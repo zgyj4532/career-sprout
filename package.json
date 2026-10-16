@@ -5,6 +5,12 @@
   "scripts": {
     "build": "npm run build --prefix frontend",
     "install:frontend": "npm install --prefix frontend",
-    "build:portfolio": "npm run build:portfolio --prefix frontend"
+    "build:portfolio": "npm run build:portfolio --prefix frontend",
+    "doctor": "node scripts/local/doctor.mjs",
+    "setup:local": "node scripts/local/setup-local.mjs",
+    "infra:up": "node scripts/local/infra.mjs up",
+    "infra:down": "node scripts/local/infra.mjs down",
+    "dev:local": "node scripts/local/dev-local.mjs",
+    "verify:phase1": "node scripts/local/verify-phase1.mjs"
   }
 }

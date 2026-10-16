@@ -1,0 +1,36 @@
+name: career-pilot-local
+
+services:
+  mongodb:
+    image: mongo:8.0
+    container_name: career-pilot-local-mongo
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - career_pilot_local_mongo:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: career-pilot-local-redis
+    ports:
+      - "127.0.0.1:6380:6379"
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
+    volumes:
+      - career_pilot_local_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  career_pilot_local_mongo:
+  career_pilot_local_redis:

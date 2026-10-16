@@ -9,49 +9,43 @@ const __dirname = dirname(__filename);
 
 const WHITELISTED_FILES = [];
 
-function getFilesRecursively(dir) {
-  let results = [];
-  const list = fs.readdirSync(dir);
-  list.forEach((file) => {
-    const filePath = path.join(dir, file);
-    const stat = fs.statSync(filePath);
-    if (stat && stat.isDirectory()) {
-      results = results.concat(getFilesRecursively(filePath));
-    } else {
-      const ext = path.extname(filePath);
-      if (ext === '.jsx' || ext === '.tsx') {
-        results.push(filePath);
-      }
-    }
-  });
-  return results;
+function getTemplateFiles(dir) {
+  return fs.readdirSync(dir, { recursive: true })
+    .map((entry) => path.join(dir, entry.toString()))
+    .filter((file) => {
+      const ext = path.extname(file);
+      return ext === '.jsx' || ext === '.tsx';
+    });
 }
 
 describe('No dangerouslySetInnerHTML in portfolio templates', () => {
   test('scans all template files and checks for dangerouslySetInnerHTML', () => {
+    const started = Date.now();
     const templatesDir = path.resolve(__dirname, '../components/portfolio/templates');
-    const files = getFilesRecursively(templatesDir);
-    
-    // Ensure we actually found template files
-    expect(files.length).toBeGreaterThan(0);
+    const files = getTemplateFiles(templatesDir);
+    expect(files.length, `No jsx/tsx files found under ${templatesDir}`).toBeGreaterThan(0);
 
     const violations = [];
-
     files.forEach((file) => {
       const relativePath = path.relative(templatesDir, file).replace(/\\/g, '/');
       const content = fs.readFileSync(file, 'utf8');
-      
-      if (content.includes('dangerouslySetInnerHTML')) {
-        const isWhitelisted = WHITELISTED_FILES.some(whiteFile => {
-          return relativePath === whiteFile || file.endsWith(whiteFile);
-        });
-        
-        if (!isWhitelisted) {
-          violations.push(relativePath);
-        }
-      }
+      if (!content.includes('dangerouslySetInnerHTML')) return;
+      const isWhitelisted = WHITELISTED_FILES.some((whiteFile) => (
+        relativePath === whiteFile || file.endsWith(whiteFile)
+      ));
+      if (!isWhitelisted) violations.push(relativePath);
     });
 
-    expect(violations, `Found dangerouslySetInnerHTML in the following files: ${violations.join(', ')}`).toEqual([]);
-  });
+    const elapsedMs = Date.now() - started;
+    expect(
+      violations,
+      [
+        `dangerouslySetInnerHTML scan failed`,
+        `root=${templatesDir}`,
+        `files=${files.length}`,
+        `elapsedMs=${elapsedMs}`,
+        `violations=${violations.join(', ') || 'none'}`,
+      ].join('; '),
+    ).toEqual([]);
+  }, 30000);
 });
