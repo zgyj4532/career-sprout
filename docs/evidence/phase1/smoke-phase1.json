@@ -1,0 +1,55 @@
+{
+  "at": "2026-10-15T12:34:09.057Z",
+  "results": [
+    {
+      "name": "health",
+      "status": "PASS",
+      "detail": "{\"status\":200,\"bodyStatus\":\"OK\",\"database\":true,\"redis\":true}"
+    },
+    {
+      "name": "disabled-payments",
+      "status": "PASS",
+      "detail": "404"
+    },
+    {
+      "name": "remote-host-rejected",
+      "status": "PASS",
+      "detail": "401"
+    },
+    {
+      "name": "resume-create",
+      "status": "PASS",
+      "detail": "201"
+    },
+    {
+      "name": "resume-read",
+      "status": "PASS",
+      "detail": "200"
+    },
+    {
+      "name": "pdf-download",
+      "status": "PASS",
+      "detail": "bytes=40018"
+    },
+    {
+      "name": "parse-jd",
+      "status": "PASS",
+      "detail": "200"
+    },
+    {
+      "name": "parse-jd-url-disabled",
+      "status": "PASS",
+      "detail": "404"
+    },
+    {
+      "name": "skill-gap-no-key",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": "403"
+    },
+    {
+      "name": "interview-start-no-key",
+      "status": "BLOCKED_EXTERNAL",
+      "detail": "403"
+    }
+  ]
+}
