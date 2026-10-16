@@ -87,8 +87,10 @@ class OpenAIAdapter {
         'Set OPENAI_API_KEY in your .env file or provide it via the X-AI-Key header.'
       );
     }
-    this.client = new OpenAI({ apiKey });
-    this.modelName = modelName || DEFAULT_MODELS.openai;
+    const baseURL = process.env.OPENAI_BASE_URL || 'https://api.vibekey.cn/v1';
+    this.client = new OpenAI({ apiKey, baseURL });
+    this.baseURL = this.client.baseURL;
+    this.modelName = modelName || process.env.OPENAI_MODEL || (String(baseURL).includes('vibekey.cn') ? 'gpt-6.1-sol' : DEFAULT_MODELS.openai);
     this.providerName = 'openai';
   }
 
@@ -288,45 +290,54 @@ let _defaultProvider = null;
  * Returns the default server-side Gemini provider (lazy-initialised).
  * Throws if GEMINI_API_KEY is not set.
  */
-export function getDefaultProvider() {
-  if (_defaultProvider) return _defaultProvider;
-
-  const envProvider = process.env.AI_PROVIDER;
-  if (envProvider) {
-    let envKey = null;
-    if (envProvider === 'gemini') envKey = process.env.GEMINI_API_KEY;
-    else if (envProvider === 'openai') envKey = process.env.OPENAI_API_KEY;
-    else if (envProvider === 'groq') envKey = process.env.GROQ_API_KEY;
-    else if (envProvider === 'openrouter') envKey = process.env.OPENROUTER_API_KEY;
-    else if (envProvider === 'requesty') envKey = process.env.REQUESTY_API_KEY;
-
-    if (envKey) {
-      _defaultProvider = createAIProvider(envProvider, envKey);
-      return _defaultProvider;
+export function createServerProvider() {
+  const envProvider = (process.env.AI_PROVIDER || '').toLowerCase().trim();
+  const customKey = process.env.CUSTOM_API_KEY;
+  const customBase = process.env.CUSTOM_BASE_URL;
+  const customModel = process.env.CUSTOM_MODEL;
+  if (envProvider === 'custom') {
+    if (!customKey || !customBase) {
+      throw new ApiError(
+        503,
+        'AI_PROVIDER=custom but CUSTOM_API_KEY or CUSTOM_BASE_URL is missing. Set both in backend/.env. Do not put the key in frontend env.',
+      );
     }
+    return createAIProvider('custom', customKey, customModel, customBase);
+  }
+
+  const keyed = {
+    gemini: process.env.GEMINI_API_KEY,
+    openai: process.env.OPENAI_API_KEY,
+    groq: process.env.GROQ_API_KEY,
+    openrouter: process.env.OPENROUTER_API_KEY,
+    requesty: process.env.REQUESTY_API_KEY,
+  };
+  if (envProvider && keyed[envProvider]) {
+    return createAIProvider(envProvider, keyed[envProvider]);
   }
 
   const groqApiKey = process.env.GROQ_API_KEY;
   if (groqApiKey && groqApiKey.startsWith('gsk_')) {
-    _defaultProvider = createAIProvider('groq', groqApiKey);
-    return _defaultProvider;
+    return createAIProvider('groq', groqApiKey);
   }
-
   const openaiApiKey = process.env.OPENAI_API_KEY;
   if (openaiApiKey && openaiApiKey.startsWith('sk-')) {
-    _defaultProvider = createAIProvider('openai', openaiApiKey);
-    return _defaultProvider;
+    return createAIProvider('openai', openaiApiKey);
   }
-
-  const geminiApiKey = process.env.GEMINI_API_KEY;
-  if (!geminiApiKey) {
-    throw new ApiError(
-      503,
-      'AI features are unavailable — Neither OPENAI_API_KEY nor GEMINI_API_KEY is configured. ' +
-      'Set one in your .env file or supply your own key via the X-AI-Key header.'
-    );
+  if (process.env.GEMINI_API_KEY) {
+    return createAIProvider('gemini', process.env.GEMINI_API_KEY);
   }
+  if (customKey && customBase) {
+    return createAIProvider('custom', customKey, customModel, customBase);
+  }
+  throw new ApiError(
+    503,
+    'AI features are unavailable. Set one of GEMINI_API_KEY, OPENAI_API_KEY, GROQ_API_KEY, or CUSTOM_API_KEY with CUSTOM_BASE_URL in backend/.env.',
+  );
+}
 
-  _defaultProvider = createAIProvider('gemini', geminiApiKey);
+export function getDefaultProvider() {
+  if (_defaultProvider) return _defaultProvider;
+  _defaultProvider = createServerProvider();
   return _defaultProvider;
 }

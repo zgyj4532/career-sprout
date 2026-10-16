@@ -1,3 +1,7 @@
+import { execFileSync, spawn } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { getDefaultProvider } from '../config/aiProviders.js';
 import QuestionBank from '../models/QuestionBank.model.js';
 
@@ -526,56 +530,186 @@ Return ONLY valid JSON with this structure:
 // ---------------------------------------------------------------------------
 
 /**
- * Transcribe an audio buffer using the user's BYOK provider.
- *
- * Provider strategy:
- *   - openai / openrouter (when model is whisper-1) → OpenAI audio.transcriptions
- *   - gemini → Gemini inline audio + prompt
- *   - groq → Groq's OpenAI-compatible /audio/transcriptions
- *
- * For providers without audio support we fall back to asking the LLM to
- * describe the audio (graceful degradation — will return a placeholder).
+ * Chat stays on the OpenAI-compatible proxy. That host does not provide
+ * Whisper, so speech uses Qwen ASR when configured.
  */
+function runFfmpeg(args) {
+  const bin = process.env.FFMPEG_PATH || '/mnt/c/Users/ll/scoop/shims/ffmpeg.exe';
+  return new Promise((resolve, reject) => {
+    const child = spawn(bin, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    let stderr = '';
+    child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+    child.on('error', reject);
+    child.on('exit', (code) => (code === 0 ? resolve(stderr) : reject(new Error(`ffmpeg exit ${code}: ${stderr.slice(-240)}`))));
+  });
+}
+
+function ffmpegArg(bin, file) {
+  return bin.endsWith('.exe') ? execFileSync('wslpath', ['-w', file], { encoding: 'utf8' }).trim() : file;
+}
+
+async function toSpeechAudio(buffer, mimeType) {
+  if (!buffer?.length) {
+    const error = new Error('录音是空的，没有可转写的音频。');
+    error.statusCode = 422;
+    error.code = 'ASR_EMPTY_AUDIO';
+    throw error;
+  }
+  if (/wav|mpeg|mp3/i.test(mimeType || '')) {
+    return { buffer, mime: /wav/i.test(mimeType) ? 'audio/wav' : 'audio/mpeg', bytes: buffer.length };
+  }
+  const dir = await mkdtemp(path.join(tmpdir(), 'campus-asr-'));
+  const input = path.join(dir, 'in.bin');
+  const wav = path.join(dir, 'out.wav');
+  const mp3 = path.join(dir, 'out.mp3');
+  await writeFile(input, buffer);
+  const bin = process.env.FFMPEG_PATH || '/mnt/c/Users/ll/scoop/shims/ffmpeg.exe';
+  const inputArg = ffmpegArg(bin, input);
+  const wavArg = ffmpegArg(bin, wav);
+  const mp3Arg = ffmpegArg(bin, mp3);
+  try {
+    const probe = await runFfmpeg(['-y', '-i', inputArg, '-ar', '16000', '-ac', '1', wavArg]);
+    const times = [...probe.matchAll(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/g)];
+    const last = times.at(-1);
+    const duration = last ? Number(last[1]) * 3600 + Number(last[2]) * 60 + Number(last[3]) : 0;
+    const volumeLog = await runFfmpeg(['-i', wavArg, '-af', 'volumedetect', '-f', 'null', '-']);
+    const mean = Number(volumeLog.match(/mean_volume:\s*(-?\d+(?:\.\d+)?) dB/)?.[1]);
+    if (!duration || duration < 0.4 || (Number.isFinite(mean) && mean < -45)) {
+      const error = new Error(`录音里没有可用语音。durationSec=${duration.toFixed(2)} meanVolumeDb=${Number.isFinite(mean) ? mean : 'unknown'} inputBytes=${buffer.length} mime=${mimeType || 'unknown'}`);
+      error.statusCode = 422;
+      error.code = 'ASR_SILENCE';
+      throw error;
+    }
+    await runFfmpeg(['-y', '-i', wavArg, '-codec:a', 'libmp3lame', '-q:a', '5', mp3Arg]);
+    return {
+      buffer: await readFile(wav),
+      mime: 'audio/wav',
+      fallback: await readFile(mp3),
+      fallbackMime: 'audio/mpeg',
+      bytes: buffer.length,
+      durationSec: duration,
+    };
+  } catch (error) {
+    if (error.code === 'ASR_SILENCE' || error.code === 'ASR_EMPTY_AUDIO') throw error;
+    const wrapped = new Error(`录音格式 ${mimeType || 'unknown'} 转换失败：${error.message}`);
+    wrapped.statusCode = 502;
+    wrapped.code = 'ASR_CONVERT';
+    throw wrapped;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+function asrText(payload) {
+  const message = payload?.choices?.[0]?.message;
+  if (!message) return '';
+  if (typeof message.content === 'string') return message.content.trim();
+  if (Array.isArray(message.content)) {
+    return message.content.map((part) => part?.text || part?.transcript || '').join('').trim();
+  }
+  return String(message.audio?.transcript || '').trim();
+}
+
+async function callQwenAsr({ base, model, apiKey, dataUri, language }) {
+  const response = await fetch(`${base}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{
+        role: 'user',
+        content: [{ type: 'input_audio', input_audio: { data: dataUri } }],
+      }],
+      asr_options: { language: language || 'zh', enable_itn: false },
+    }),
+  });
+  const raw = await response.text();
+  let payload = null;
+  try { payload = JSON.parse(raw); } catch { payload = null; }
+  if (!response.ok) {
+    const error = new Error(`Qwen ASR failed status=${response.status} model=${model} host=${new URL(base).host} detail=${payload?.error?.message || payload?.message || raw.slice(0, 240)}`);
+    error.statusCode = 502;
+    error.code = 'ASR_UPSTREAM';
+    throw error;
+  }
+  return { text: asrText(payload), requestId: payload?.id || '' };
+}
+
+async function transcribeWithQwen({ audioBuffer, mimeType, language }) {
+  const apiKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
+  if (!apiKey) {
+    throw new Error('Qwen ASR is not configured. Set DASHSCOPE_API_KEY in backend/.env. A Gemini web login is not an API key.');
+  }
+  const base = (process.env.QWEN_ASR_BASE_URL || 'https://dashscope.aliyuncs.com/compatible-mode/v1').replace(/\/$/, '');
+  const model = process.env.QWEN_ASR_MODEL || 'qwen3-asr-flash';
+  const audio = await toSpeechAudio(Buffer.from(audioBuffer), mimeType);
+  const first = await callQwenAsr({
+    base,
+    model,
+    apiKey,
+    language,
+    dataUri: `data:${audio.mime};base64,${audio.buffer.toString('base64')}`,
+  });
+  if (first.text) return { text: first.text, language: language || 'zh', provider: 'qwen', model, requestId: first.requestId };
+  if (audio.fallback) {
+    const second = await callQwenAsr({
+      base,
+      model,
+      apiKey,
+      language,
+      dataUri: `data:${audio.fallbackMime};base64,${audio.fallback.toString('base64')}`,
+    });
+    if (second.text) return { text: second.text, language: language || 'zh', provider: 'qwen', model, requestId: second.requestId };
+  }
+  const error = new Error(`Qwen ASR returned empty text model=${model} requestId=${first.requestId || 'none'} inputBytes=${audio.bytes || audio.buffer.length} durationSec=${audio.durationSec ?? 'unknown'} mime=${mimeType || 'unknown'}`);
+  error.statusCode = 502;
+  error.code = 'ASR_EMPTY';
+  throw error;
+}
+
 export const transcribeAudio = async ({ audioBuffer, mimeType, language }, aiProvider) => {
   const provider = aiProvider || getDefaultProvider();
+  const base = provider.baseURL || provider.client?.baseURL || '';
+  if (String(base).includes('vibekey.cn') || process.env.ASR_PROVIDER === 'qwen') {
+    return transcribeWithQwen({ audioBuffer, mimeType, language });
+  }
   const name = provider.providerName;
 
-  // OpenAI / Groq / OpenRouter — all expose OpenAI-compatible audio endpoint
   if (name === 'openai' || name === 'groq' || name === 'openrouter') {
     if (!provider.client?.audio?.transcriptions?.create) {
       throw new Error('Selected provider does not support audio transcription. Switch to OpenAI or Groq.');
     }
-    const file = new Blob([audioBuffer], { type: mimeType || 'audio/webm' });
-    // Node's openai SDK expects a File-like object — build a minimal one
     const fileLike = {
       name: 'audio.webm',
       type: mimeType || 'audio/webm',
-      arrayBuffer: async () => audioBuffer
+      arrayBuffer: async () => audioBuffer,
     };
     const transcription = await provider.client.audio.transcriptions.create({
       file: fileLike,
       model: name === 'groq' ? 'whisper-large-v3-turbo' : 'whisper-1',
-      language: language || undefined
+      language: language || undefined,
     });
     return { text: transcription.text || '', language };
   }
 
-  // Gemini — send audio inline
   if (name === 'gemini' && provider.model) {
     const result = await provider.model.generateContent({
       contents: [{
         role: 'user',
         parts: [
           { text: `Transcribe the following audio. Respond ONLY with the transcription, no commentary.${language ? ` Language: ${language}.` : ''}` },
-          { inlineData: { mimeType: mimeType || 'audio/webm', data: Buffer.from(audioBuffer).toString('base64') } }
-        ]
-      }]
+          { inlineData: { mimeType: mimeType || 'audio/webm', data: Buffer.from(audioBuffer).toString('base64') } },
+        ],
+      }],
     });
     const text = result.response.text();
     return { text: text || '', language };
   }
 
-  throw new Error('Audio transcription is not supported by the active provider. Please use OpenAI, Groq, OpenRouter (Whisper), or Gemini.');
+  throw new Error('Audio transcription is not supported by the active provider. Please use OpenAI, Groq, OpenRouter (Whisper), Gemini, or Qwen ASR.');
 };
 
 // ---------------------------------------------------------------------------

@@ -102,6 +102,11 @@ const userProfileSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  studyStage: {
+    type: String,
+    enum: ['大一', '大二', '大三', '大四', '已毕业', ''],
+    default: '',
+  },
   // Availability flag surfaced to recruiters / community
   openToWork: {
     type: Boolean,

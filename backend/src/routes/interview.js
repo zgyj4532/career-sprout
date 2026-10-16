@@ -155,7 +155,7 @@ router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(st
     }
 
     const interview = new Interview({
-        odId: req.user.uid,
+        userId: req.user.uid,
         jobRole,
         industry,
         experienceLevel,
@@ -535,14 +535,44 @@ router.post('/:id/complete', verifyToken, asyncHandler(async (req, res) => {
 router.get('/history', verifyToken, asyncHandler(async (req, res) => {
     const interviews = await Interview.find({ odId: req.user.uid })
         .sort({ createdAt: -1 })
-        .limit(20)
-        .select('jobRole industry experienceLevel mode language companyName status overallScore createdAt completedAt duration')
+        .limit(50)
+        .select('title jobRole status overallScore createdAt completedAt totalQuestionCount answers.questionId')
         .lean();
 
     res.json({
         success: true,
-        data: interviews
+        data: interviews.map((row) => ({
+            _id: row._id,
+            title: row.title || '',
+            jobRole: row.jobRole,
+            status: row.status,
+            overallScore: row.overallScore,
+            createdAt: row.createdAt,
+            completedAt: row.completedAt,
+            totalQuestionCount: row.totalQuestionCount,
+            answeredCount: row.answers?.length || 0,
+        })),
     });
+}));
+
+router.patch('/:id([0-9a-fA-F]{24})', verifyToken, asyncHandler(async (req, res) => {
+    const title = String(req.body?.title || '').replace(/\s+/g, ' ').trim();
+    if (!title || title.length > 40) {
+        throw new ApiError(400, '档案名字需要 1 到 40 个字');
+    }
+    const interview = await Interview.findOneAndUpdate(
+        { _id: req.params.id, userId: req.user.uid },
+        { $set: { title } },
+        { new: true },
+    ).select('title');
+    if (!interview) throw new ApiError(404, '找不到这份档案');
+    res.json({ success: true, data: { title: interview.title } });
+}));
+
+router.delete('/:id([0-9a-fA-F]{24})', verifyToken, asyncHandler(async (req, res) => {
+    const deleted = await Interview.findOneAndDelete({ _id: req.params.id, userId: req.user.uid });
+    if (!deleted) throw new ApiError(404, '找不到这份档案');
+    res.json({ success: true });
 }));
 
 // ---------------------------------------------------------------------------
@@ -563,9 +593,9 @@ router.get('/analytics', verifyToken, asyncHandler(async (req, res) => {
 router.get('/:id([0-9a-fA-F]{24})', verifyToken, asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const interview = await Interview.findOne({ _id: id, odId: req.user.uid }).lean();
+    const interview = await Interview.findOne({ _id: id, userId: req.user.uid }).lean();
     if (!interview) {
-        throw new ApiError(404, 'Interview not found');
+        throw new ApiError(404, `Interview not found id=${id}`);
     }
 
     res.json({

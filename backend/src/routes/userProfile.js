@@ -40,7 +40,7 @@ router.put('/me', validate(updateProfileSchema), asyncHandler(async (req, res) =
   const {
     displayName, bio, jobRole, skills, location, website, github, linkedin,
     avatarUrl, phone, headline, dateOfBirth, gender, company, yearsOfExperience,
-    collegeStudent, openToWork, education, languages, resumeHeadline,
+    collegeStudent, studyStage, openToWork, education, languages, resumeHeadline,
   } = req.body;
 
   const update = {};
@@ -67,6 +67,10 @@ router.put('/me', validate(updateProfileSchema), asyncHandler(async (req, res) =
   if (company !== undefined) update.company = String(company).slice(0, 100);
   if (yearsOfExperience !== undefined) update.yearsOfExperience = yearsOfExperience;
   if (collegeStudent !== undefined) update.collegeStudent = Boolean(collegeStudent);
+  if (studyStage !== undefined) {
+    update.studyStage = studyStage;
+    update.collegeStudent = studyStage !== '已毕业';
+  }
   if (openToWork !== undefined) update.openToWork = Boolean(openToWork);
   if (resumeHeadline !== undefined) update.resumeHeadline = String(resumeHeadline).slice(0, 300);
 

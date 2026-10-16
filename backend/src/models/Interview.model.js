@@ -73,6 +73,7 @@ const codingQuestionSchema = new mongoose.Schema({
 const interviewSchema = new mongoose.Schema({
     userId: { type: String, required: true, index: true, alias: 'odId' },
     jobRole: { type: String, required: true },
+    title: { type: String, default: '', trim: true, maxlength: 40 },
     industry: { type: String, required: true },
     experienceLevel: { type: String, required: true },
     mode: {
@@ -120,7 +121,13 @@ const interviewSchema = new mongoose.Schema({
         timestamp: { type: Date, default: Date.now }
     }]
 }, { timestamps: true });
-
+interviewSchema.pre(/^find/, function mapOwnerAlias() {
+  const query = this.getQuery();
+  if (query && Object.prototype.hasOwnProperty.call(query, 'odId') && !Object.prototype.hasOwnProperty.call(query, 'userId')) {
+    query.userId = query.odId;
+    delete query.odId;
+  }
+});
 interviewSchema.index({ userId: 1, createdAt: -1 }, { background: true });
 interviewSchema.index({ userId: 1, status: 1 }, { background: true });
 interviewSchema.index({ userId: 1, jobRole: 1, industry: 1 }, { background: true });

@@ -1,6 +1,26 @@
 import puppeteer from 'puppeteer';
 import { marked } from 'marked';
+import { existsSync } from 'node:fs';
 import { generateStructuredData } from '../utils/structuredDataGenerator.js';
+
+const CJK_FONT_FILES = [
+  process.env.CAMPUS_CJK_FONT,
+  '/mnt/c/Windows/Fonts/msyh.ttc',
+  '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+].filter(Boolean);
+
+function cjkFontCss() {
+  const file = CJK_FONT_FILES.find((fontPath) => existsSync(fontPath));
+  const face = file
+    ? `@font-face { font-family: "Campus CJK"; src: url("file://${file}") format("truetype"); }`
+    : '';
+  return `${face}
+        body, h1, h2, h3, p, li {
+          font-family: "Campus CJK", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+        }`;
+}
 /**
  * Generate a PDF from markdown text using Puppeteer.
  * @param {string} markdownText - The resume markdown content.
@@ -30,7 +50,7 @@ export const generatePDF = async (markdownText, options = {}) => {
   // Read full HTML structure with styles
   const fullHtml = `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="zh-CN">
     <head>
       <meta charset="UTF-8">
       <title>${title}</title>
@@ -40,12 +60,12 @@ export const generatePDF = async (markdownText, options = {}) => {
           --theme-color: ${themeColor};
         }
         body {
-          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
           line-height: 1.5;
           color: #333;
           margin: 0;
           padding: 0;
         }
+        ${cjkFontCss()}
         /* Typography */
         h1 {
           font-size: 24px;

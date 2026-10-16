@@ -66,6 +66,7 @@ export const updateProfileSchema = z.object({
     .max(80, 'yearsOfExperience must be <= 80')
     .optional(),
   collegeStudent: z.boolean().optional(),
+  studyStage: z.enum(['大一', '大二', '大三', '大四', '已毕业']).optional(),
   openToWork: z.boolean().optional(),
   education: z.array(educationItemSchema).max(20, 'You can list at most 20 education entries').optional(),
   languages: z
