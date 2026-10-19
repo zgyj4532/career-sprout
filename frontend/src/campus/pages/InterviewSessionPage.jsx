@@ -43,7 +43,7 @@ function InterviewRoom({ id }) {
     setItem(data)
     const accepted = data.answers?.some((answer) => answer.questionId === questionId)
     setUncertain(false)
-    if (accepted) { setTranscript(''); setDuration(0); setNote('服务器已保存这一题，已恢复进度，不会重复提交。') }
+    if (accepted) { setTranscript(''); setDuration(0); setNote('') }
     return accepted
   }
   async function retryReconcile() {
@@ -91,15 +91,15 @@ function InterviewRoom({ id }) {
     <div className="campus-progress"><span>已保存 {answers.length} / {item?.totalQuestionCount || '—'} 题</span></div>
     <RequestError error={error} onRetry={uncertain ? retryReconcile : !item ? load : undefined} />
     {note && <p className="campus-note" role="status">{note}</p>}
-    <p role="status">{phase === 'loading' ? '正在读取面试…' : phase === 'submitting' ? '正在提交，等待服务器确认…' : phase === 'reconciling' ? '正在恢复服务器进度…' : phase === 'summary' ? '正在生成总评，已保存回答不会丢失…' : '文字确认后才会提交。'}</p>
+    {busy && <p role="status">{phase === 'loading' ? '正在读取面试…' : phase === 'summary' ? '正在生成总评…' : '正在保存回答…'}</p>}
     {question && <>
       <article className="campus-question-card"><div className="campus-q-index">{answers.length + 1}</div><h2>{question.question}</h2></article>
       <div className="campus-actions">{speech.speaking ? <button type="button" onClick={speech.cancel}>停止播报</button> : <button type="button" disabled={busy || voiceActive} onClick={() => speech.speak(question.question)}>朗读这道题</button>}</div>
       {speech.notice && <p role="status">{speech.notice}</p>}
-      <VoiceInput key={question.questionId} disabled={busy || speech.speaking || uncertain} onActiveChange={setVoiceActive} onReview={(text, seconds) => { setTranscript((current) => [current, text].filter(Boolean).join('\n')); setDuration(seconds); setNote('转写已放入回答区。请检查，再点击确认提交。') }} />
+      <VoiceInput key={question.questionId} disabled={busy || speech.speaking || uncertain} onActiveChange={setVoiceActive} onReview={(text, seconds) => { setTranscript((current) => [current, text].filter(Boolean).join('\n')); setDuration(seconds); setNote('文字已带入，请确认并提交回答。') }} />
       <form className="campus-form" onSubmit={submit}><label>检查并编辑本题回答<textarea disabled={busy || voiceActive || uncertain} value={transcript} maxLength={20000} onChange={(event) => setTranscript(event.target.value)} placeholder="可以直接打字，也可以使用上方转写。" /></label><div className="campus-actions"><button className="primary" type="submit" disabled={busy || voiceActive || speech.speaking || uncertain || !transcript.trim()}>确认并提交回答</button><button type="button" disabled={busy || voiceActive || uncertain} onClick={() => { setTranscript(''); setDuration(0) }}>清空未提交文字</button></div></form>
     </>}
-    {item && !question && <p>题目已答完。已保存回答可独立生成总评，失败后可以重试。</p>}
+    {item && !question && <p>题目已答完，点击下方按钮查看总评。</p>}
     <RequestError error={summaryError} onRetry={finish} />
     {!!answers.length && <button type="button" disabled={busy || voiceActive || speech.speaking || uncertain} onClick={finish}>{summaryError ? '重新生成总评' : question ? '提前结束，生成总评' : '生成本次总评'}</button>}
     <details><summary>已保存的回答（{answers.length}）</summary>{answers.map((answer) => <article className="campus-turn" key={answer.questionId}><h3>{answer.question}</h3><p className="campus-preserve-text">{answer.transcript}</p></article>)}</details>

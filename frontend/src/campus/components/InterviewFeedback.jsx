@@ -12,9 +12,9 @@ function FeedbackView({ analysis }) {
     <article className="campus-feedback">
       <div className="campus-feedback-bar">
         <div className="campus-scores">
-          <span>贴题 {analysis.relevance ?? '—'}</span>
-          <span>清楚 {analysis.clarity ?? '—'}</span>
-          <span>信心 {analysis.confidence ?? '—'}</span>
+          <span className="campus-score-relevance">贴题 {analysis.relevance ?? '—'}</span>
+          <span className="campus-score-clarity">清楚 {analysis.clarity ?? '—'}</span>
+          <span className="campus-score-confidence">信心 {analysis.confidence ?? '—'}</span>
         </div>
         <button type="button" className="campus-fold" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
           {open ? '收起' : '展开'}

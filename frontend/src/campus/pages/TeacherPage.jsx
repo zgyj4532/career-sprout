@@ -9,6 +9,7 @@ import JobSelect from '../components/JobSelect'
 export default function TeacherPage() {
   const { status, error: sessionError, refresh } = useCampusSession()
   const [jobs, setJobs] = useState([])
+  const [jobsTotal, setJobsTotal] = useState(null)
   const [jobId, setJobId] = useState('')
   const [candidates, setCandidates] = useState(null)
   const [selected, setSelected] = useState([])
@@ -16,9 +17,13 @@ export default function TeacherPage() {
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
   const generation = useRef(0)
+  async function loadJobs() {
+    setError(null)
+    try { const data = await campusData('/jobs?limit=50'); setJobs(data.items); setJobsTotal(data.total) } catch (err) { setError(err) }
+  }
   useEffect(() => {
     if (!status?.user?.isTeacher) return
-    campusData('/jobs?limit=50').then((data) => setJobs(data.items)).catch(setError)
+    loadJobs()
     return () => { generation.current += 1 }
   }, [status?.user?.isTeacher])
   async function load(id = jobId) {
@@ -40,8 +45,8 @@ export default function TeacherPage() {
   }
   if (!status?.user?.isTeacher) return <section className="campus-form"><h1>教师荐才</h1><RequestError error={sessionError} onRetry={refresh} /><p>{!status ? '正在确认账号权限…' : '此页面需要已验证邮箱、并由服务端授权的正式教师账号。本机体验和学生自选身份不能取得教师权限。'}</p><Link to="/login?returnTo=/teacher">查看正式账号状态</Link><Link to="/profile">管理自己对教师的授权</Link></section>
   return <section className="campus-form"><h1>为岗位整理候选材料</h1><p>只展示明确授权给你的学生。匹配依据学生自评，不是 AI 录用概率。时间冲突或待确认的学生单独列出。</p>
-    <RequestError error={error} onRetry={() => load()} />{note && <p role="status" className="campus-note">{note}</p>}
-    <JobSelect jobs={jobs} setJobs={setJobs} value={jobId} disabled={busy} label="选择岗位" onChange={load} />
+    <RequestError error={error} onRetry={jobsTotal === null ? loadJobs : () => load()} />{note && <p role="status" className="campus-note">{note}</p>}
+    <JobSelect jobs={jobs} setJobs={setJobs} total={jobsTotal} loadError={error} value={jobId} disabled={busy} label="选择岗位" onChange={load} />
     {jobId && <button type="button" disabled={busy} onClick={() => load()}>重新读取授权与版本</button>}
     {busy && <p role="status">正在处理，请稍候…</p>}
     {candidates && [['eligible', '时间符合要求'], ['conflict', '时间冲突'], ['unknown', '资料待确认']].map(([key, label]) => <section className="campus-form" key={key}><h2>{label}</h2>{!candidates[key]?.length && <p>暂无已授权的候选人。</p>}{(candidates[key] || []).map((student) => <article className="campus-panel" key={student.studentId}><h3>{student.displayName}</h3><p>{TIME_LABELS[student.timeStatus]} · 技能覆盖：{typeof student.coverage === 'number' ? `${Math.round(student.coverage * 100)}%` : '待确认'}</p>

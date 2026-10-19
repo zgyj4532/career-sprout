@@ -224,6 +224,19 @@
   gap: 8px;
 }
 
+.campus-scores span {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.campus-score-relevance { background: #e2f2e9; color: #14583e; }
+.campus-score-clarity { background: #e4eefb; color: #234f87; }
+.campus-score-confidence { background: #efe7fa; color: #65408b; }
 
 .campus-feedback ul, .campus-turn ul {
   margin: 4px 0 0;
@@ -414,10 +427,6 @@
 .campus-stage-card,
 .campus-question-card,
 .campus-orb,
-.campus-report .campus-panel,
-.campus-report .campus-panel,
-.campus-report .campus-turn,
-.campus-report .campus-feedback,
 .campus-immersive .campus-feedback {
   background: rgba(15, 23, 42, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -425,20 +434,12 @@
   color: #e8eef7;
 }
 
-.campus-report .campus-feedback p,
-.campus-report .campus-feedback li,
 .campus-immersive .campus-feedback p,
-.campus-immersive .campus-feedback li,
-.campus-report .campus-turn p,
-.campus-report .campus-turn li {
+.campus-immersive .campus-feedback li {
   color: #dbe7f5;
 }
 
-.campus-report .campus-scores span,
-.campus-immersive .campus-scores span {
-  background: rgba(14, 165, 233, 0.16);
-  color: #bae6fd;
-}
+
 .campus-stage-card,
 .campus-question-col {
   display: grid;
@@ -628,9 +629,9 @@
 .campus-room-actions div { flex: 1; }
 .campus-room-hint { margin: 0; color: #94a3b8; font-size: 13px; text-align: center; }
 
-.campus-report { display: grid; gap: 16px; }
-.campus-kicker { margin: 0; color: #7dd3fc; font-weight: 700; }
-.campus-report h1 { color: #f8fafc; }
+.campus-report { display: grid; gap: 16px; color: var(--ink); }
+.campus-kicker { margin: 0; color: var(--muted); font-weight: 700; }
+.campus-report h1 { color: var(--ink); }
 .campus-score-row {
   display: grid;
   grid-template-columns: 160px 1fr;
@@ -647,7 +648,7 @@
   background: conic-gradient(#818cf8 var(--score), rgba(255, 255, 255, 0.08) 0);
 }
 .campus-score-ring strong { font-size: 40px; line-height: 1; }
-.campus-score-ring span { color: #94a3b8; }
+.campus-score-ring span { color: var(--muted); }
 .campus-bars { display: grid; gap: 10px; }
 .campus-bars div div { display: flex; justify-content: space-between; font-size: 14px; }
 .campus-bars i { background: #0ea5e9; }
@@ -1340,7 +1341,6 @@
 .campus-slogan-measure { visibility: hidden; pointer-events: none; }
 .campus-slogan-display { transition: opacity 100ms, filter 100ms; }
 .campus-slogan-toggle.is-fading .campus-slogan-display { opacity: 0.2; filter: blur(3px); }
-.campus .campus-slogan-hint { font-size: 12px; color: var(--accent); margin: 8px 0 20px; }
 .campus .campus-job-choice { display: grid; gap: 8px; border-radius: 14px; text-align: left; justify-content: start; padding: 18px; }
 .campus-job-choice span { color: var(--muted); font-size: 14px; }
 .campus-recording-banner { position: sticky; top: 12px; z-index: 25; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px; border: 2px solid var(--danger); border-radius: 12px; color: #7a1410; background: #fff1ed; box-shadow: 0 4px 20px #1c19151a; }

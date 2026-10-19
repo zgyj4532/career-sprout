@@ -25,6 +25,5 @@ export default function Slogan() {
       <span className="campus-slogan-measure" aria-hidden="true">{phrases[1]}</span>
       <span className="campus-slogan-display" aria-hidden="true">{replay && !reduced ? <BlurText key={String(alternate)} as="span" text={phrases[Number(alternate)]} animateBy="chars" delay={7} stepDuration={0.18} animationFrom={{ opacity: 0, filter: 'blur(5px)', y: 5 }} animationTo={[{ opacity: 0.6, filter: 'blur(2px)', y: 2 }, { opacity: 1, filter: 'blur(0px)', y: 0 }]} /> : phrases[Number(alternate)]}</span>
     </button></h1>
-    <p className="campus-slogan-hint">点一下，换句话说</p>
   </div>
 }

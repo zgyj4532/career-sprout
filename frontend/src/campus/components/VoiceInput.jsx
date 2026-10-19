@@ -40,11 +40,11 @@ export default function VoiceInput({ onReview, disabled = false, onActiveChange 
     setError(null)
   }
   return <div className="campus-voice campus-form">
-    <p>仅在你点击后使用麦克风，不开启摄像头。每段最多 3 分钟；结束后先转写校对，不会自动提交。</p>
+    <p>每段最多3分钟，结束后自动转写，请校对文字后使用。</p>
     {audio.error && <p className="campus-error" role="alert">{audio.error}</p>}
     <RequestError error={error} onRetry={transcribe} />
     {audio.state === 'recording' && <div className="campus-recording-banner" role="status"><strong>录音已开始，请说话</strong><span className="campus-timer">{Math.floor(audio.seconds / 60)}:{String(audio.seconds % 60).padStart(2, '0')}</span><button type="button" onClick={audio.stop}>结束录音，检查文字</button></div>}
-    <p role="status">{audio.state === 'requesting_permission' ? '等待麦克风授权，可以随时取消。' : audio.state === 'starting' ? '设备正在准备，尚未开始录音。' : audio.state === 'stopping' ? '正在结束录音…' : busy ? '正在转写，原有文字不会被覆盖。' : audio.state === 'captured' ? '录音已结束。请转写并检查文字。' : ''}</p>
+    <p role="status">{audio.state === 'requesting_permission' ? '等待麦克风授权…' : audio.state === 'starting' ? '正在准备录音…' : audio.state === 'stopping' ? '正在结束录音…' : busy ? '正在转写…' : ''}</p>
     <div className="campus-actions">
       <button type="button" onClick={() => { setReview(null); audio.start() }} disabled={disabled || audio.active || busy}>{audio.capture ? '重新录音' : '开始录音'}</button>
       {audio.capture && <button type="button" onClick={transcribe} disabled={disabled || busy}>转写这段录音</button>}
