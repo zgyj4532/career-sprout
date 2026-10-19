@@ -15,12 +15,12 @@
   "branch": "feat/career-sprout-experience-polish",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
-  "pr_url": null,
+  "commit": "68de1f67",
+  "pr_url": "https://github.com/zgyj4532/career-sprout/pull/2",
   "subtasks": [],
   "children": [],
   "parent": null,
   "relatedFiles": [],
-  "notes": "2026-10-19：用户批准一个PR分开提交，包含此前未提交的必要校园基础改造。主要提交c55f1930、85b14eaa；未完成需求转GitHub Issue #1，复杂AI能力仍须讨论。完整任务保持in_progress。发布前校园前端26项测试通过，384MiB生产构建通过（保留大chunk提示）；后端既有lint错误未宣称已修复。",
+  "notes": "2026-10-19：PR https://github.com/zgyj4532/career-sprout/pull/2 已推送到 zgyj4532/career-sprout。提交 c55f1930、85b14eaa、68de1f67。未完成需求为 Issue https://github.com/zgyj4532/career-sprout/issues/1 ，不自动关闭。完整任务保持 in_progress。",
   "meta": { "issue_url": "https://github.com/zgyj4532/career-sprout/issues/1", "publication_scope": "基础改造与轻量修正同一PR、独立提交；排除.omp与旧任务日志" }
 }

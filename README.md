@@ -137,7 +137,7 @@ career-pilot/                    # 本地目录仍被当前会话锁定，目标
 
 上游的页面和路由仍在仓库里。校园构建只解析校园入口与普通CSS，不扫描未启用的作品集模板；原上游入口仍保留。Mongo数据库、Compose project和卷名继续使用历史 `career-pilot-local` / `career_pilot_local` 标识，避免改名丢失数据。
 
-GitHub已改为 `zgyj4532/career-sprout`，仍保留原fork和提交历史。本地改名被当前omp会话的目录锁阻止，未强杀或复制替代；关闭会话后使用 `E:\github\rename-careersprout.ps1`，具体操作见本地启动说明。校园体验改造与轻量修正发布在 `feat/career-sprout-experience-polish`；后续导入、截图识别和流程合并见 GitHub Issue #1，复杂能力仍须讨论后实施。
+GitHub已改为 `zgyj4532/career-sprout`，仍保留原fork和提交历史。本地改名被当前omp会话的目录锁阻止，未强杀或复制替代；关闭会话后使用 `E:\github\rename-careersprout.ps1`，具体操作见本地启动说明。校园体验改造与轻量修正见 [Pull Request #2](https://github.com/zgyj4532/career-sprout/pull/2)；后续导入、截图识别和流程合并见 [Issue #1](https://github.com/zgyj4532/career-sprout/issues/1)，复杂能力仍须讨论后实施。
 
 ## 验收边界
 
