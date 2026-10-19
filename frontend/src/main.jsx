@@ -1,8 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import './index.css'
+import '@app-styles'
 import { ClerkProvider } from '@clerk/clerk-react'
-import { registerSW } from 'virtual:pwa-register'
+import { clerkLocalization } from './campus/clerkLocalization'
+import Page from '@app-entry'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const campusLocal = import.meta.env.VITE_APP_PROFILE === 'campus-local'
@@ -26,7 +27,7 @@ class DebugBoundary extends React.Component {
       return (
         <div role="alert" style={{ minHeight: '100vh', padding: 24 }}>
           <h1>页面启动失败</h1>
-          <pre>{this.state.error.stack || this.state.error.message}</pre>
+          <p>请刷新重试。如果仍然失败，请联系维护者检查服务状态。</p>
         </div>
       )
     }
@@ -42,7 +43,7 @@ function Root({ Page }) {
   )
   if (localBypass || !PUBLISHABLE_KEY) return app
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/" localization={campusLocal ? clerkLocalization : undefined}>
       {app}
     </ClerkProvider>
   )
@@ -52,9 +53,6 @@ if (import.meta.env.DEV && !PUBLISHABLE_KEY && !campusLocal) {
   console.warn('VITE_CLERK_PUBLISHABLE_KEY is missing; running in public-preview mode.')
 }
 
-const Page = campusLocal
-  ? (await import('./campus/CampusApp.jsx')).default
-  : (await import('./App.jsx')).default
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -62,12 +60,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 
-if ('serviceWorker' in navigator && import.meta.env.PROD && !campusLocal) {
-  registerSW({
-    immediate: true,
-    onOfflineReady() {},
-    onRegisterError(error) {
-      console.error('SW registration error', error)
-    },
-  })
-}

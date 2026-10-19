@@ -10,6 +10,14 @@ import assert from 'node:assert/strict';
 
 import { transcribeAudio } from '../interviewService.js';
 
+function wavFixture() {
+  const audio = Buffer.alloc(16044);
+  audio.write('RIFF'); audio.writeUInt32LE(audio.length - 8, 4); audio.write('WAVEfmt ', 8);
+  audio.writeUInt32LE(16, 16); audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22);
+  audio.writeUInt32LE(16000, 24); audio.writeUInt32LE(32000, 28); audio.writeUInt16LE(2, 32); audio.writeUInt16LE(16, 34);
+  audio.write('data', 36); audio.writeUInt32LE(16000, 40); return audio;
+}
+
 describe('transcribeAudio — provider routing', () => {
   test('OpenAI adapter: calls audio.transcriptions.create', async () => {
     let capturedArgs = null;
@@ -29,7 +37,7 @@ describe('transcribeAudio — provider routing', () => {
     };
 
     const result = await transcribeAudio(
-      { audioBuffer: Buffer.from([1, 2, 3]), mimeType: 'audio/webm', language: 'en' },
+      { audioBuffer: wavFixture(), mimeType: 'audio/wav', language: 'en' },
       provider
     );
 
@@ -56,7 +64,7 @@ describe('transcribeAudio — provider routing', () => {
     };
 
     const result = await transcribeAudio(
-      { audioBuffer: Buffer.from([1]), mimeType: 'audio/webm', language: 'es' },
+      { audioBuffer: wavFixture(), mimeType: 'audio/wav', language: 'es' },
       provider
     );
 
@@ -77,13 +85,13 @@ describe('transcribeAudio — provider routing', () => {
     };
 
     const result = await transcribeAudio(
-      { audioBuffer: Buffer.from([1, 2, 3]), mimeType: 'audio/webm', language: 'ja' },
+      { audioBuffer: wavFixture(), mimeType: 'audio/wav', language: 'ja' },
       provider
     );
 
     assert.equal(result.text, 'transcribed text');
     assert.ok(capturedArgs.contents[0].parts[0].text.includes('ja'));
-    assert.equal(capturedArgs.contents[0].parts[1].inlineData.mimeType, 'audio/webm');
+    assert.equal(capturedArgs.contents[0].parts[1].inlineData.mimeType, 'audio/wav');
     assert.ok(capturedArgs.contents[0].parts[1].inlineData.data.length > 0);
   });
 
@@ -116,5 +124,13 @@ describe('transcribeAudio — provider routing', () => {
       ),
       /Audio transcription is not supported/
     );
+  });
+  test('request cancellation reaches provider signal before service settles', async () => {
+    const controller = new AbortController();
+    const provider = { providerName: 'openai', client: { audio: { transcriptions: { create: async (_args, options) => {
+      controller.abort(new Error('cancelled'));
+      options.signal.throwIfAborted();
+    } } } } };
+    await assert.rejects(() => transcribeAudio({ audioBuffer: wavFixture(), signal: controller.signal }, provider), /cancelled/);
   });
 });

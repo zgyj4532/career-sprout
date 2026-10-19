@@ -1,4 +1,6 @@
 import { AIProviderFactory, getDefaultProvider, SUPPORTED_PROVIDERS } from '../config/aiProviders.js';
+import { logEvent } from '../utils/diagnostics.js';
+import { campusError } from '../campus/errors.js';
 
 /**
  * Middleware: extractAIProvider
@@ -54,20 +56,10 @@ export const extractAIProvider = async (req, res, next) => {
       return next();
     } catch (providerError) {
       if (providerError.statusCode !== 503) throw providerError;
-      return res.status(403).json({
-        success: false,
-        error: providerError.message,
-        code: 'AI_KEY_MISSING',
-        requireApiKey: true,
-        method: req.method,
-        path: req.originalUrl || req.url,
-      });
+      return next(campusError(503, 'AI_KEY_MISSING', 'AI 服务尚未配置，请继续手动编辑或联系维护者。'));
     }
   } catch (error) {
-    console.error('AI provider middleware error:', error.message);
-    return res.status(500).json({
-      success: false,
-      error: `Failed to initialize AI provider: ${error.message}`,
-    });
+    logEvent('ai.initialization_failed', { code: 'AI_UNAVAILABLE' });
+    return next(campusError(503, 'AI_UNAVAILABLE', 'AI 服务暂时不可用，请稍后重试。'));
   }
 };

@@ -1,8 +1,8 @@
 import { CapArt, GateArt, MicArt, NotebookArt } from './art/Decor'
 
 export const CORE_NAV = [
-  { to: '/resume', label: '做简历', copy: '编辑、保存、导出中文 PDF。', Icon: NotebookArt },
-  { to: '/interview', label: '练面试', copy: '普通语音面试。没有语音服务时会说明原因。', Icon: MicArt },
-  { to: '/jd', label: '分析岗位', copy: '粘贴岗位描述，不抓取招聘网站。', Icon: GateArt },
-  { to: '/profile', label: '我的档案', copy: '保存姓名、技能和年级。', Icon: CapArt },
+  { to: '/profile', label: '了解自己', copy: '从课程、社团与真实技能开始。', Icon: CapArt },
+  { to: '/jd', label: '找个方向', copy: '录入岗位，看清要求与下一步。', Icon: GateArt },
+  { to: '/resume', label: '做简历', copy: '讲述经历，核对建议，保存与导出。', Icon: NotebookArt },
+  { to: '/interview', label: '练面试', copy: '用真实材料练习，确认后再提交。', Icon: MicArt },
 ]

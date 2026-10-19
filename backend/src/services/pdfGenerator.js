@@ -1,243 +1,101 @@
 import puppeteer from 'puppeteer';
 import { marked } from 'marked';
-import { existsSync } from 'node:fs';
-import { generateStructuredData } from '../utils/structuredDataGenerator.js';
+import { load } from 'cheerio';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
+import { campusError } from '../campus/errors.js';
+import { logEvent, safeErrorMetadata } from '../utils/diagnostics.js';
 
-const CJK_FONT_FILES = [
-  process.env.CAMPUS_CJK_FONT,
-  '/mnt/c/Windows/Fonts/msyh.ttc',
-  '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
-].filter(Boolean);
-
-function cjkFontCss() {
-  const file = CJK_FONT_FILES.find((fontPath) => existsSync(fontPath));
-  const face = file
-    ? `@font-face { font-family: "Campus CJK"; src: url("file://${file}") format("truetype"); }`
-    : '';
-  return `${face}
-        body, h1, h2, h3, p, li {
-          font-family: "Campus CJK", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
-          overflow-wrap: anywhere;
-          word-break: break-word;
-        }`;
+let active = false;
+const allowedTags = new Set(['h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'b', 'em', 'i', 'br', 'hr', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span']);
+const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+export function sanitizeResumeHtml(html) {
+  const $ = load(html, null, false);
+  $('script,style,iframe,object,embed,svg,math,form,input,link,meta,base,img,video,audio').remove();
+  $('*').each((_index, element) => {
+    if (!allowedTags.has(element.tagName)) { $(element).replaceWith($(element).contents()); return; }
+    for (const attribute of Object.keys(element.attribs || {})) $(element).removeAttr(attribute);
+  });
+  return $.html();
 }
-/**
- * Generate a PDF from markdown text using Puppeteer.
- * @param {string} markdownText - The resume markdown content.
- * @param {Object} options - Options like format ('A4' or 'Letter') and title.
- * @returns {Buffer} - The generated PDF buffer.
- */
-export const generatePDF = async (markdownText, options = {}) => {
-  const { 
-    format = 'A4', 
-    title = 'Resume',
-    themeColor = '#2563eb' 
-  } = options;
 
-  // Convert markdown to HTML
-  const htmlContent = marked.parse(markdownText);
-  const jsonLdScript =
-    options.portfolio && Object.keys(options.portfolio).length > 0
-      ? (() => {
-          const structuredData = generateStructuredData(options.portfolio);
-          const jsonLd = JSON.stringify(structuredData, null, 2).replace(
-            /<\/script>/gi,
-            '<\\/script>'
-          );
-          return `<script type="application/ld+json">\n${jsonLd}\n</script>`;
-        })()
-      : '';
-  // Read full HTML structure with styles
-  const fullHtml = `
-    <!DOCTYPE html>
-    <html lang="zh-CN">
-    <head>
-      <meta charset="UTF-8">
-      <title>${title}</title>
-      ${jsonLdScript}
-      <style>
-        :root {
-          --theme-color: ${themeColor};
-        }
-        body {
-          line-height: 1.5;
-          color: #333;
-          margin: 0;
-          padding: 0;
-        }
-        ${cjkFontCss()}
-        /* Typography */
-        h1 {
-          font-size: 24px;
-          margin-bottom: 8px;
-          color: #000;
-          text-align: center;
-        }
-        h2 {
-          font-size: 14px;
-          text-transform: uppercase;
-          color: var(--theme-color);
-          border-bottom: 1px solid #ccc;
-          padding-bottom: 4px;
-          margin-top: 16px;
-          margin-bottom: 10px;
-        }
-        h3 {
-          font-size: 12px;
-          margin-top: 10px;
-          margin-bottom: 4px;
-          color: #000;
-          display: flex;
-          justify-content: space-between;
-        }
-        p {
-          font-size: 11px;
-          margin: 4px 0;
-        }
-        ul {
-          margin: 4px 0 10px 0;
-          padding-left: 20px;
-        }
-        li {
-          font-size: 11px;
-          margin-bottom: 4px;
-        }
-        a {
-          color: var(--theme-color);
-          text-decoration: none;
-        }
-        strong {
-          font-weight: 600;
-          color: #000;
-        }
-        /* Contact info styling */
-        .contact-info {
-          text-align: center;
-          font-size: 10px;
-          margin-bottom: 16px;
-          color: #555;
-        }
-        .contact-info a {
-          color: #555;
-        }
-        
-        /* Layout */
-        .resume-content {
-          max-width: 100%;
-        }
-      </style>
-    </head>
-    <body>
-      <div class="resume-content">
-        ${htmlContent}
-      </div>
-      <script>
-        // Post-process the DOM to format the header and dates
-        document.querySelectorAll('h3').forEach(el => {
-          if (el.textContent.includes('|')) {
-            const parts = el.textContent.split('|');
-            el.innerHTML = '<span>' + parts[0].trim() + '</span><span style="color: #666; font-weight: normal;">' + parts.slice(1).join('|').trim() + '</span>';
-          }
-        });
-        
-        // Post-process contact info (usually the first paragraph after h1)
-        const content = document.querySelector('.resume-content');
-        if (content.children.length > 1) {
-            const possibleContact = content.children[1];
-            if (possibleContact.tagName === 'P' && (possibleContact.textContent.includes('|') || possibleContact.textContent.includes('@'))) {
-                possibleContact.className = 'contact-info';
-            }
-        }
-      </script>
-    </body>
-    </html>
-  `;
-
-  // Launch puppeteer
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
-
-  try {
-    const page = await browser.newPage();
-    
-    // Set content and wait for network idle to ensure styles load
-    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-
-    // Generate PDF
-    const pdfBuffer = await page.pdf({
-      format: format, // 'A4' or 'Letter'
-      printBackground: true,
-      displayHeaderFooter: true,
-      headerTemplate: '<div></div>', // Empty header
-      footerTemplate: `
-        <div style="width: 100%; font-size: 8px; text-align: center; color: #888; padding-bottom: 10px;">
-          <span class="pageNumber"></span> / <span class="totalPages"></span>
-        </div>
-      `,
-      margin: {
-        top: '1.5cm',
-        bottom: '1.5cm',
-        left: '1.5cm',
-        right: '1.5cm'
-      }
-    });
-
-    return Buffer.from(pdfBuffer);
-  } finally {
-    await browser.close();
+export function assertPdfLayout(pages) {
+  if (pages.length > 2 || (pages[1] && pages[1].some((item) => item.text.trim() && item.bottom < (297 / 2) * 72 / 25.4))) {
+    throw campusError(422, 'RESUME_TOO_LONG', '简历超过一页半 A4 的可打印篇幅，请精简内容后导出；内容未被截断。');
   }
-};
+}
 
-/**
- * Render an arbitrary HTML string (e.g. one of the resume templates'
- * JSX output, server-rendered) to an ATS-safe multi-page A4 PDF using
- * Puppeteer. The text layer is preserved — selectable text in the PDF.
- *
- * @param {string} htmlBody - Already-rendered HTML body (no <html>/<head> wrapper needed)
- * @param {Object} options
- * @param {'A4'|'Letter'} [options.format='A4']
- * @param {string} [options.title='Resume']
- * @param {string} [options.css=''] - Optional additional CSS to inject into <head>
- * @returns {Promise<Buffer>}
- */
-export const generatePDFFromHTML = async (htmlBody, options = {}) => {
-  const { format = 'A4', title = 'Resume', css = '' } = options;
+export function pdfFailureMetadata(error, stage) {
+  const metadata = safeErrorMetadata(error);
+  const stages = new Set(['sanitize', 'launch', 'page', 'content', 'fonts', 'print', 'parse']);
+  const safeStage = stages.has(stage) ? stage : 'sanitize';
+  const code = error?.name === 'TimeoutError' ? 'PDF_TIMEOUT' : error?.name === 'TargetCloseError' ? 'PDF_BROWSER_CLOSED' : error?.name === 'ProtocolError' ? 'PDF_PROTOCOL_ERROR' : metadata.code !== 'INTERNAL' ? metadata.code : `PDF_${safeStage.toUpperCase()}_FAILED`;
+  return { ...metadata, stage: safeStage, code };
+}
 
-  const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>${title}</title>
-  <style>
-    @page { size: ${format}; margin: 0; }
-    html, body { margin: 0; padding: 0; }
-    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #111; }
-    ${css}
-  </style>
-</head>
-<body>
-  ${htmlBody}
-</body>
-</html>`;
-
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-
+async function render(input, options, markdown = false) {
+  if (typeof input !== 'string' || input.length > 200000 || Buffer.byteLength(input, 'utf8') > 200000) throw campusError(422, 'RESUME_TOO_LONG', '简历内容过长，请精简后导出。');
+  if (active) throw campusError(429, 'PDF_BUSY', '已有文件正在生成，请稍后重试。');
+  active = true;
+  let browser;
+  let abort;
+  const { signal, requestId } = options;
+  let stage = 'sanitize';
+  const enterStage = (next) => { stage = next; logEvent('pdf.stage', { requestId, stage }); };
+  logEvent('pdf.started', { requestId });
   try {
+    const html = sanitizeResumeHtml(markdown ? marked.parse(input) : input);
+    if (Buffer.byteLength(html, 'utf8') > 200000) throw campusError(422, 'RESUME_TOO_LONG', '简历内容过长，请精简后导出。');
+    if (signal?.aborted) throw campusError(499, 'REQUEST_ABORTED', '导出已取消。');
+    enterStage('launch');
+    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'], timeout: 30000 });
+    abort = () => { void browser.close().catch(() => {}); };
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) throw campusError(499, 'REQUEST_ABORTED', '导出已取消。');
+    enterStage('page');
     const page = await browser.newPage();
-    await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({
-      format,
-      printBackground: true,
-      preferCSSPageSize: true,
-      margin: { top: '0', bottom: '0', left: '0', right: '0' },
+    page.setDefaultTimeout(30000);
+    await page.setJavaScriptEnabled(false);
+    const font = [process.env.CAMPUS_CJK_FONT, '/mnt/c/Windows/Fonts/msyh.ttc', '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc'].find((file) => file && existsSync(file) && statSync(file).size <= 32 * 1024 * 1024);
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+      if (font && request.url() === 'https://resume-font.invalid/cjk') void request.respond({ status: 200, contentType: 'font/ttf', body: readFileSync(font) }).catch(() => {});
+      else void request.abort().catch(() => {});
     });
-    return Buffer.from(pdfBuffer);
+    const fontCss = font ? '@font-face{font-family:ResumeCJK;src:url("https://resume-font.invalid/cjk")}' : '';
+    await page.emulateMediaType('print');
+    enterStage('content');
+    await page.setContent(`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${escape(options.title || '职芽简历')}</title><style>${fontCss}
+      @page{size:A4;margin:15mm}html,body{margin:0;padding:0}body{font:11pt/1.5 ResumeCJK,"Microsoft YaHei","Noto Sans CJK SC",sans-serif;color:#222;overflow-wrap:anywhere}h1{font-size:20pt;text-align:center;margin:0 0 8pt}h2{font-size:13pt;color:#0f6e56;border-bottom:1px solid #bbb;margin:12pt 0 5pt}h3,h4{font-size:11pt;margin:8pt 0 3pt}p{margin:4pt 0}ul,ol{padding-left:20pt;margin:4pt 0}li{margin:2pt 0}pre{white-space:pre-wrap}table{border-collapse:collapse;width:100%;table-layout:fixed}td,th{padding:3pt;border:1px solid #ccc}*{orphans:1;widows:1}h1,h2,h3,h4{break-after:avoid}blockquote{margin:5pt 12pt}
+    </style></head><body>${html}</body></html>`, { waitUntil: 'networkidle0', timeout: 30000 });
+    enterStage('fonts');
+    await page.evaluate(() => globalThis.document.fonts.ready);
+    enterStage('print');
+    const bytes = Buffer.from(await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true, margin: { top: '15mm', bottom: '15mm', left: '15mm', right: '15mm' }, timeout: 30000 }));
+    if (bytes.length > 5 * 1024 * 1024) throw campusError(422, 'PDF_TOO_LARGE', '生成文件过大，请精简后重试。');
+    // Inspect actual printed text positions, not screen height: pagination can add whitespace.
+    const pages = [];
+    enterStage('parse');
+    await pdfParse(bytes, { pagerender: async (pdfPage) => {
+      const content = await pdfPage.getTextContent();
+      pages[pdfPage.pageNumber - 1] = content.items.map((item) => ({ text: item.str || '', bottom: item.transform?.[5] ?? 0 }));
+      return content.items.map((item) => item.str).join(' ');
+    } });
+    assertPdfLayout(pages);
+    if (signal?.aborted) throw campusError(499, 'REQUEST_ABORTED', '导出已取消。');
+    logEvent('pdf.completed', { requestId, bytes: bytes.length, count: pages.length });
+    return bytes;
+  } catch (error) {
+    const failure = pdfFailureMetadata(error, stage);
+    logEvent('pdf.failed', { requestId, ...failure });
+    if (error.safeMessage) throw error;
+    throw campusError(error.name === 'TimeoutError' ? 504 : 500, failure.code, 'PDF 生成暂时失败，请稍后重试并提供请求编号以便定位。');
   } finally {
-    await browser.close();
+    signal?.removeEventListener('abort', abort);
+    if (browser) await browser.close().catch(() => {});
+    active = false;
   }
-};
+}
+
+export const generatePDF = (markdownText, options = {}) => render(markdownText, options, true);
+export const generatePDFFromHTML = (htmlBody, options = {}) => render(htmlBody, options);

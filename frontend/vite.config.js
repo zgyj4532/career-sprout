@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import { loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
@@ -8,8 +9,11 @@ import { pwaOptions } from './pwaOptions.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig({
-  base: process.env.VITE_CDN_URL || '/',
+export default defineConfig(({ mode }) => {
+  const env = { ...loadEnv(mode, __dirname, 'VITE_'), ...process.env }
+  const campusLocal = env.VITE_APP_PROFILE === 'campus-local'
+  return {
+  base: env.VITE_CDN_URL || '/',
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.jsx',
@@ -18,25 +22,25 @@ export default defineConfig({
 
   plugins: [
     react(),
-    tailwindcss(),
-    VitePWA(pwaOptions),
+    ...(campusLocal ? [] : [tailwindcss(), VitePWA(pwaOptions)]),
     {
       name: 'campus-html',
       transformIndexHtml(html) {
-        if (process.env.VITE_APP_PROFILE !== 'campus-local') return html
+        if (!campusLocal) return html
         return html
-          .replace('<html lang="en">', '<html lang="zh-CN">')
           .replace(/<script src="https:\/\/checkout\.razorpay\.com\/v1\/checkout\.js"><\/script>\s*/, '')
           .replace(/<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">\s*/, '')
           .replace(/<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>\s*/, '')
           .replace(/<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Inter[^"]+" rel="stylesheet">\s*/, '')
-          .replace(/<title>[^<]*<\/title>/, '<title>校园职业练习</title>')
+          .replace(/<title>[^<]*<\/title>/, '<title>职芽 · CareerSprout — 大学生 AI 职业成长助手</title>')
       },
     },
   ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@app-entry': path.resolve(__dirname, campusLocal ? './src/campus/CampusApp.jsx' : './src/fullAppEntry.jsx'),
+      '@app-styles': path.resolve(__dirname, campusLocal ? './src/campus/base.css' : './src/index.css'),
     },
   },
   server: {
@@ -50,4 +54,5 @@ export default defineConfig({
       },
     },
   },
+  }
 })

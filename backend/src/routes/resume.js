@@ -19,6 +19,7 @@ import { scrapeLinkedInProfile, profileToResumeText } from '../services/linkedin
 import { fetchGitHubProfile, convertGitHubToResumeText } from '../services/githubImporter.js';
 import { getDefaultProvider } from '../config/aiProviders.js';
 import { analyzeResume } from '../services/resumeService.js';
+import { logEvent } from '../utils/diagnostics.js';
 
 const router = express.Router();
 
@@ -147,6 +148,7 @@ router.post('/', verifyToken, validate(createResumeSchema), asyncHandler(async (
     throw err;
   }
 
+  logEvent('resume.saved');
   res.status(201).json({
     success: true,
     data: {
@@ -209,6 +211,7 @@ router.put('/:resumeId', verifyToken, validate(updateResumeSchema), asyncHandler
     throw new ApiError(404, 'Resume not found');
   }
 
+  logEvent('resume.saved');
   res.json({
     success: true,
     data: {
@@ -412,21 +415,22 @@ router.get('/:resumeId/download', verifyToken, validate(downloadResumeQuerySchem
 
   const { generatePDF } = await import('../services/pdfGenerator.js');
 
+  const controller = new AbortController();
+  const cancel = () => { if (!res.writableEnded) controller.abort(); };
+  res.once('close', cancel);
   try {
     const pdfBuffer = await generatePDF(textContent, {
       format: paperSize === 'Letter' ? 'Letter' : 'A4',
-      title: resume.title || 'Resume'
+      title: resume.title || 'Resume', signal: controller.signal, requestId: req.requestId,
     });
-
+    if (controller.signal.aborted) return;
     const filename = `${resume.title || 'resume'}_${version}.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
-    
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
-  } catch (error) {
-    console.error('PDF generation error:', error);
-    throw new ApiError(500, 'Failed to generate PDF');
+  } finally {
+    res.removeListener('close', cancel);
   }
 }));
 
@@ -579,7 +583,7 @@ ${text}`;
       }
     });
   } catch (error) {
-    console.error('Error generating resume from text:', error);
+    logEvent('resume.structure_failed');
     throw new ApiError(500, 'Failed to structure resume from text');
   }
 }));

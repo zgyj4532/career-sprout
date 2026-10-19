@@ -26,6 +26,12 @@ import {
 } from '../schemas/interview.schema.js';
 import { parseJdFromUrl, parseJdFromText } from '../services/jdParser.service.js';
 import { uploadAudioBuffer } from '../services/upload.service.js';
+import { ownedSource } from '../campus/targets.js';
+import { visibleJob } from '../campus/growth.js';
+import { campusError } from '../campus/errors.js';
+import { logEvent } from '../utils/diagnostics.js';
+import { persistInterviewAnswer } from '../services/interviewAnswers.js';
+import { speechAdmission } from '../middleware/speechAdmission.js';
 
 const router = express.Router();
 
@@ -34,10 +40,10 @@ const router = express.Router();
 // ---------------------------------------------------------------------------
 const audioUpload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 12, fieldSize: 100000, parts: 13 },
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('audio/')) {
-            return cb(new Error('Only audio files are accepted'));
+            return cb(campusError(400, 'INVALID_AUDIO', '请选择音频文件。'));
         }
         cb(null, true);
     }
@@ -101,6 +107,18 @@ const buildInterviewAnalytics = async (uid) => {
 // POST /api/interview/start
 // ---------------------------------------------------------------------------
 router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(startInterviewSchema), asyncHandler(async (req, res) => {
+    if (req.body.resumeId) {
+        const source = await ownedSource(req.body.resumeId, req.user.uid);
+        req.body.resumeText = source.originalText;
+    }
+    if (req.body.jobId) {
+        const job = await visibleJob(req.body.jobId, req.user.uid);
+        req.body.jobDescriptionText = job.description;
+        req.body.jobRole = job.title;
+    }
+    const resolved = startInterviewSchema.safeParse(req.body);
+    if (!resolved.success) throw campusError(422, 'INTERVIEW_CONTEXT_TOO_LONG', '所选简历或岗位内容超过面试输入上限，请精简后重试；原文未更改。');
+    req.body = resolved.data;
     const {
         jobRole,
         industry,
@@ -122,7 +140,7 @@ router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(st
 
     const count = Math.min(Math.max(parseInt(questionCount) || 10, 2), 20);
     const preferences = {
-        jobRole, industry, experienceLevel, language, resumeText, jobDescriptionText
+        jobRole, industry, experienceLevel, language, resumeText, jobDescriptionText, mode
     };
 
     let questions;
@@ -164,6 +182,7 @@ router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(st
         companyName: companyName || '',
         companyRole: companyRole || '',
         jobDescriptionText: jobDescriptionText || '',
+        resumeText: resumeText || '',
         questions,
         totalQuestionCount: count,
         contextSummary: '',
@@ -214,21 +233,24 @@ router.post(
     verifyToken,
     extractAIProvider,
     aiRateLimiter,
-    audioUpload.single('audio'),
-    asyncHandler(async (req, res) => {
-        if (!req.file) {
+    speechAdmission(audioUpload.single('audio'), async (req, res) => {
+        if (!req.file?.buffer?.length) {
             throw new ApiError(400, 'audio file is required');
         }
-        const language = (req.body && req.body.language) || 'en';
+        const parsed = transcribeAudioSchema.safeParse(req.body || {});
+        if (!parsed.success) throw campusError(400, 'INVALID_LANGUAGE', '语音语言设置不正确。');
+        const language = parsed.data.language;
+        logEvent('asr.started', { requestId: req.requestId, bytes: req.file.size });
         const result = await transcribeAudio(
             {
                 audioBuffer: req.file.buffer,
                 mimeType: req.file.mimetype,
-                language
+                language, signal: req.speechSignal, requestId: req.requestId,
             },
             req.aiProvider
         );
-        res.json({ success: true, data: result });
+        logEvent('asr.completed', { requestId: req.requestId });
+        if (!req.speechSignal.aborted) res.json({ success: true, data: result });
     })
 );
 
@@ -274,8 +296,8 @@ router.post(
             throw new ApiError(404, 'Interview not found');
         }
 
-        if (interview.status === 'completed') {
-            throw new ApiError(400, 'Interview already completed');
+        if (interview.status !== 'in_progress') {
+            throw campusError(409, 'INTERVIEW_CLOSED', '面试已结束，不能继续提交回答。');
         }
 
         const question = interview.questions.find((q) => q.questionId === data.questionId);
@@ -285,11 +307,11 @@ router.post(
 
         const existingAnswer = interview.answers.find((a) => a.questionId === data.questionId);
         if (existingAnswer) {
-            throw new ApiError(400, 'Question already answered');
+            throw campusError(409, 'ANSWER_ALREADY_SUBMITTED', '该问题的回答已保存，请刷新面试状态。');
         }
 
         // Skip scoring entirely for warmup answers
-        if (data.isWarmup) {
+        if (data.isWarmup && process.env.APP_PROFILE !== 'campus-local') {
             const answer = {
                 questionId: data.questionId,
                 question: question.question,
@@ -299,11 +321,10 @@ router.post(
                 submittedAt: new Date(),
                 audioUrl: req.file ? (await uploadAudioBuffer(req.file)).secure_url : ''
             };
-            interview.answers.push(answer);
-            await interview.save();
+            const saved = await persistInterviewAnswer({ id, userId: req.user.uid, questionId: data.questionId, answerCount: interview.answers.length, update: { $push: { answers: answer } } });
             return res.json({
                 success: true,
-                data: { questionId: data.questionId, isWarmup: true, answeredCount: interview.answers.length, totalQuestions: interview.totalQuestionCount }
+                data: { questionId: data.questionId, isWarmup: true, answeredCount: saved.answers.length, totalQuestions: saved.totalQuestionCount }
             });
         }
 
@@ -315,17 +336,17 @@ router.post(
             interview.contextSummary,
             interview.answers.length + 1,
             interview.totalQuestionCount,
-            { language: interview.language, code: data.code, codingLanguage: data.codingLanguage }
+            { language: interview.language, code: data.code, codingLanguage: data.codingLanguage, resumeText: interview.resumeText, jobDescriptionText: interview.jobDescriptionText, mode: interview.mode }
         );
 
         // Upload audio to Cloudinary if present
         let audioUrl = '';
-        if (req.file) {
+        if (req.file && process.env.APP_PROFILE !== 'campus-local') {
             try {
                 const uploadResult = await uploadAudioBuffer(req.file);
                 audioUrl = uploadResult.secure_url || '';
             } catch (e) {
-                console.warn('Audio upload failed:', e.message);
+                logEvent('audio.upload_failed');
             }
         }
 
@@ -346,14 +367,11 @@ router.post(
             audioUrl
         };
 
-        interview.answers.push(answer);
-
-        if (analysis.newContextSummary) {
-            interview.contextSummary = analysis.newContextSummary;
-        }
+        const update = { $push: { answers: answer }, $set: {} };
+        if (analysis.newContextSummary) update.$set.contextSummary = analysis.newContextSummary;
 
         let nextQuestion = null;
-        if (analysis.nextQuestion && interview.answers.length < interview.totalQuestionCount) {
+        if (analysis.nextQuestion && interview.answers.length + 1 < interview.totalQuestionCount) {
             nextQuestion = {
                 questionId: `q_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
                 question: analysis.nextQuestion.question,
@@ -361,20 +379,21 @@ router.post(
                 difficulty: analysis.nextQuestion.difficulty,
                 source: analysis.nextQuestion.source || 'context'
             };
-            interview.questions.push(nextQuestion);
+            update.$push.questions = nextQuestion;
         }
 
-        await interview.save();
+        const saved = await persistInterviewAnswer({ id, userId: req.user.uid, questionId: data.questionId, answerCount: interview.answers.length, update });
+        logEvent('interview.answer_saved', { count: saved.answers.length });
 
         res.json({
             success: true,
             data: {
                 questionId: data.questionId,
                 analysis,
-                answeredCount: interview.answers.length,
-                totalQuestions: interview.totalQuestionCount,
+                answeredCount: saved.answers.length,
+                totalQuestions: saved.totalQuestionCount,
                 nextQuestion,
-                questions: interview.questions
+                questions: saved.questions
             },
             provider: req.aiProvider.providerName,
             providerSource: req.aiProviderSource
@@ -495,19 +514,20 @@ router.post('/:id([0-9a-fA-F]{24})/complete', verifyToken, extractAIProvider, ai
         throw new ApiError(404, 'Interview not found');
     }
 
-    if (interview.status === 'completed') {
-        throw new ApiError(400, 'Interview already completed');
+    if (interview.status !== 'in_progress') {
+        throw campusError(409, 'INTERVIEW_CLOSED', '面试已结束，请刷新查看已保存反馈。');
     }
 
+    if (!interview.answers.length) throw campusError(400, 'NO_ANSWERS', '请至少完成一道回答后再生成反馈。');
     const { overallScore, overallFeedback } = await generateOverallFeedback(interview, req.aiProvider);
 
-    interview.status = 'completed';
-    interview.completedAt = new Date();
-    interview.duration = Math.round((interview.completedAt - interview.startedAt) / 1000);
-    interview.overallScore = overallScore;
-    interview.overallFeedback = overallFeedback;
-
-    await interview.save();
+    const completedAt = new Date();
+    const duration = Math.round((completedAt - interview.startedAt) / 1000);
+    const completed = await Interview.findOneAndUpdate(
+        { _id: id, userId: req.user.uid, status: 'in_progress', answers: { $size: interview.answers.length } },
+        { $set: { status: 'completed', completedAt, duration, overallScore, overallFeedback } }, { new: true });
+    if (!completed) throw campusError(409, 'INTERVIEW_CHANGED', '回答已更新，请刷新后重新生成反馈。');
+    logEvent('interview.completed', { count: completed.answers.length });
 
     res.json({
         success: true,
@@ -517,7 +537,7 @@ router.post('/:id([0-9a-fA-F]{24})/complete', verifyToken, extractAIProvider, ai
             overallFeedback,
             answeredQuestions: interview.answers.length,
             totalQuestions: interview.questions.length,
-            duration: interview.duration,
+            duration,
             answers: interview.answers
         },
         provider: req.aiProvider.providerName,

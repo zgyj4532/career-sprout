@@ -2,17 +2,17 @@ import { NavLink, Route, Routes, BrowserRouter, useLocation, Link } from 'react-
 import './campus.css'
 import Particles from './bits/Particles'
 import { CORE_NAV } from './nav'
-import {
-  ClosedPage,
-  HistoryDetailPage,
-  HistoryPage,
-  HomePage,
-  InterviewPage,
-  InterviewSessionPage,
-  JdPage,
-  ProfilePage,
-  ResumePage,
-} from './pages'
+import HomePage from './pages/HomePage'
+import ResumePage from './pages/ResumePage'
+import JobsPage from './pages/JobsPage'
+import ProfilePage from './pages/ProfilePage'
+import InterviewPage from './pages/InterviewPage'
+import InterviewSessionPage from './pages/InterviewSessionPage'
+import { HistoryPage, HistoryDetailPage } from './pages/HistoryPage'
+import AuthPage from './pages/AuthPage'
+import TeacherPage from './pages/TeacherPage'
+import ClosedPage from './pages/ClosedPage'
+import { CampusSessionProvider, SessionNavigation } from './auth'
 
 function devNote() {
   const campus = import.meta.env.VITE_APP_PROFILE === 'campus-local'
@@ -42,10 +42,14 @@ function WorkspaceRoutes() {
     <Routes>
       <Route path="/resume" element={<ResumePage />} />
       <Route path="/interview" element={<InterviewPage />} />
-      <Route path="/jd" element={<JdPage />} />
+      <Route path="/jd" element={<JobsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/history/:id" element={<HistoryDetailPage />} />
+      <Route path="/login/*" element={<AuthPage />} />
+      <Route path="/register/*" element={<AuthPage />} />
+      <Route path="/verify-email/*" element={<AuthPage />} />
+      <Route path="/teacher" element={<TeacherPage />} />
       <Route path="*" element={<ClosedPage />} />
     </Routes>
   )
@@ -58,7 +62,7 @@ function CampusShell() {
 
   if (room) {
     return (
-      <div className="campus campus-immersive">
+      <div className="campus campus-practice">
         <header className="campus-room-bar">
           <Link to="/interview">退出面试间</Link>
         </header>
@@ -84,10 +88,11 @@ function CampusShell() {
           />
         </div>
         <header className="campus-portal-header">
-          <Link className="campus-brand" to="/">校园职业练习</Link>
+          <Link className="campus-brand" to="/">职芽 <small>CareerSprout</small></Link>
           <div className="campus-portal-actions">
             {note && <span className="campus-dev-note">{note}</span>}
             <Link className="campus-pill-link" to="/history">历史档案</Link>
+            <SessionNavigation />
           </div>
         </header>
         <main className="campus-portal-main">
@@ -102,7 +107,7 @@ function CampusShell() {
       <aside className="campus-nav-container">
         <div className="campus-sidebar-top">
           <Link className="campus-brand-back" to="/">
-            <span className="campus-brand">校园职业练习</span>
+            <span className="campus-brand">职芽 <small>CareerSprout</small></span>
             <span className="campus-back-badge">回首页</span>
           </Link>
         </div>
@@ -112,12 +117,14 @@ function CampusShell() {
             <span className="campus-nav-label">历史档案</span>
           </NavLink>
           {note && <p className="campus-dev-note">{note}</p>}
+          <SessionNavigation />
         </div>
       </aside>
       <div className="campus-workspace-content">
         <header className="campus-mobile-topbar">
-          <Link className="campus-brand" to="/">校园职业练习</Link>
+          <Link className="campus-brand" to="/">职芽</Link>
           <Link className="campus-pill-link" to="/history">历史档案</Link>
+          <SessionNavigation />
         </header>
         <main className="campus-main">
           <WorkspaceRoutes />
@@ -130,7 +137,7 @@ function CampusShell() {
 export default function CampusApp() {
   return (
     <BrowserRouter>
-      <CampusShell />
+      <CampusSessionProvider><CampusShell /></CampusSessionProvider>
     </BrowserRouter>
   )
 }

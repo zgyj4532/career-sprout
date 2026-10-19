@@ -1,6 +1,7 @@
 <div align="center">
-  <h1>Career Pilot · 校园本地版</h1>
-  <p><strong>在已有 WSL 里跑的精简练习站：中文简历、岗位文本、普通语音面试和历史档案。</strong></p>
+  <h1>职芽 · CareerSprout</h1>
+  <p><strong>从现在开始，让每一次练习长成未来。</strong></p>
+  <p>面向大学生的 AI 职业成长助手：找方向、整理经历、做简历、练面试和授权荐才。</p>
   <p>
     <img src="https://img.shields.io/badge/Node.js-24.14.1-339933?logo=node.js&logoColor=white" alt="Node.js"/>
     <img src="https://img.shields.io/badge/Express-campus%20entry-000000?logo=express&logoColor=white" alt="Express"/>
@@ -12,6 +13,7 @@
   </p>
   <p>
     上游 <a href="https://github.com/anurag3407/career-pilot">anurag3407/career-pilot</a>
+    · 本项目 <a href="https://github.com/zgyj4532/career-sprout">zgyj4532/career-sprout</a>
     · 基线 <code>0f0be2c1</code>
     · 说明 <a href="docs/LOCAL_WSL.md">本地启动</a>
     · License <a href="LICENSE">MIT</a>
@@ -20,7 +22,7 @@
 
 ---
 
-这不是上游完整职业平台的发行版。上游 README 里的 Firebase、端口 5000、`Docker-compose.yml`、支付和作品集部署，不适用于本分支。本分支只在本机回路跑一个校园练习壳。
+职芽面向所有年级，优先让大一大二新手也能独立使用；已有简历的高年级学生可直接进入练习。当前仍使用安全的 WSL 本地运行方式，不是上游完整平台的发行版。上游 Firebase、端口 5000、支付和作品集部署说明不适用于校园入口。
 
 ## 目录
 
@@ -36,30 +38,33 @@
 
 ## 这是什么
 
-给大学生在本机练习三件事：写一份中文简历并导出 PDF，粘贴岗位描述做对照，做一场普通语音面试并留下历史。没有配好的服务会直接说明，不会装成已经成功。
+从真实课程、社团、项目或实习经历起步，按保存进度获得下一步建议。岗位可人工录入并由 AI 整理技能要求；简历支持口述转写、建议对照与确认采纳；面试录音有明确状态，转写校对后才提交。学生可授权教师按技能和时间匹配岗位，并下载学生确认过的定向版本。未配置服务明确不可用，不返回假结果。
 
 技术栈仍是 React/Vite、Express、MongoDB、Redis。没有换成别的框架，也没有把数据库从 MongoDB 迁走。
 
 ## 保留与关闭
 
-| 保留 | 关闭 |
+| 已实现的校园能力 | 未启用或不在当前范围 |
 |---|---|
-| 简历编辑、保存、重读、导出中文 PDF | 作品集、社区、支付、爬虫 |
-| 粘贴岗位描述；有密钥时做技能对照 | 招聘网站抓取、邮件、部署、同步任务 |
-| 普通语音面试、转写、回答反馈、总评 | 编程题、直播电话、长期保存音频 |
-| 个人档案、历史档案的重命名和删除 | 局域网或公网开放本地开发身份 |
+| 成长档案、技能自评、可实习时间、岗位录入与分析 | 招聘爬虫、学校教学报表、社区与支付 |
+| 口述/文本简历润色、确认、保存、中文 A4 PDF | 编造经历、自动采纳AI结果、永久保存音频 |
+| 中文语音面试、转写校对、显式提交、历史反馈 | 真实电话拨号、编程题和视频表情评分 |
+| 学生授权、教师匹配、定向版本确认和ZIP导出 | 公开学生资料目录、自动邮件外发简历 |
+| 中文注册/登录/验证界面、已有 Clerk 正式路径 | Resend 发信/身份签发：仅预留，尚未启用 |
 
 ## 页面
 
 | 路径 | 作用 |
 |---|---|
-| `/` | 欢迎大厅。四个入口，没有侧栏。 |
-| `/resume` | 简历工作台。左边编辑，右边已保存列表。 |
-| `/interview` | 开始一场中文面试。 |
-| `/interview/session/:id` | 深色面试间。题目说完后手动录音或打字。 |
-| `/jd` | 只接受粘贴的岗位描述。 |
-| `/profile` | 姓名、技能、年级。 |
-| `/history` | 历史档案。可以重命名，删除前要确认。 |
+| `/` | 一个明确下一步；点击口号可切换 React Bits 彩蛋。 |
+| `/resume` | 整理真实经历、语音补充、AI建议对照、保存/PDF及定向版本确认。 |
+| `/interview` | 选择保存的简历、岗位和练习类型。 |
+| `/interview/session/:id` | 明确录音开始/结束，转写校对，确认提交，再生成总评。 |
+| `/jd` | 校园岗位录入、发布、AI技能整理和差距查看。 |
+| `/profile` | 基本档案、经历、自评、时间及教师授权/撤回。 |
+| `/history` | 已保存面试、重命名、确认删除和反馈。 |
+| `/login`、`/register`、`/verify-email` | 正式账号入口与真实可用状态；Resend未启用时不发信。 |
+| `/teacher` | 仅限已验证且被服务端授权的教师，查看获学生授权的候选材料。 |
 
 电脑上的内页使用左侧导航。窄屏改成底部四宫格。面试间不套这层导航。
 
@@ -104,29 +109,46 @@ npm run dev:local
 
 文本模型走 OpenAI 兼容代理。语音转写走 Qwen ASR。没有对应密钥时，页面和接口报告不可用，不返回假答案或假转写。环境样例见 `backend/.env.example`。不要提交真实的 `.env`。
 
+教师需将真实 Clerk UID 加入服务端 `CAMPUS_TEACHER_UIDS`，且主邮箱已验证；本地开发身份永不升级为教师。学生另行授权，修改简历或岗位会使旧定向版本失效，需要重新生成/确认。
+
+`RESEND_API_KEY`、`RESEND_FROM`、`APP_PUBLIC_URL` 是后续接入预留，填写后也不会自动启用邮件认证；当前相应接口返回 `503 EMAIL_AUTH_NOT_CONFIGURED`。不要把Resend当作完整身份系统。
+
+## 日志与排障
+
+- 服务端：`logs/backend.jsonl`；本地启动器：`logs/runtime.jsonl`。单文件2MiB或跨日轮转，最多保留3个旧文件，目录已被Git忽略。
+- 页面错误可展开“技术信息”复制诊断编号，或下载最多200条前端事件。按 `requestId` 关联请求、AI/ASR/PDF阶段与结果。
+- 日志只保留受限事件、字段名/错误码、耗时、字节数和安全异常类别，不记录密钥、验证链接、音频、口述和简历全文。
+- PDF与ASR均为全进程单任务准入；繁忙时返回429，不无限排队。录音最长3分钟，上传最大10MiB；PDF一般一页、最多第二页上半页，超长明确拒绝且不截断。
+- 低内存时不要同时跑构建、测试、浏览器和导出。校园构建在配置期隔离上游大模块；不要靠取消内存限制解决问题。
+
+
 ## 目录结构
 
 ```text
-career-pilot/
+career-pilot/                    # 本地目录仍被当前会话锁定，目标为 career-sprout
 ├── backend/src/campusServer.js   # 校园 API 入口
-├── frontend/src/campus/          # 欢迎大厅、工作台、面试间
+├── frontend/src/campus/          # 分流程页面、录音状态与口号彩蛋
+├── backend/src/campus/           # 岗位、私密档案、授权、定向版本与匹配
 ├── compose.local.yml             # 只跑本项目 MongoDB / Redis
 ├── scripts/local/                # doctor、setup、infra、dev、verify
 ├── docs/LOCAL_WSL.md             # 启动细节
 └── docs/evidence/phase1/         # 已跑过的冒烟和面试流程证据
 ```
 
-上游的页面和路由仍在仓库里。校园入口不加载已关闭模块，也不启动它们的后台任务。
+上游的页面和路由仍在仓库里。校园构建只解析校园入口与普通CSS，不扫描未启用的作品集模板；原上游入口仍保留。Mongo数据库、Compose project和卷名继续使用历史 `career-pilot-local` / `career_pilot_local` 标识，避免改名丢失数据。
+
+GitHub已改为 `zgyj4532/career-sprout`，仍保留原fork和提交历史。本地改名被当前omp会话的目录锁阻止，未强杀或复制替代；关闭会话后使用 `E:\github\rename-careersprout.ps1`，具体操作见本地启动说明。代码尚未自动提交或推送。
 
 ## 验收边界
 
-已在本机核对的内容写在 `docs/PHASE1_REPORT.md` 和 `docs/PHASE1_1_REPORT.md`。那里没有标成通过的项，不要在这里补成通过。
+本轮实际结果见 `.trellis/tasks/10-18-student-career-experience/research/verification.md`。已验证真实模型/ASR、浏览器交互、中文PDF与隔离授权ZIP；测试使用的合成身份和语音不是真人使用证据。历史基线报告仍保留在 `docs/PHASE1_REPORT.md` 和 `docs/PHASE1_1_REPORT.md`，不覆盖原记录。
 
 当前明确未完成：
 
-- Clerk 正式注册和两个真实账号。
-- 真人用麦克风把一场面试从头走到尾。
-- 公网部署。本分支不部署。
+- Clerk正式师生账号端到端联调：当前缺少真实配置；隔离权限测试不替代正式账户验收。
+- 真人麦克风/扬声器质量与真实手机：受控浏览器音轨和模拟视口仅验证状态及布局。
+- Resend实际邮件送达和公网部署：本轮未启用。
+- 后端全量lint仍有停用上游模块的既存错误，具体结果见验证记录，不宣称全仓全绿。
 
 ## 许可证
 

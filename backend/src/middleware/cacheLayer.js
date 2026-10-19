@@ -31,6 +31,12 @@ const loadRedisManager = async () => {
   return redisManagerPromise;
 };
 
+export async function closeCacheConnection() {
+  if (!redisManagerPromise) return;
+  const manager = await redisManagerPromise;
+  await manager.close(CACHE_CONNECTION_NAME);
+}
+
 const CACHEABLE_METHODS = new Set([
   'GET',
   'HEAD',

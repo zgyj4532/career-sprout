@@ -91,7 +91,7 @@ describe('extractAIProvider middleware', () => {
     assert.match(state.body.error, /unsupported/i);
   });
 
-  test('returns 403 when no key available from any source', async () => {
+  test('returns safe unavailable error when no key is configured', async () => {
     // Clear env keys
     const saved = {
       GEMINI_API_KEY: process.env.GEMINI_API_KEY,
@@ -108,11 +108,12 @@ describe('extractAIProvider middleware', () => {
     delete process.env.CUSTOM_BASE_URL;
     process.env.AI_PROVIDER = 'gemini';
 
-    const { req, res, state } = mockReqRes({});
-    await extractAIProvider(req, res, () => {});
-
-    assert.equal(state.statusCode, 403);
-    assert.match(state.body.error, /api key is required|AI features are unavailable|CUSTOM_API_KEY/i);
+    const { req, res } = mockReqRes({});
+    let error;
+    await extractAIProvider(req, res, (value) => { error = value; });
+    assert.equal(error.statusCode, 503);
+    assert.equal(error.code, 'AI_KEY_MISSING');
+    assert.doesNotMatch(error.safeMessage, /backend\/|CUSTOM_API_KEY|api key/i);
 
     process.env.GEMINI_API_KEY = saved.GEMINI_API_KEY;
     process.env.AI_PROVIDER = saved.AI_PROVIDER;

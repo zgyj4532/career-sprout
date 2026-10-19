@@ -18,6 +18,13 @@ import resumeRoutes from './routes/resume.js';
 import interviewRoutes from './routes/interview.js';
 import enhanceRoutes from './routes/enhance.js';
 import userProfileRoutes from './routes/userProfile.js';
+import { requestDiagnostics, diagnosticMount, logEvent, safeErrorMetadata } from './utils/diagnostics.js';
+import { verifyToken } from './middleware/auth.js';
+import campusAuthRoutes, { listTeachers } from './campus/auth.js';
+import campusGrowthRoutes from './campus/growth.js';
+import campusTargetRoutes from './campus/targets.js';
+import campusSharingRoutes from './campus/sharing.js';
+import { closeCacheConnection } from './middleware/cacheLayer.js';
 
 const BLOCKED_ENHANCE = new Set([
   '/generate-email',
@@ -39,8 +46,8 @@ export async function checkRedisHealth() {
     await client.connect();
     const pong = await client.ping();
     return { ok: pong === 'PONG' };
-  } catch (error) {
-    return { ok: false, error: error.message };
+  } catch {
+    return { ok: false, error: 'REDIS_UNAVAILABLE' };
   } finally {
     client.disconnect();
   }
@@ -52,11 +59,13 @@ export function createCampusApp() {
   const origins = allowedFrontendOrigins(process.env);
   app.disable('x-powered-by');
   app.set('trust proxy', false);
+  app.use(requestDiagnostics);
   app.use(cors({
     origin(origin, callback) {
       if (!origin || origins.has(origin)) return callback(null, true);
       return callback(null, false);
     },
+    exposedHeaders: ['X-Request-ID', 'Content-Disposition'],
   }));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
@@ -65,19 +74,21 @@ export function createCampusApp() {
     max: 300,
     standardHeaders: true,
     legacyHeaders: false,
+    handler: (_req, res) => res.status(429).json({ success: false, code: 'RATE_LIMITED' }),
   }));
   app.use((req, res, next) => {
     const reason = campusDisabledReason(req.originalUrl || req.path);
     if (!reason) return next();
     res.status(404).json({ success: false, error: reason, code: 'CAMPUS_DISABLED' });
   });
+  app.use('/api/campus/auth', diagnosticMount('/api/campus/auth'), campusAuthRoutes);
   app.get(['/health', '/api/health'], async (_req, res) => {
     let database = { ok: false, state: 'disconnected' };
     try {
       await connectDB();
       database = await checkDBHealth();
-    } catch (error) {
-      database = { ok: false, state: 'error', error: error.message };
+    } catch {
+      database = { ok: false, state: 'error', error: 'DATABASE_UNAVAILABLE' };
     }
     const redis = await checkRedisHealth();
     const ok = Boolean(database?.ok && redis.ok);
@@ -93,19 +104,15 @@ export function createCampusApp() {
     try {
       await connectDB();
       next();
-    } catch (error) {
-      console.error(`[campus-db] ${req.method} ${req.originalUrl} ${error.message}`);
-      res.status(503).json({
-        success: false,
-        error: '数据库不可用',
-        message: '数据库不可用',
-        code: 'DATABASE_UNAVAILABLE',
-        method: req.method,
-        path: req.originalUrl,
-        detail: error.message,
-      });
+    } catch {
+      logEvent('database.unavailable', { requestId: req.requestId });
+      res.status(503).json({ success: false, code: 'DATABASE_UNAVAILABLE', safeMessage: '数据库暂时不可用，请稍后重试。' });
     }
   });
+  for (const mount of ['/api/campus', '/api/resumes', '/api/interview', '/api/enhance', '/api/user-profiles']) app.use(mount, diagnosticMount(mount));
+  app.use('/api/campus', verifyToken);
+  app.get('/api/campus/teachers', listTeachers);
+  app.use('/api/campus', campusGrowthRoutes, campusTargetRoutes, campusSharingRoutes);
   app.use('/api/resumes', (req, res, next) => {
     if (req.path.startsWith('/import/')) {
       return res.status(404).json({
@@ -161,11 +168,12 @@ export async function startCampusServer() {
     server.once('error', reject);
     server.listen(port, host, resolve);
   });
-  console.log(`campus server listening on http://${host}:${port}`);
+  logEvent('server.started', { state: 'listening' });
 
   const shutdown = async (signal) => {
-    console.log(`received ${signal}, closing campus server`);
+    logEvent('server.stopping', { state: signal });
     server.close();
+    await closeCacheConnection().catch(() => {});
     await disconnectDB().catch(() => {});
     process.exit(0);
   };
@@ -182,7 +190,7 @@ function isDirectRun() {
 
 if (isDirectRun()) {
   startCampusServer().catch((error) => {
-    console.error(`[campus-startup] ${error.stack || error.message}`);
+    logEvent('server.failed', safeErrorMetadata(error));
     process.exit(1);
   });
 }

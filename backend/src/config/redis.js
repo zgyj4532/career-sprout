@@ -133,6 +133,11 @@ export class RedisManager {
   async close(name) {
     const entry = this.connections.get(name);
     if (!entry) return;
+    if (entry.client.status !== 'ready') {
+      entry.client.disconnect();
+      this.connections.delete(name);
+      return;
+    }
     try {
       await entry.client.quit();
     } catch {

@@ -1,20 +1,21 @@
 import mongoose from 'mongoose';
+import { logEvent, safeErrorMetadata } from '../utils/diagnostics.js';
 
 let eventListenersAttached = false;
 
 function setupConnectionEvents() {
   if (eventListenersAttached) return;
 
-  mongoose.connection.on('error', (err) => {
-    console.error('❌ MongoDB Connection Error:', err.message);
+  mongoose.connection.on('error', (error) => {
+    logEvent('database.error', safeErrorMetadata(error));
   });
 
   mongoose.connection.on('disconnected', () => {
-    console.warn('⚠️ MongoDB Disconnected. Reconnecting...');
+    logEvent('database.disconnected');
   });
 
   mongoose.connection.on('reconnected', () => {
-    console.log('🔄 MongoDB Reconnected successfully.');
+    logEvent('database.reconnected');
   });
 
   eventListenersAttached = true;
@@ -42,7 +43,7 @@ export const connectDB = async () => {
   const maxPoolSize = parseInt(process.env.DB_MAX_POOL_SIZE, 10) || (env === 'production' ? 50 : 10);
   const minPoolSize = parseInt(process.env.DB_MIN_POOL_SIZE, 10) || (env === 'production' ? 5 : 2);
 
-  console.log(`📦 Connecting to MongoDB (${env})...`);
+  logEvent('database.connecting');
   await mongoose.connect(uri, {
     serverSelectionTimeoutMS: 30000,
     socketTimeoutMS: 45000,
@@ -50,16 +51,16 @@ export const connectDB = async () => {
     minPoolSize,
     autoIndex,
   });
-  console.log(`📦 Connected to MongoDB (poolSize: ${minPoolSize}-${maxPoolSize}, autoIndex: ${autoIndex})`);
+  logEvent('database.connected');
 
   // Slow-query profiling is opt-in only. Set ENABLE_DB_PROFILING=true to activate.
   const enableDbProfiling = process.env.ENABLE_DB_PROFILING === 'true';
   if (env !== 'test' && enableDbProfiling) {
     try {
       await mongoose.connection.db.command({ profile: 1, slowms: 100 });
-      console.log('📊 MongoDB profiling enabled via ENABLE_DB_PROFILING (threshold: 100ms)');
-    } catch (err) {
-      console.warn('⚠️  Could not enable query profiling:', err.message);
+      logEvent('database.profiling_enabled');
+    } catch {
+      logEvent('database.profiling_failed');
     }
   }
 };
@@ -67,7 +68,7 @@ export const connectDB = async () => {
 export const disconnectDB = async () => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close(false);
-    console.log('📦 Disconnected from MongoDB');
+    logEvent('database.disconnected');
   }
 };
 
@@ -83,8 +84,8 @@ export const checkDBHealth = async () => {
   try {
     await mongoose.connection.db.admin().ping();
     return { ok: true, state: 'connected', latencyMs: Date.now() - start };
-  } catch (err) {
-    return { ok: false, state: 'error', error: err.message, latencyMs: Date.now() - start };
+  } catch {
+    return { ok: false, state: 'error', error: 'DATABASE_UNAVAILABLE', latencyMs: Date.now() - start };
   }
 };
 

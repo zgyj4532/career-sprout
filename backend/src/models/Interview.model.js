@@ -113,6 +113,7 @@ const interviewSchema = new mongoose.Schema({
 
     // v2 additions
     jobDescriptionText: { type: String, default: '' },
+    resumeText: { type: String, default: '' },
     warmupCompleted: { type: Boolean, default: false },
     providerHistory: [{
         provider: { type: String, default: '' },

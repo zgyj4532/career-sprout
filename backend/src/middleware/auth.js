@@ -1,11 +1,13 @@
 import { clerkMiddleware, createClerkClient } from '@clerk/express';
 import { ApiError } from './errorHandler.js';
 import { evaluateLocalBypass, localDevUser } from '../config/localDevIdentity.js';
+import { campusError } from '../campus/errors.js';
+import { logEvent } from '../utils/diagnostics.js';
 
 let clerkClient = null;
 let clerkClientSecret = '';
 
-function getClerkClient() {
+export function getClerkClient() {
   const secret = process.env.CLERK_SECRET_KEY;
   if (!secret) return null;
   if (!clerkClient || clerkClientSecret !== secret) {
@@ -48,6 +50,7 @@ function clerkOrBypass(req, res, next) {
 }
 
 const attachUserToReq = async (req, res, next) => {
+  let directoryLookup = false;
   try {
     if (process.env.APP_PROFILE === 'campus-local') {
       if (req.localBypass?.allow) {
@@ -60,14 +63,16 @@ const attachUserToReq = async (req, res, next) => {
     }
 
     const client = getClerkClient();
-    if (!req.auth?.userId || !client) {
+    const auth = typeof req.auth === 'function' ? req.auth() : req.auth;
+    if (!auth?.userId || !client) {
       req.user = null;
       return next();
     }
 
-    const user = await client.users.getUser(req.auth.userId);
-    const email = user.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId)?.emailAddress
-      || user.emailAddresses[0]?.emailAddress;
+    directoryLookup = true;
+    const user = await client.users.getUser(auth.userId);
+    const primaryEmail = user.emailAddresses.find((entry) => entry.id === user.primaryEmailAddressId);
+    const email = primaryEmail?.emailAddress;
     const adminEmails = (process.env.ADMIN_EMAILS || '')
       .split(',')
       .map((entry) => entry.trim().toLowerCase())
@@ -78,12 +83,16 @@ const attachUserToReq = async (req, res, next) => {
       email,
       name: user.fullName || user.username || email?.split('@')[0],
       picture: user.imageUrl,
-      emailVerified: true,
+      emailVerified: primaryEmail?.verification?.status === 'verified',
+      isTeacher: primaryEmail?.verification?.status === 'verified' && trustedTeacherIds().includes(user.id),
       isAdmin: adminEmails.includes(email?.toLowerCase()),
     };
     next();
-  } catch {
+  } catch (error) {
     req.user = null;
+    const unavailable = directoryLookup && error?.status !== 404;
+    logEvent('auth.failed', { code: unavailable ? 'AUTH_UNAVAILABLE' : 'AUTH_INVALID' });
+    if (unavailable) return next(campusError(503, 'AUTH_UNAVAILABLE', '身份服务暂时不可用，请稍后重试；不会以本地身份替代登录。'));
     next();
   }
 };
@@ -121,3 +130,14 @@ export const adminOnly = (req, _res, next) => {
   }
   next();
 };
+
+export function trustedTeacherIds() {
+  return [...new Set((process.env.CAMPUS_TEACHER_UIDS || '').split(',').map((uid) => uid.trim()).filter((uid) => /^user_[a-zA-Z0-9]{1,100}$/.test(uid)))].slice(0, 100);
+}
+
+export function requireTeacher(req, _res, next) {
+  if (!req.user?.emailVerified || !req.user?.isTeacher || req.localBypass?.allow || !trustedTeacherIds().includes(req.user.uid)) {
+    return next(campusError(403, 'TEACHER_REQUIRED', '此操作仅对已验证并获授权的教师开放。'));
+  }
+  next();
+}

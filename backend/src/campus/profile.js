@@ -1,4 +1,5 @@
 export const CAMPUS_MOUNTS = [
+  '/api/campus',
   '/api/resumes',
   '/api/interview',
   '/api/enhance',

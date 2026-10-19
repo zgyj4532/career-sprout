@@ -7,6 +7,8 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 const OWNER_A = 'isolation-user-a';
 const LOCAL_B = 'campus-local-dev';
 
+const environmentKeys = ['MONGODB_URI', 'REDIS_URL', 'APP_PROFILE', 'NODE_ENV', 'HOST', 'DEV_BYPASS_AUTH', 'DEV_USER_UID', 'FRONTEND_URL', 'CLERK_SECRET_KEY'];
+const previousEnvironment = Object.fromEntries(environmentKeys.map((key) => [key, process.env[key]]));
 async function listen(app) {
   const server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -37,6 +39,7 @@ describe('campus private resource isolation', () => {
   let interviewId;
 
   before(async () => {
+    process.env.REDIS_URL = '';
     memory = await MongoMemoryServer.create();
     process.env.MONGODB_URI = memory.getUri();
     process.env.APP_PROFILE = 'campus-local';
@@ -70,8 +73,14 @@ describe('campus private resource isolation', () => {
 
   after(async () => {
     if (server) await new Promise((resolve) => server.close(resolve));
+    const { closeCacheConnection } = await import('../../middleware/cacheLayer.js');
+    await closeCacheConnection();
     if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
     if (memory) await memory.stop();
+    for (const key of environmentKeys) {
+      if (previousEnvironment[key] === undefined) delete process.env[key];
+      else process.env[key] = previousEnvironment[key];
+    }
   });
 
   test('unauthenticated requests cannot read private resume, history, or profile', async () => {
@@ -121,6 +130,20 @@ describe('campus private resource isolation', () => {
     const still = await Resume.findById(resumeId).lean();
     assert.equal(still.userId, OWNER_A);
     assert.equal(still.title, 'isolation-a');
+  });
+
+  test('canonical profile persists a selected study stage and explicit clear', async () => {
+    process.env.DEV_BYPASS_AUTH = 'true';
+    delete process.env.CLERK_SECRET_KEY;
+    const selected = await call(server, 'PUT', '/api/user-profiles/me', { studyStage: '大三' });
+    assert.equal(selected.status, 200, JSON.stringify(selected.json));
+    assert.equal(selected.json.profile.studyStage, '大三');
+    const cleared = await call(server, 'PUT', '/api/user-profiles/me', { studyStage: '' });
+    assert.equal(cleared.status, 200, JSON.stringify(cleared.json));
+    assert.equal(cleared.json.profile.studyStage, '');
+    const reread = await call(server, 'GET', '/api/user-profiles/me');
+    assert.equal(reread.status, 200, JSON.stringify(reread.json));
+    assert.equal(reread.json.profile.studyStage, '');
   });
 
   test('a configured Clerk secret blocks the local bypass even with a bearer token', async () => {
