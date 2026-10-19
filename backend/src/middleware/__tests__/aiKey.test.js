@@ -91,25 +91,40 @@ describe('extractAIProvider middleware', () => {
     assert.match(state.body.error, /unsupported/i);
   });
 
-  test('returns 403 when no key available from any source', async () => {
+  test('returns safe unavailable error when no key is configured', async () => {
     // Clear env keys
-    const geminiKey = process.env.GEMINI_API_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
-    const groqKey = process.env.GROQ_API_KEY;
+    const saved = {
+      GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      GROQ_API_KEY: process.env.GROQ_API_KEY,
+      CUSTOM_API_KEY: process.env.CUSTOM_API_KEY,
+      CUSTOM_BASE_URL: process.env.CUSTOM_BASE_URL,
+      AI_PROVIDER: process.env.AI_PROVIDER,
+    };
     delete process.env.GEMINI_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.GROQ_API_KEY;
+    delete process.env.CUSTOM_API_KEY;
+    delete process.env.CUSTOM_BASE_URL;
+    process.env.AI_PROVIDER = 'gemini';
 
-    const { req, res, state } = mockReqRes({});
-    await extractAIProvider(req, res, () => {});
+    const { req, res } = mockReqRes({});
+    let error;
+    await extractAIProvider(req, res, (value) => { error = value; });
+    assert.equal(error.statusCode, 503);
+    assert.equal(error.code, 'AI_KEY_MISSING');
+    assert.doesNotMatch(error.safeMessage, /backend\/|CUSTOM_API_KEY|api key/i);
 
-    assert.equal(state.statusCode, 403);
-    assert.match(state.body.error, /api key is required/i);
-
-    // Restore
-    process.env.GEMINI_API_KEY = geminiKey;
-    if (openaiKey) process.env.OPENAI_API_KEY = openaiKey;
-    if (groqKey) process.env.GROQ_API_KEY = groqKey;
+    process.env.GEMINI_API_KEY = saved.GEMINI_API_KEY;
+    process.env.AI_PROVIDER = saved.AI_PROVIDER;
+    if (saved.OPENAI_API_KEY) process.env.OPENAI_API_KEY = saved.OPENAI_API_KEY;
+    else delete process.env.OPENAI_API_KEY;
+    if (saved.GROQ_API_KEY) process.env.GROQ_API_KEY = saved.GROQ_API_KEY;
+    else delete process.env.GROQ_API_KEY;
+    if (saved.CUSTOM_API_KEY) process.env.CUSTOM_API_KEY = saved.CUSTOM_API_KEY;
+    else delete process.env.CUSTOM_API_KEY;
+    if (saved.CUSTOM_BASE_URL) process.env.CUSTOM_BASE_URL = saved.CUSTOM_BASE_URL;
+    else delete process.env.CUSTOM_BASE_URL;
   });
 
   test('handles model override via x-ai-model header', async () => {

@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { aiCallsCounter } from '../../middleware/metrics.js';
+import { logEvent, safeErrorMetadata } from '../../utils/diagnostics.js';
 
 // Exponential backoff helper
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -22,7 +23,7 @@ const withRetry = async (fn, maxRetries = 3, baseDelayMs = 1000) => {
       if ((error?.status === 429 || isSocketError) && attempt < maxRetries - 1) {
         attempt++;
         const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
-        console.warn(`OpenRouter network/rate error (${error?.message || error?.status}). Retrying in ${Math.round(delay)}ms... (Attempt ${attempt}/${maxRetries - 1})`);
+        logEvent('ai.retry', { provider: 'openrouter', attempt, status: error?.status });
         await sleep(delay);
       } else {
         throw error;
@@ -76,7 +77,7 @@ export class OpenRouterAdapter {
         
       return { text: completion.choices[0]?.message?.content || '', usage };
     } catch (error) {
-      console.error('OpenRouter generateContent Error:', error);
+      logEvent('ai.failed', { provider: 'openrouter', status: error?.status, ...safeErrorMetadata(error) });
       
       // Handle known errors gracefully
       if (error?.status === 401) {
@@ -112,7 +113,7 @@ export class OpenRouterAdapter {
       const u = completion.usage;
       yield { done: true, usage: u ? { prompt: u.prompt_tokens ?? 0, completion: u.completion_tokens ?? 0, total: u.total_tokens ?? 0 } : undefined };
     } catch (error) {
-      console.error('OpenRouter generateContentStream Error:', error);
+      logEvent('ai.failed', { provider: 'openrouter', status: error?.status, ...safeErrorMetadata(error) });
       if (error?.status === 401) throw new Error('OpenRouter API Key is invalid.');
       if (error?.status === 402) throw new Error('OpenRouter account has insufficient credits.');
       if (error?.status === 429) throw new Error('OpenRouter rate limit exceeded.');

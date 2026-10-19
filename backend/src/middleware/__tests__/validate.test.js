@@ -1,7 +1,8 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { z } from 'zod';
-import { validate } from '../validate.js';
+import { validate, safeValidationDetails } from '../validate.js';
+import { studentSchema } from '../../campus/schemas.js';
 
 /**
  * Create a minimal mock Express req/res with tracking.
@@ -21,6 +22,21 @@ function mockReqRes(target = 'body', initial = {}) {
   };
   return { req, res, state };
 }
+
+test('campus validation exposes bounded known fields and codes without source text', () => {
+  const { req, res, state } = mockReqRes('body', { skillAssessments: [{ name: 'PRIVATE', level: 1 }, { name: 'private', level: 2 }], availability: { startDate: '2026-02-30' } });
+  req.campusRequest = true;
+  validate(studentSchema)(req, res, () => {});
+  assert.equal(state.body.code, 'VALIDATION_FAILED');
+  assert.ok(state.body.details.some((item) => item.field === 'skillAssessments' && item.code === 'custom'));
+  assert.ok(state.body.details.some((item) => item.field === 'availability.startDate' && item.code === 'custom'));
+  assert.doesNotMatch(JSON.stringify(state.body), /PRIVATE|SECRET/);
+  const unknown = mockReqRes('body', { PRIVATE_UNKNOWN: 'SECRET' });
+  unknown.req.campusRequest = true;
+  validate(studentSchema)(unknown.req, unknown.res, () => {});
+  assert.doesNotMatch(JSON.stringify(unknown.state.body), /PRIVATE|SECRET/);
+  assert.deepEqual(safeValidationDetails([{ field: 'unknownSecret', code: 'custom' }, { field: 'name', code: 'custom', message: 'SECRET', input: 'SECRET' }]), [{ field: 'name', code: 'custom' }]);
+});
 
 describe('validate middleware', () => {
   const testSchema = z.object({

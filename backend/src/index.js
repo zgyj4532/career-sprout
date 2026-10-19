@@ -63,7 +63,9 @@ import JobAlert from './models/JobAlert.model.js';
 import { initGitHubSyncCron } from './services/portfolioGitHubSync.js';
 import coverLetterRoutes from "./routes/coverLetter.js";
 
+const campusProfile = process.env.APP_PROFILE === 'campus-local';
 const shouldInitGitHubSyncCron =
+  !campusProfile &&
   process.env.ENABLE_GITHUB_SYNC_CRON !== 'false' &&
   process.env.NODE_ENV !== 'test';
 
@@ -330,12 +332,14 @@ app.use("/api/upload", inputRoutes);
 app.use("/api/recruiter", recruiterRoutes);
 app.use("/api/outreach", outreachRoutes);
 app.use("/api/bugs", bugsRoutes);
-import('./routes/payments.js').then((module) => {
+if (!campusProfile) {
+  import('./routes/payments.js').then((module) => {
     app.use('/api/payments', module.default);
     console.log('✅ Payment routes loaded');
-}).catch((error) => {
+  }).catch((error) => {
     console.warn('⚠️ Payment routes disabled:', error.message);
-});
+  });
+}
 app.use('/api/collaboration', collaborationRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/portfolio/github', portfolioGithubRoutes);
@@ -357,8 +361,11 @@ app.use((req, res) => {
 app.use(globalErrorHandler);
 
 const startServer = async () => {
+  if (campusProfile) {
+    console.error('APP_PROFILE=campus-local must be started with node src/campusServer.js');
+    process.exit(1);
+  }
   try {
-    // Fail fast in production when email is not configured; warn otherwise.
     // Without this check, missing credentials surface only later as silent
     // send failures.
     const emailStatus = validateEmailConfig(process.env);

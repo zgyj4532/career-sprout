@@ -1,4 +1,5 @@
 import express from "express";
+import { logEvent } from '../utils/diagnostics.js';
 import {
   enhanceResume,
   generateSummary,
@@ -100,12 +101,7 @@ Return ONLY valid JSON. No markdown fences, no extra text.`;
       try {
         qualitativeData = JSON.parse(text);
       } catch (parseErr) {
-        console.error(
-          "Resume score JSON parse error:",
-          parseErr,
-          "Raw text:",
-          text,
-        );
+        logEvent('resume.score_invalid');
         throw new ApiError(
           502,
           "AI service returned an invalid response. Please try again in a moment.",
@@ -154,7 +150,7 @@ Return ONLY valid JSON. No markdown fences, no extra text.`;
       });
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      console.error("Resume scoring error:", error);
+      logEvent('resume.score_failed');
       throw new ApiError(500, "Failed to score resume. Please try again.");
     }
   }),
@@ -206,7 +202,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Resume enhancement error:", error);
+      logEvent('resume.enhance_failed');
       throw new ApiError(500, "Failed to enhance resume. Please try again.");
     }
   }),
@@ -243,7 +239,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Summary generation error:", error);
+      logEvent('resume.summary_failed');
       throw new ApiError(500, "Failed to generate summary. Please try again.");
     }
   }),
@@ -284,7 +280,7 @@ router.post(
         },
       });
     } catch (error) {
-      console.error("Suggestions generation error:", error);
+      logEvent('resume.suggestions_failed');
       throw new ApiError(
         500,
         "Failed to generate suggestions. Please try again.",
@@ -322,7 +318,7 @@ router.post(
         providerSource: req.aiProviderSource,
       });
     } catch (error) {
-      console.error("ATS analysis error:", error);
+      logEvent('resume.ats_failed');
       throw new ApiError(500, "Failed to analyze ATS score. Please try again.");
     }
   }),
@@ -361,7 +357,7 @@ router.post(
         providerSource: req.aiProviderSource,
       });
     } catch (error) {
-      console.error("Comprehensive analysis error:", error);
+      logEvent('resume.analysis_failed');
       throw new ApiError(
         500,
         "Failed to perform comprehensive analysis. Please try again.",
@@ -403,7 +399,7 @@ router.post(
         providerSource: req.aiProviderSource,
       });
     } catch (error) {
-      console.error("Bullet analysis error:", error);
+      logEvent('resume.bullets_failed');
       throw new ApiError(
         500,
         "Failed to analyze bullet points. Please try again.",
@@ -446,7 +442,7 @@ router.post(
         providerSource: req.aiProviderSource,
       });
     } catch (error) {
-      console.error("Before/after generation error:", error);
+      logEvent('resume.comparison_failed');
       throw new ApiError(
         500,
         "Failed to generate comparison. Please try again.",
@@ -564,7 +560,7 @@ router.post(
         providerSource: req.aiProviderSource,
       });
     } catch (error) {
-      console.error("Skill gap analysis error:", error);
+      logEvent('resume.gap_failed');
       throw new ApiError(500, "Failed to analyze skill gap. Please try again.");
     }
   }),
@@ -602,7 +598,7 @@ router.post(
         providerSource: req.aiProviderSource,
       });
     } catch (error) {
-      console.error("Resume translation error:", error);
+      logEvent('resume.translation_failed');
       throw new ApiError(500, "Failed to translate resume. Please try again.");
     }
   }),
@@ -638,7 +634,7 @@ router.post(
         providerSource: req.aiProviderSource,
       });
     } catch (error) {
-      console.error("Resume tailoring error:", error);
+      logEvent('resume.target_failed');
       throw new ApiError(500, "Failed to tailor resume. Please try again.");
     }
   }),
@@ -814,8 +810,8 @@ router.post(
       if (isAborted) {
         return;
       }
-      console.error("Streaming enhancement error:", error);
-      stream.sendError(error.message || "Failed to enhance resume");
+      logEvent('resume.stream_failed');
+      stream.sendError('AI 服务暂时不可用，请稍后重试。');
       stream.endStream();
     } finally {
       req.off("close", markAborted);

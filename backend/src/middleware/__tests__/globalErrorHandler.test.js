@@ -1,10 +1,12 @@
 import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { globalErrorHandler, catchAsync } from '../globalErrorHandler.js';
+import { ApiError } from '../errorHandler.js';
 
 function mockReqRes() {
   const state = { statusCode: 200, body: null };
   const res = {
+    setHeader(name, value) { state[name] = value; },
     status(code) {
       state.statusCode = code;
       return this;
@@ -27,17 +29,19 @@ describe('globalErrorHandler', () => {
 
     assert.equal(state.statusCode, 404);
     assert.equal(state.body.success, false);
-    assert.equal(state.body.message, 'Not found');
+    assert.equal(state.body.requestId, state['X-Request-ID']);
+    assert.equal(state.body.stack, undefined);
   });
 
   test('defaults to 500 when no statusCode', () => {
     const { res, state } = mockReqRes();
-    const err = new Error('Something broke');
+    const err = new Error('SECRET_PRIVATE_SOURCE');
 
     globalErrorHandler(err, {}, res, () => {});
 
     assert.equal(state.statusCode, 500);
-    assert.equal(state.body.message, 'Something broke');
+    assert.doesNotMatch(JSON.stringify(state.body), /SECRET_PRIVATE_SOURCE/);
+    assert.equal(state.body.code, 'INTERNAL');
   });
 
   test('uses fallback message when no message', () => {
@@ -47,7 +51,16 @@ describe('globalErrorHandler', () => {
     globalErrorHandler(err, {}, res, () => {});
 
     assert.equal(state.statusCode, 500);
-    assert.equal(state.body.message, 'Something went wrong');
+    assert.equal(typeof state.body.message, 'string');
+    assert.ok(state.body.requestId);
+  });
+  test('legacy operational errors retain messages but campus and unexpected errors do not leak', () => {
+    const legacy = mockReqRes();
+    globalErrorHandler(new ApiError(409, 'Known resource conflict'), {}, legacy.res, () => {});
+    assert.equal(legacy.state.body.message, 'Known resource conflict');
+    const campus = mockReqRes();
+    globalErrorHandler(new ApiError(409, 'PRIVATE_SOURCE'), { campusRequest: true }, campus.res, () => {});
+    assert.doesNotMatch(JSON.stringify(campus.state.body), /PRIVATE_SOURCE/);
   });
 });
 

@@ -19,6 +19,16 @@ import {
   cacheProfileResponse,
 } from '../../services/profileCache.js';
 
+test('closing an unavailable Redis connection disconnects instead of queueing quit', async () => {
+  const { RedisManager } = await import('../../config/redis.js');
+  const manager = new RedisManager();
+  let disconnected = false;
+  manager.connections.set('api-cache', { client: { status: 'reconnecting', disconnect() { disconnected = true; }, quit() { throw new Error('must not queue quit'); } } });
+  await manager.close('api-cache');
+  assert.equal(disconnected, true);
+  assert.equal(manager.connections.has('api-cache'), false);
+});
+
 const flushAsyncWork = async () => {
   await new Promise((resolve) => {
     setImmediate(resolve);

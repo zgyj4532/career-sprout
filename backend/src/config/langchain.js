@@ -1,6 +1,7 @@
 import { getDefaultProvider } from './aiProviders.js';
 import { computeATSScore } from '../services/atsScorer.js';
 import dotenv from 'dotenv';
+import { logEvent } from '../utils/diagnostics.js';
 
 dotenv.config();
 
@@ -135,7 +136,7 @@ export const enhanceResume = async (resumeText, preferences, aiProvider) => {
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error enhancing resume:', error);
+    logEvent('resume.enhance_failed');
     throw new Error(`Failed to enhance resume: ${error.message}`);
   }
 };
@@ -158,7 +159,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error generating summary:', error);
+    logEvent('resume.summary_failed');
     throw new Error(`Failed to generate summary: ${error.message}`);
   }
 };
@@ -205,7 +206,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error translating resume:', error);
+    logEvent('resume.translation_failed');
     throw new Error(`Failed to translate resume: ${error.message}`);
   }
 };
@@ -228,7 +229,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error suggesting improvements:', error);
+    logEvent('resume.suggestions_failed');
     throw new Error(`Failed to suggest improvements: ${error.message}`);
   }
 };
@@ -287,7 +288,7 @@ ${resumeText}`;
       }
       qualitativeData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error('Failed to parse ATS qualitative analysis JSON:', parseError);
+      logEvent('resume.ats_invalid');
       qualitativeData = {
         strengths: ["Clear effort shown in formatting"],
         improvements: [{
@@ -324,7 +325,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error analyzing ATS score:', error);
+    logEvent('resume.ats_failed');
     throw new Error(`Failed to analyze ATS score: ${error.message}`);
   }
 };
@@ -443,7 +444,7 @@ ${resumeText}`;
       }
       analysisData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error('Failed to parse comprehensive analysis JSON:', parseError);
+      logEvent('resume.analysis_invalid');
       throw new Error('Failed to parse analysis results');
     }
 
@@ -454,7 +455,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error in comprehensive analysis:', error);
+    logEvent('resume.analysis_failed');
     throw new Error(`Failed to analyze resume: ${error.message}`);
   }
 };
@@ -517,7 +518,7 @@ ${resumeText}`;
       }
       bulletData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error('Failed to parse bullet analysis JSON:', parseError);
+      logEvent('resume.bullets_invalid');
       throw new Error('Failed to parse bullet analysis');
     }
 
@@ -528,7 +529,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error analyzing bullets:', error);
+    logEvent('resume.bullets_failed');
     throw new Error(`Failed to analyze bullet points: ${error.message}`);
   }
 };
@@ -574,7 +575,7 @@ ${resumeText}`;
       }
       comparisonData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error('Failed to parse comparison JSON:', parseError);
+      logEvent('resume.comparison_invalid');
       throw new Error('Failed to generate comparison');
     }
 
@@ -585,7 +586,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error generating comparison:', error);
+    logEvent('resume.comparison_failed');
     throw new Error(`Failed to generate comparison: ${error.message}`);
   }
 };
@@ -634,7 +635,7 @@ ${jobDescription}`;
       }
       analysisData = JSON.parse(cleanedText);
     } catch (parseError) {
-      console.error('Failed to parse skill gap analysis JSON:', parseError);
+      logEvent('resume.gap_invalid');
       throw new Error('Failed to parse skill gap analysis results');
     }
 
@@ -650,7 +651,7 @@ ${jobDescription}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error analyzing skill gap:', error);
+    logEvent('resume.gap_failed');
     throw new Error(`Failed to analyze skill gap: ${error.message}`);
   }
 };
@@ -714,7 +715,7 @@ ${resumeText}`;
     };
   } catch (error) {
     if (error.statusCode === 503) throw error;
-    console.error('Error tailoring resume:', error);
+    logEvent('resume.target_failed');
     throw new Error(`Failed to tailor resume: ${error.message}`);
   }
 };

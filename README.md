@@ -1,720 +1,155 @@
 <div align="center">
-  <h1>🚀 Career Pilot</h1>
-  <p><strong>AI-powered career OS — resumes, mock interviews, job tracking, portfolios, fellowships, GitHub intelligence and outreach, all in one full-stack platform.</strong></p>
+  <h1>职芽 · CareerSprout</h1>
+  <p><strong>从现在开始，让每一次练习长成未来。</strong></p>
+  <p>面向大学生的 AI 职业成长助手：找方向、整理经历、做简历、练面试和授权荐才。</p>
   <p>
-    <a href="https://github.com/anurag3407/career-pilot/stargazers"><img src="https://img.shields.io/github/stars/anurag3407/career-pilot?style=for-the-badge&logo=github" alt="Stars"/></a>
-    <a href="https://github.com/anurag3407/career-pilot/blob/main/LICENSE"><img src="https://img.shields.io/github/license/anurag3407/career-pilot?style=for-the-badge" alt="License"/></a>
-    <a href="#-quick-install"><img src="https://img.shields.io/badge/install-one%20command-7c3aed?style=for-the-badge&logo=rocket" alt="Install"/></a>
-  </p>
-  <p>
-    <img src="https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js&logoColor=white" alt="Node.js"/>
-    <img src="https://img.shields.io/badge/Express-4.18-000000?logo=express&logoColor=white" alt="Express"/>
-    <img src="https://img.shields.io/badge/MongoDB-6.0-47A248?logo=mongodb&logoColor=white" alt="MongoDB"/>
-    <img src="https://img.shields.io/badge/Redis-7.0-DC382D?logo=redis&logoColor=white" alt="Redis"/>
-    <img src="https://img.shields.io/badge/Socket.IO-4-010101?logo=socket.io&logoColor=white" alt="Socket.IO"/>
-    <img src="https://img.shields.io/badge/BullMQ-queues-EA2424?logo=bull&logoColor=white" alt="BullMQ"/>
+    <img src="https://img.shields.io/badge/Node.js-24.14.1-339933?logo=node.js&logoColor=white" alt="Node.js"/>
+    <img src="https://img.shields.io/badge/Express-campus%20entry-000000?logo=express&logoColor=white" alt="Express"/>
+    <img src="https://img.shields.io/badge/MongoDB-local-47A248?logo=mongodb&logoColor=white" alt="MongoDB"/>
+    <img src="https://img.shields.io/badge/Redis-local-DC382D?logo=redis&logoColor=white" alt="Redis"/>
     <img src="https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white" alt="React"/>
     <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite"/>
-    <img src="https://img.shields.io/badge/TailwindCSS-4-38B2AC?logo=tailwindcss&logoColor=white" alt="TailwindCSS"/>
-    <img src="https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-FFCA28?logo=firebase&logoColor=black" alt="Firebase"/>
-    <img src="https://img.shields.io/badge/Razorpay-payments-3395FF?logo=razorpay&logoColor=white" alt="Razorpay"/>
-    <img src="https://img.shields.io/badge/Tesseract-OCR-5C2D91" alt="OCR"/>
-    <img src="https://img.shields.io/badge/Multi--AI-OpenAI%20%7C%20Anthropic%20%7C%20Groq%20%7C%20Gemini-7c3aed" alt="Multi-AI"/>
+    <img src="https://img.shields.io/badge/loopback-127.0.0.1-0f6e56" alt="Loopback"/>
   </p>
   <p>
-    Documentation · <a href="https://discord.gg/dpDMVywS">Discord</a> · License: <a href="LICENSE">MIT</a> · Built with ❤️ by the Career Pilot community
+    上游 <a href="https://github.com/anurag3407/career-pilot">anurag3407/career-pilot</a>
+    · 本项目 <a href="https://github.com/zgyj4532/career-sprout">zgyj4532/career-sprout</a>
+    · 基线 <code>0f0be2c1</code>
+    · 说明 <a href="docs/LOCAL_WSL.md">本地启动</a>
+    · License <a href="LICENSE">MIT</a>
   </p>
 </div>
 
 ---
 
-## Table of Contents
+职芽面向所有年级，优先让大一大二新手也能独立使用；已有简历的高年级学生可直接进入练习。当前仍使用安全的 WSL 本地运行方式，不是上游完整平台的发行版。上游 Firebase、端口 5000、支付和作品集部署说明不适用于校园入口。
 
-- [✨ What is Career Pilot?](#-what-is-career-pilot)
-- [🔄 How It Works](#-how-it-works)
-- [📸 Screenshots](#-screenshots)
-- [📂 Project Structure](#-project-structure)
-- [🧭 Feature Pillars](#-feature-pillars)
-- [🚀 Quick Install](#-quick-install)
-- [🔑 Environment Variables](#-environment-variables)
-- [🏁 Getting Started](#-getting-started)
-- [📝 Pillar 1 — Resume Studio](#-pillar-1--resume-studio)
-- [🎤 Pillar 2 — Interview Sim](#-pillar-2--interview-sim)
-- [💼 Pillar 3 — Jobs & Tracker](#-pillar-3--jobs--tracker)
-- [🎨 Pillar 4 — Portfolio Studio](#-pillar-4--portfolio-studio)
-- [🧠 Pillar 5 — AI Career Tools](#-pillar-5--ai-career-tools)
-- [🌐 Pillar 6 — Community, Fellowships & GitHub Intel](#-pillar-6--community-fellowships--github-intel)
-- [🔐 Security, Auth & Privacy](#-security-auth--privacy)
-- [🧩 Architecture at a Glance](#-architecture-at-a-glance)
-- [🌐 Real-time, Queues & Background Work](#-real-time-queues--background-work)
-- [🛠 CLI vs Web Quick Reference](#-cli-vs-web-quick-reference)
-- [📚 Documentation](#-documentation)
-- [🧪 Testing](#-testing)
-- [🚢 Deployment](#-deployment)
-- [🔄 Migrating from Other Tools](#-migrating-from-other-tools)
-- [🛣 Roadmap](#-roadmap)
-- [🧠 Project Notes](#-project-notes)
-- [🤝 Contributing](#-contributing)
-- [👥 Maintainers](#-maintainers)
-- [💬 Community](#-community)
-- [📄 License](#-license)
+## 目录
 
----
+- [这是什么](#这是什么)
+- [保留与关闭](#保留与关闭)
+- [页面](#页面)
+- [本地启动](#本地启动)
+- [端口](#端口)
+- [身份与密钥](#身份与密钥)
+- [目录结构](#目录结构)
+- [验收边界](#验收边界)
+- [许可证](#许可证)
 
-## ✨ What is Career Pilot?
+## 这是什么
 
-**Career Pilot** is a full-stack, AI-first **career operating system** that turns job hunting from a chaotic, multi-tab slog into a single workflow. It's not a single-purpose resume builder — it's a unified platform that combines **resumes, mock interviews, job search & tracking, portfolio publishing, GitHub intelligence, fellowships, paid challenges, community, outreach, and admin tooling** behind one authenticated dashboard.
+从真实课程、社团、项目或实习经历起步，按保存进度获得下一步建议。岗位可人工录入并由 AI 整理技能要求；简历支持口述转写、建议对照与确认采纳；面试录音有明确状态，转写校对后才提交。学生可授权教师按技能和时间匹配岗位，并下载学生确认过的定向版本。未配置服务明确不可用，不返回假结果。
 
-Powered by **multi-provider AI** (OpenAI, Anthropic Claude, Groq, Google Gemini, OpenRouter and a Bring-Your-Own-Key path), Career Pilot writes your resume, critiques it like an ATS, runs you through mock interviews with an avatar, tracks every job application on a kanban board, deploys a designer-grade portfolio to Netlify / Cloudflare Pages / GitHub Pages, parses your GitHub for risk and impact, and emails recruiters on your behalf — all from the same Express + React app.
+技术栈仍是 React/Vite、Express、MongoDB、Redis。没有换成别的框架，也没有把数据库从 MongoDB 迁走。
 
-It's modular by design: the Express backend exposes 30+ route groups, the React frontend has 50+ pages across feature hubs, and contributors can pick up **good-first-issue** tickets in any one of them without having to grok the rest of the system.
+## 保留与关闭
 
----
+| 已实现的校园能力 | 未启用或不在当前范围 |
+|---|---|
+| 成长档案、技能自评、可实习时间、岗位录入与分析 | 招聘爬虫、学校教学报表、社区与支付 |
+| 口述/文本简历润色、确认、保存、中文 A4 PDF | 编造经历、自动采纳AI结果、永久保存音频 |
+| 中文语音面试、转写校对、显式提交、历史反馈 | 真实电话拨号、编程题和视频表情评分 |
+| 学生授权、教师匹配、定向版本确认和ZIP导出 | 公开学生资料目录、自动邮件外发简历 |
+| 中文注册/登录/验证界面、已有 Clerk 正式路径 | Resend 发信/身份签发：仅预留，尚未启用 |
 
-## 🔄 How It Works
+## 页面
 
-Career Pilot guides users through their complete career journey:
+| 路径 | 作用 |
+|---|---|
+| `/` | 一个明确下一步；点击口号可切换 React Bits 彩蛋。 |
+| `/resume` | 整理真实经历、语音补充、AI建议对照、保存/PDF及定向版本确认。 |
+| `/interview` | 选择保存的简历、岗位和练习类型。 |
+| `/interview/session/:id` | 明确录音开始/结束，转写校对，确认提交，再生成总评。 |
+| `/jd` | 校园岗位录入、发布、AI技能整理和差距查看。 |
+| `/profile` | 基本档案、经历、自评、时间及教师授权/撤回。 |
+| `/history` | 已保存面试、重命名、确认删除和反馈。 |
+| `/login`、`/register`、`/verify-email` | 正式账号入口与真实可用状态；Resend未启用时不发信。 |
+| `/teacher` | 仅限已验证且被服务端授权的教师，查看获学生授权的候选材料。 |
 
-1. Sign up or log in securely.
-2. Build or import your resume.
-3. Enhance it using AI and ATS optimization.
-4. Practice mock interviews with AI.
-5. Search and track job applications.
-6. Build and deploy your portfolio.
-7. Analyze GitHub repositories and improve your profile.
-8. Connect with the community and participate in fellowships.
+电脑上的内页使用左侧导航。窄屏改成底部四宫格。面试间不套这层导航。
 
-## 📸 Screenshots
+## 本地启动
 
-| Home Page | Resume Enhancer |
-|-----------|-----------------|
-| ![](docs/images/home_page.png) | ![](docs/images/resume_enhancer.png) |
+在已有 WSL 的仓库根目录：
 
-| Mock Interview | Job Tracker |
-|----------------|-------------|
-| ![](docs/images/mock_interview.png) | ![](docs/images/job_tracker.png) |
+```bash
+source "$HOME/.nvm/nvm.sh"
+nvm use
+npm run doctor
+npm run setup:local
+npm run infra:up
+npm run dev:local
+```
 
-| Email Generator | Community Board |
-|-----------------|-----------------|
-| ![](docs/images/email_generator_form.png) | ![](docs/images/community_board.png) |
+浏览器打开 `http://127.0.0.1:5173`。
 
-## 📂 Project Structure
+停止：
+
+- `Ctrl+C` 只结束这一次前后端进程，不删除数据库卷。
+- `npm run infra:down` 停止本项目的 MongoDB 和 Redis，不使用 `-v`。
+
+不要用上游的 `docker compose up` 代替 `infra:up`。那会启动完整后端，并占用另一组数据库端口。
+
+## 端口
+
+| 服务 | 地址 |
+|---|---|
+| Vite | `127.0.0.1:5173` |
+| 校园 API | `127.0.0.1:5002` |
+| MongoDB | `127.0.0.1:27018` |
+| Redis | `127.0.0.1:6380` |
+
+前端的 `/api` 代理到 `127.0.0.1:5002`。端口被占用时命令失败，不会结束别人的进程。
+
+## 身份与密钥
+
+没有 Clerk 密钥时，本地配置可以打开 `DEV_BYPASS_AUTH`。它只在 `NODE_ENV=development`、`APP_PROFILE=campus-local`、监听 `127.0.0.1`，并且变更请求来自本机前端时生效。这不是注册，也不是多用户验证。
+
+已配置 `CLERK_SECRET_KEY` 时，开发旁路关闭，正式认证仍走 Clerk。不要把 `HOST` 改成 `0.0.0.0` 后用开发身份做局域网或公网演示。
+
+文本模型走 OpenAI 兼容代理。语音转写走 Qwen ASR。没有对应密钥时，页面和接口报告不可用，不返回假答案或假转写。环境样例见 `backend/.env.example`。不要提交真实的 `.env`。
+
+教师需将真实 Clerk UID 加入服务端 `CAMPUS_TEACHER_UIDS`，且主邮箱已验证；本地开发身份永不升级为教师。学生另行授权，修改简历或岗位会使旧定向版本失效，需要重新生成/确认。
+
+`RESEND_API_KEY`、`RESEND_FROM`、`APP_PUBLIC_URL` 是后续接入预留，填写后也不会自动启用邮件认证；当前相应接口返回 `503 EMAIL_AUTH_NOT_CONFIGURED`。不要把Resend当作完整身份系统。
+
+## 日志与排障
+
+- 服务端：`logs/backend.jsonl`；本地启动器：`logs/runtime.jsonl`。单文件2MiB或跨日轮转，最多保留3个旧文件，目录已被Git忽略。
+- 页面错误可展开“技术信息”复制诊断编号，或下载最多200条前端事件。按 `requestId` 关联请求、AI/ASR/PDF阶段与结果。
+- 日志只保留受限事件、字段名/错误码、耗时、字节数和安全异常类别，不记录密钥、验证链接、音频、口述和简历全文。
+- PDF与ASR均为全进程单任务准入；繁忙时返回429，不无限排队。录音最长3分钟，上传最大10MiB；PDF一般一页、最多第二页上半页，超长明确拒绝且不截断。
+- 低内存时不要同时跑构建、测试、浏览器和导出。校园构建在配置期隔离上游大模块；不要靠取消内存限制解决问题。
+
+
+## 目录结构
 
 ```text
-career-pilot/
-├── backend/          # Express backend and APIs
-├── frontend/         # React + Vite frontend
-├── docs/             # Project documentation
-├── API_DOCS/         # API documentation
-├── firebase/         # Firebase configuration
-├── Docker-compose.yml
-└── README.md
+career-pilot/                    # 本地目录仍被当前会话锁定，目标为 career-sprout
+├── backend/src/campusServer.js   # 校园 API 入口
+├── frontend/src/campus/          # 分流程页面、录音状态与口号彩蛋
+├── backend/src/campus/           # 岗位、私密档案、授权、定向版本与匹配
+├── compose.local.yml             # 只跑本项目 MongoDB / Redis
+├── scripts/local/                # doctor、setup、infra、dev、verify
+├── docs/LOCAL_WSL.md             # 启动细节
+└── docs/evidence/phase1/         # 已跑过的冒烟和面试流程证据
 ```
 
-For a detailed architecture overview, see the **Architecture at a Glance** section below.
+上游的页面和路由仍在仓库里。校园构建只解析校园入口与普通CSS，不扫描未启用的作品集模板；原上游入口仍保留。Mongo数据库、Compose project和卷名继续使用历史 `career-pilot-local` / `career_pilot_local` 标识，避免改名丢失数据。
 
-## 🧭 Feature Pillars
+GitHub已改为 `zgyj4532/career-sprout`，仍保留原fork和提交历史。本地改名被当前omp会话的目录锁阻止，未强杀或复制替代；关闭会话后使用 `E:\github\rename-careersprout.ps1`，具体操作见本地启动说明。校园体验改造与轻量修正见 [Pull Request #2](https://github.com/zgyj4532/career-sprout/pull/2)；后续导入、截图识别和流程合并见 [Issue #1](https://github.com/zgyj4532/career-sprout/issues/1)，复杂能力仍须讨论后实施。
 
-Career Pilot is organized into six tightly-integrated pillars. Each pillar ships its own UI hub, REST routes, AI services, and MongoDB models — and they share authentication, presence, notifications, and rate limiting.
+## 验收边界
 
-| | Pillar | What you get |
-|---|---|---|
-| 📝 | **Resume Studio** | AI-built resumes, 60+ templates, ATS scorer, drag-and-drop sections, text-to-resume, tailoring, translation, versions & sharing |
-| 🎤 | **Interview Sim** | Audio + video mock interviews with an avatar interviewer, coding round (Monaco editor, executed against hidden tests), 14 languages, confidence meter, replay |
-| 💼 | **Jobs & Tracker** | JSearch-powered search, drag-and-drop kanban tracker, scheduled email alerts, company research, JD summarizer, recruiter outreach & tracking |
-| 🎨 | **Portfolio Studio** | 250+ themes, AI content enhancer + extractor, deploy to Netlify / Cloudflare / GitHub Pages, custom domains, accessibility audit, SEO, GitHub sync |
-| 🧠 | **AI Career Tools** | Cover-letter generator, email drafter (3 variants), LinkedIn optimizer, skill-gap analyzer, career-trajectory predictor, weekly digest |
-| 🌐 | **Community, Fellowships & GitHub Intel** | Channels, posts, DMs, scheduled posts, paid fellowship challenges, Razorpay payouts, repo analyzer, project visualizer, CI/CD & dependency detection |
+本轮实际结果见 `.trellis/tasks/10-18-student-career-experience/research/verification.md`。已验证真实模型/ASR、浏览器交互、中文PDF与隔离授权ZIP；测试使用的合成身份和语音不是真人使用证据。历史基线报告仍保留在 `docs/PHASE1_REPORT.md` 和 `docs/PHASE1_1_REPORT.md`，不覆盖原记录。
 
----
+当前明确未完成：
 
-## 🚀 Quick Install
+- Clerk正式师生账号端到端联调：当前缺少真实配置；隔离权限测试不替代正式账户验收。
+- 真人麦克风/扬声器质量与真实手机：受控浏览器音轨和模拟视口仅验证状态及布局。
+- Resend实际邮件送达和公网部署：本轮未启用。
+- 后端全量lint仍有停用上游模块的既存错误，具体结果见验证记录，不宣称全仓全绿。
 
-### Prerequisites
-- **Node.js 18+** and **npm 10+** (or yarn / pnpm)
-- **MongoDB 6.0+** (local or Atlas)
-- **Redis 7.0+** (local, Upstash, or Memorystore)
-- **Firebase project** (Authentication + Firestore)
-- Optional: **Cloudinary** for media, **OpenAI / Anthropic / Groq** keys for AI features, **RapidAPI** for JSearch, **Razorpay** for fellowship payments, **GitHub token** for higher rate-limits
+## 许可证
 
-### Clone & bootstrap
-```bash
-git clone https://github.com/anurag3407/career-pilot.git
-cd career-pilot
-
-# Install root, backend, and frontend deps
-npm install
-cd backend && npm install
-cd ../frontend && npm install
-cd ..
-```
-
-### Configure environment
-
-```bash
-# Backend
-cp backend/.env.example backend/.env
-# Edit backend/.env — set MONGODB_URI, REDIS_URL, OPENAI_API_KEY, RAPIDAPI_KEY,
-# FIREBASE_PROJECT_ID, FIREBASE_SERVICE_ACCOUNT_PATH, FRONTEND_URL
-
-# Frontend
-cp frontend/.env.example frontend/.env
-# Edit frontend/.env — set VITE_API_URL, VITE_FIREBASE_* keys
-```
-
-## 🔑 Environment Variables
-
-Career Pilot uses separate environment configuration files for the backend and frontend.
-
-Copy the example files before starting the application:
-
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-```
-
-### Backend Environment Variables
-
-| Category | Important Variables |
-|----------|---------------------|
-| Server | `PORT`, `NODE_ENV`, `FRONTEND_URL` |
-| Database | `MONGODB_URI` |
-| Firebase Admin | `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_SERVICE_ACCOUNT_PATH` |
-| AI Services | `GEMINI_API_KEY`, `OPENAI_API_KEY`, `GROQ_API_KEY`, `AI_PROVIDER` |
-| Job Search | `RAPIDAPI_KEY`, `RAPIDAPI_HOST` |
-| Email | `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_HOST`, `EMAIL_PORT` |
-| Redis | `REDIS_URL` |
-| Payments | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` |
-| OAuth | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
-| Deployment | `NETLIFY_ACCESS_TOKEN`, `VERCEL_TOKEN`, `CLOUDFLARE_API_TOKEN` |
-| Security | `ENCRYPTION_KEY`, `TOTP_ENCRYPTION_KEY` |
-
-> Refer to `backend/.env.example` for the complete list of backend environment variables and descriptions.
-
-### Frontend Environment Variables
-
-| Category | Important Variables |
-|----------|---------------------|
-| Backend API | `VITE_API_URL`, `VITE_API_BASE` |
-| Firebase Client | `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_MEASUREMENT_ID` |
-| File Upload | `VITE_MAX_SIZE_MB` |
-| Feature Flags | `VITE_ENABLE_PREMIUM_THEMES` |
-
-> Refer to `frontend/.env.example` for the complete list of frontend environment variables and descriptions.
-
-
-### Run locally
-
-```bash
-# Terminal 1 — backend (Express on :5000)
-cd backend
-npm run dev
-
-# Terminal 2 — frontend (Vite on :5173)
-cd frontend
-npm run dev
-```
-
-Visit **http://localhost:5173** and sign up. Two-factor authentication, social login, and Firebase auth are wired in — registration takes one click.
-
-### Docker (one command)
-
-```bash
-docker compose up --build
-```
-
-The included `Docker-compose.yml` builds the frontend, the backend, and pulls in MongoDB + Redis with health-checks so you can be running in a single command on Linux, macOS, or Windows.
-
----
-
-## 🏁 Getting Started
-
-After installation, the most-used workflows are:
-
-```bash
-# Resume
-cd frontend && npm run dev          # open /dashboard → "New Resume"
-# AI: paste a job description into Enhance → ATS score + rewrite
-
-# Mock interview
-# Open /interview-prep → pick a role → speak or type answers
-
-# Job tracker
-# Open /jobs-hub → "Track" a job → drag across the kanban
-
-# Portfolio
-# Open /portfolio-hub → "New Portfolio" → pick a theme → Deploy
-```
-
-The **Hubs** (`/resume-hub`, `/jobs-hub`, `/portfolio-hub`, `/career-growth-hub`, `/community-hub`) act as mission control — every tool you need for that pillar is one click away.
-
----
-
-## 📝 Pillar 1 — Resume Studio
-
-A complete resume authoring + analysis environment.
-
-| Feature | Description |
-|---|---|
-| **Visual Builder** | Step-wizard with sections for Personal, Education, Experience, Projects, Skills, Certifications, Custom Sections. Drag-and-drop reorder with persistence. |
-| **60+ Templates** | From `ClassicSerif` and `IvyLeague` to `TechMono`, `IDETheme`, `Glassmorphism`, `BrutalistBold`, `NeumorphismSoft`, `PhotoBanner`, `StockholmScandi`, `BerlinTwoCol` — pick the one that matches your industry. |
-| **Text-to-Resume** | Paste a wall of text (LinkedIn export, old bio, anything) and the AI structures it into a resume. See `/text-to-resume`. |
-| **AI Enhancement** | `Enhance.jsx` runs a multi-pass critique: ATS scoring, achievement rewrites with action verbs, quantified-impact suggestions, tone analyzer, consistency checker. |
-| **Resume Tailor** | Paste a job description → AI rewrites your resume to match keywords and rank for that specific role. |
-| **Resume Translator** | Translate to 14 languages while preserving layout and section ordering. |
-| **ATS Scorer** | Section-aware keyword matching with role dictionaries (software engineer, frontend, backend, data scientist, PM, designer, marketing, sales, HR, PM, etc.). Returns 0–100 with actionable feedback. |
-| **Versions & Compare** | Every save snapshots a `ResumeVersion`. Diff two versions side-by-side, restore any prior snapshot. |
-| **Sharing & Comments** | Generate a public link (`/shared/:token`) with optional expiry. Reviewers can leave inline comments without an account. |
-| **Resume ↔ Portfolio Compare** | Detects drift between your resume claims and your live portfolio content. |
-| **PDF Export** | One-click export via `jsPDF` + `html2canvas`, paginated, print-ready. |
-
-**Routes**: `/dashboard`, `/resume-builder`, `/enhance`, `/resume-templates`, `/resume-view/:id`, `/shared/:token`, `/text-to-resume`
-
-**Backend**: `routes/resume.js`, `routes/enhance.js`, `routes/collaboration.js`, `services/atsScorer.js`, `services/resumeJobMatcher.js`, `services/keywordOptimizer.js`, `services/pdfGenerator.js`
-
----
-
-## 🎤 Pillar 2 — Interview Sim
-
-A real interview, not a quiz.
-
-| Feature | Description |
-|---|---|
-| **Avatar Interviewer** | 3D-animated interviewer with idle/active/listening states — built in `AvatarInterviewer.jsx`. |
-| **Audio + Video** | Browser mic capture via `VoiceToTextButton`, video toggle, push-to-talk. Falls back gracefully on devices without a camera. |
-| **Speech-to-Text** | Server-side transcription pipeline (`transcribeAudio`) uploads buffer to storage and returns text — so any candidate can answer verbally. |
-| **Coding Round** | Lazy-loaded **Monaco editor** with syntax highlighting. Code is executed against hidden test cases (`runCodeAgainstTests`) and graded. |
-| **14 Languages** | English, Spanish, French, German, Italian, Portuguese, Dutch, Hindi, Japanese, Korean, Simplified Chinese, Arabic, Russian, Turkish — the AI gives feedback and ideal answers in your chosen language. |
-| **Company-Specific Bank** | A curated `QuestionBank` model ships pre-vetted questions for top companies. AI generation fills the gaps. |
-| **Confidence Meter** | Real-time audio analysis + answer-quality scoring — see how you sound under pressure. |
-| **Body Language Tips** | Browser-side heuristics for posture, eye contact, and pace — actionable prompts mid-interview. |
-| **Replay** | Every interview is saved (`Interview.model.js`) with question, your answer, ideal answer, and AI analysis. Replay any past attempt in `/interview-history` and `/interview-replay/:id`. |
-| **JD-Driven Questions** | Drop in a job description URL or paste text — the parser extracts role / level / skills and generates a tailored loop. |
-| **Share Cards** | Generate a poster-style image of your interview summary to share on LinkedIn. |
-
-**Routes**: `/interview-prep`, `/interview-history`, `/interview-replay/:id`
-
-**Backend**: `routes/interview.js`, `services/interviewService.js`, `services/jdParser.service.js`, `models/Interview.model.js`, `models/QuestionBank.model.js`
-
----
-
-## 💼 Pillar 3 — Jobs & Tracker
-
-Find, organize, follow up — without losing a single application.
-
-| Feature | Description |
-|---|---|
-| **Job Search** | Filters for title, location, salary, remote/on-site, recency. Backed by **RapidAPI JSearch** with a multi-source **Scraper Registry** (LinkedIn, Naukri, AngelList, RemoteOK) as a fallback when the API quota is exhausted. |
-| **Job Tracker** | Drag-and-drop kanban: `Saved → Applied → Interviewing → Offered → Rejected`. Each card tracks company, role, link, notes, salary, status updates, and timeline. |
-| **Mobile Kanban** | Swipe-friendly board for on-the-go status changes (`MobileKanban.jsx`). |
-| **Job Alerts** | Define keyword + location + frequency; a **BullMQ** worker runs the query, dedupes, and emails matching roles. (`jobFetcher.js`, `jobAlertQueue.js`) |
-| **Smart Email Alerts** | Open + click tracking via `emailTracker.js` + `bounceHandler.js`; unsubscribe links; weekly digest summary. |
-| **Company Research** | Paste a company name → AI returns structured intelligence (size, funding, tech stack, culture, recent news) for interview prep. |
-| **JD Summarizer** | One-line "what this job actually wants" + responsibility breakdown + must-have vs. nice-to-have skills. |
-| **Recruiter Outreach** | `/outreach` — give it a company URL and it drafts 3 personalized cold emails using your resume + the company's open roles, then queues them. |
-| **Email Tracking** | Open pixels + click redirects tell you which recruiter actually read your email. |
-| **Offline Tolerant** | Status changes are queued locally (`getQueuedStatusUpdates`) and replayed when you're back online — track a job from the train. |
-
-**Routes**: `/job-search`, `/job-tracker`, `/job-alerts`, `/outreach`
-
-**Backend**: `routes/jobsRoute.js`, `routes/jobTracker.js`, `routes/jobAlerts.js`, `routes/outreach.route.js`, `routes/emailTracking.js`, `services/jobFetcher.js`, `services/companyResearchService.js`, `services/jobSummarizer.js`, `services/scrapers/*`, `services/outreachQueue.js`, `services/weeklyDigestService.js`
-
----
-
-## 🎨 Pillar 4 — Portfolio Studio
-
-A working portfolio site in under a minute — themed, accessible, and live on your domain.
-
-| Feature | Description |
-|---|---|
-| **250+ Themes** | From `Aurora_Sky` to `Cyberpunk`, `Cyber_Security_Red_Team`, `Magazine_Editorial`, `Liquid_Morph`, `Apple_Showcase`, `Spotify_Wrapped`, `Vercel_Deploy`, `IKEA_Assembly_Manual`, `Cyber_Security_Red_Team`, `Reddit_Whistleblower`, `Notion_Workspace`, `VS_Code_Theme`, and many more — including tribute templates inspired by Delba, Dev Jadiya, Clyde D'Souza, and ChiragChrg. |
-| **AI Portfolio Extractor** | Paste your resume → AI extracts structured data (hero, projects, skills, experience, education) → pre-fills the editor. |
-| **AI Content Enhancer** | Section-by-section rewrites to sharpen your "About", tighten project descriptions, and humanize your tone. |
-| **Theme Selector + Color Customizer** | Live preview with custom palette, fonts, and accent colors per section. |
-| **Resume ↔ Portfolio Compare** | Detects drift so your portfolio never contradicts your resume. |
-| **Section Editor** | Reorder, hide, or duplicate hero / projects / about / skills / experience / education sections. |
-| **Social Links Editor** | GitHub, LinkedIn, X, Email, Website — rendered as themed buttons. |
-| **Accessibility Audit** | `accessibilityChecker.js` scores contrast, alt-text, ARIA, heading order, and keyboard traps; surfaces a per-page report. |
-| **Image Optimization** | Sharp-based pipeline that resizes, re-encodes, and lazy-loads every asset. |
-| **One-Click Deploy** | Push to **Netlify**, **Cloudflare Pages**, or **GitHub Pages** with the same UI. Custom slugs, deploy logs, and rollback are all in-app. |
-| **GitHub Sync** | `portfolioGitHubSync.js` watches a connected repo, auto-rebuilds the portfolio on new commits, and pins your best work. |
-| **SEO** | Auto-generated `robots.txt`, `sitemap.xml`, OpenGraph, and Twitter cards. |
-| **Screenshot Service** | `screenshotService.js` uses a shared Puppeteer browser instance to generate social-share previews. |
-| **HTML Sanitization** | Every user-pasted HTML block is sanitized through `htmlSanitizer.js` and threat-scanned before render. |
-| **Portfolio Versions** | Snapshot every publish, roll back in one click. |
-
-**Routes**: `/portfolio-hub`, `/portfolio/:id`, `/deployments`
-
-**Backend**: `routes/portfolio.js`, `services/portfolioTemplateEngine.js`, `services/portfolioGitHubSync.js`, `services/accessibilityChecker.js`, `services/screenshotService.js`, `services/imageOptimizer.js`, `services/deploy/{netlify,cloudflare,githubPages}Deployer.js`, `services/deploy/portfolioHtmlGenerator.js`, `services/ai/portfolioExtractor.js`, `services/ai/portfolioContentEnhancer.js`
-
----
-
-## 🧠 Pillar 5 — AI Career Tools
-
-A bag of focused, deterministic AI utilities that compose with everything else.
-
-| Tool | What it does |
-|---|---|
-| **AI Resume Enhancer** | Multi-pass rewrite of bullet points, with action verbs, quantified impact, and tone control. |
-| **ATS Scorer** | Section-aware keyword density, role-specific dictionaries, 0–100 score with concrete fixes. |
-| **Resume ↔ JD Matcher** | Match score, missing skills, strengths, and tailored recommendation list. |
-| **Skill Gap Analyzer** | Paste a JD → see what you're missing, get a personalized learning plan. |
-| **Career Trajectory Predictor** | 3 career paths × 4 roles × 3 skills each, from your current role + skills. |
-| **Salary Estimator** | Industry + experience + location → market salary band with reasoning. |
-| **Cover Letter Generator** | Upload your resume PDF → AI extracts text → tone picker (formal / conversational / enthusiastic) → PDF-ready letter. |
-| **Cold Email Generator** | 3 variants + 3 subject lines from your resume + a job description; pickable tone. |
-| **LinkedIn Optimizer** | Section-by-section critique of your LinkedIn profile with a ScoreRing UI, copyable rewrites, and impact-tagged recommendations. |
-| **LinkedIn Headline Generator** | Standalone generator powered by `LinkedInHelper`. |
-| **LinkedIn Dashboard** | Importer, engagement analytics, and connection-tracking. |
-| **JD Summarizer** | Compresses any job description into responsibilities / requirements / nice-to-haves / red flags. |
-| **Company Research** | AI-driven company intelligence report. |
-| **Keyword Optimizer** | Finds high-value keywords missing from your resume for a target role. |
-| **Weekly Digest** | Personalized email of new jobs, alerts fired, interview stats, and application status. |
-| **Multi-Provider AI** | `aiProviders.js` routes between OpenAI, Anthropic Claude, Groq, Gemini, OpenRouter. BYOK via `extractAIProvider` middleware. |
-
-**Routes**: `/enhance`, `/skill-gap`, `/cover-letter`, `/email-generator`, `/linkedin-optimizer`, `/linkedin-dashboard`, `/analytics`
-
-**Backend**: `services/atsScorer.js`, `services/resumeJobMatcher.js`, `services/keywordOptimizer.js`, `services/coverLetterService.js`, `services/emailGeneratorService.js`, `services/linkedinOptimizerService.js`, `services/linkedinService.js`, `services/linkedinImporter.js`, `services/careerPathSuggester.js`, `services/salaryEstimator*`, `services/companyResearchService.js`, `services/jobSummarizer.js`, `services/weeklyDigestService.js`, `services/ai/*`, `services/anthropicChatService.js`
-
----
-
-## 🌐 Pillar 6 — Community, Fellowships & GitHub Intel
-
-The non-resume half of Career Pilot: where humans (and code) meet.
-
-### Community
-- **Channels** with member counts and unread badges
-- **Posts feed** with rich text + image uploads, scheduled posts (`postScheduler.js`)
-- **Comments** with like-toggle and threaded replies
-- **Direct Messages** with online presence indicators
-- **Presence service** via Socket.IO (`presenceService.js`) — see who's online right now
-- **Real-time** updates through `socketServiceFirebase.js`
-- **Bull-Board UI** at `/admin/queues` for ops to watch queues live
-
-### Fellowships — paid challenges
-- **Browse Challenges** (`/fellowship/challenges`) across Design, Content, Development, Research, Marketing
-- **Submit Proposals** with budget and timeline
-- **Onboarding & Verification** — email + 6-digit code with rate-limited attempts (`verifyCodeLimiter`)
-- **Chat Rooms** scoped per challenge (`FellowshipChat`)
-- **Razorpay Payouts** — proposals are funded via `paymentService.js` (`routes/payments.js`): create order → user pays → signature verified → funds released
-- **My Challenges / My Proposals** — personal dashboards
-
-### GitHub Intelligence
-- **Repo Analyzer Workspace** (`/repo-analyzer/workspace`) — paste a GitHub URL, get a node-graph of files, dependencies, and complexity. Includes file drawer, chat panel, and **interview mode** where the AI quizzes you on the codebase.
-- **Project Visualizer** (`/project-visualizer`) — architecture canvas, module inspector, language bar, dependency-health panel, risk cards, contributor grid, commit timeline, AI suggestions.
-- **CI/CD Detector** — auto-detects GitHub Actions, Jenkins, CircleCI, Travis, GitLab CI, and reports coverage.
-- **Dependency Analyzer** — surfaces outdated, vulnerable, or unused packages.
-- **GitHub Dashboard** — contribution heatmap, productive hours chart, repo radar, README generator, profile import → resume.
-- **Repo Ingestion** — clones and indexes repos for offline analysis.
-
-**Routes**: `/community`, `/fellowship/*`, `/repo-analyzer/*`, `/project-visualizer/*`, `/github-dashboard`
-
-**Backend**: `routes/community.js`, `routes/fellowships.js`, `routes/payments.js`, `routes/repoAnalyzer.js`, `routes/projectVisualizer.route.js`, `routes/githubImporter.js`, `services/postScheduler.js`, `services/presenceService.js`, `services/socketServiceFirebase.js`, `services/repoScanner.js`, `services/repoIngestionService.js`, `services/dependencyAnalyzer.js`, `services/cicdDetector.js`, `services/githubEnricherService.js`, `services/paymentService.js`, `services/twoFactorService.js`
-
----
-
-## 🔐 Security, Auth & Privacy
-
-| Capability | Implementation |
-|---|---|
-| **Firebase Authentication** | Email/password, Google, GitHub social login. Token verified server-side via `verifyToken` middleware. |
-| **Two-Factor Auth** | TOTP via `speakeasy`, AES-256-GCM-encrypted secrets, QR code setup, 10 single-use backup codes, secure recovery flow (`routes/twoFactor.js`). |
-| **Rate Limiting** | Per-route, per-user limits on AI endpoints (`aiRateLimiter`), fellowship verify codes, and cover-letter generation. |
-| **Role-Based Access** | `adminOnly` middleware protects admin routes; `/api/admin/*` exposes stats, user management, login logs, bug reports. |
-| **GDPR** | `/api/gdpr/*` endpoints for export and deletion. |
-| **Email Bounce Handling** | `bounceHandler.js` unsubscribes and flags invalid addresses. |
-| **HTML Sanitization** | `htmlSanitizer.js` + threat scanner protect portfolio rendering. |
-| **Payments** | Razorpay HMAC signature verification on every callback. |
-| **Security Settings UI** | `/security-settings` — enable/disable 2FA, regenerate backup codes, view active sessions. |
-
----
-
-## 🧩 Architecture at a Glance
-
-```
-career-pilot/
-├── backend/                # Express 4.18 API server
-│   ├── src/
-│   │   ├── routes/         # 30+ route groups (resume, jobs, portfolio, etc.)
-│   │   ├── controllers/    # Request handlers
-│   │   ├── services/       # 50+ business-logic services (AI, jobs, deploy…)
-│   │   ├── models/         # 30+ Mongoose schemas
-│   │   ├── middleware/     # auth, rateLimiter, aiKey, validate, errorHandler
-│   │   ├── schemas/        # Zod request validators
-│   │   ├── config/         # aiProviders, firebase, redis, multer
-│   │   ├── utils/          # htmlSanitizer, diff, sitemapGenerator
-│   │   ├── validators/     # Custom validators
-│   │   └── templates/      # Email + portfolio template sources
-│   ├── tests/              # Jest test suite
-│   ├── Dockerfile
-│   └── .env.example
-│
-├── frontend/               # React 19 + Vite 7 SPA
-│   ├── src/
-│   │   ├── pages/          # 50+ pages grouped by pillar
-│   │   ├── components/     # 200+ components grouped by feature
-│   │   ├── services/       # Typed API clients
-│   │   ├── stores/         # Zustand stores
-│   │   ├── hooks/          # useAuth, useSocket, usePrefetch…
-│   │   ├── constants/      # Languages, statuses, tooltips
-│   │   ├── utils/          # resumeChecker, toneAnalyzer, shareCard…
-│   │   └── data/           # Static data
-│   ├── Dockerfile
-│   └── .env.example
-│
-├── docs/                   # PROJECT_DOCUMENTATION, AI architecture, GDPR, deployment
-├── API_DOCS/               # API documentation index
-├── ARCHITECTURE.md         # System diagrams and deeper flows
-├── DATABASE_SCHEMA.md      # MongoDB schema reference
-├── firebase/               # Firestore rules + indexes
-├── activity/               # Activity tracking
-├── scripts/                # Operational scripts
-├── prometheus.yml          # Prometheus scrape config
-├── docker-compose.yml
-├── Dockerfile
-└── README.md (this file)
-```
-
-**Stack detail:**
-- **Backend** — Node.js 18+, Express 4.18, Mongoose 8, Socket.IO 4, BullMQ, Bull-Board, Redis 7, Firebase Admin, Razorpay, Puppeteer, Sharp, Tesseract.js, Speakeasy, Multer, Zod, Jest
-- **Frontend** — React 19, Vite 7, TailwindCSS 4, Framer Motion, React Router 7, Zustand, React Query, Monaco Editor, Recharts, @hello-pangea/dnd, react-hot-toast, Lucide Icons
-- **Infra** — Firebase (Auth + Firestore + Storage), Redis (queues + rate limit + pub/sub), MongoDB, Prometheus metrics
-
----
-
-## 🌐 Real-time, Queues & Background Work
-
-- **Socket.IO** gateway for live presence, kanban updates, post scheduling, job-alert push, outreach progress, and editor collaboration.
-- **BullMQ workers** for job-alert fetching (`jobAlertQueue.js`), outreach queue (`outreachQueue.js`), email queue, image processing, portfolio build, and digest emails.
-- **Bull-Board UI** at `/admin/queues` for live queue inspection.
-- **Cron-scheduled** weekly digest (`weeklyDigestService.js`), job-alert polling, GitHub repo re-sync.
-- **Circuit breaker** in `jobFetcher.js` to protect upstream APIs.
-
----
-
-## 🛠 CLI vs Web Quick Reference
-
-Career Pilot is primarily a web app, but the most-used flows are mirrored as frontend "Hubs" and individual routes for fast access.
-
-| Workflow | Route | Hub |
-|---|---|---|
-| Build / edit a resume | `/resume-builder` | `/resume-hub` |
-| AI-enhance a resume | `/enhance` | `/resume-hub` |
-| Generate resume from text | `/text-to-resume` | `/resume-hub` |
-| Browse resume templates | `/resume-templates` | `/resume-hub` |
-| View a shared resume | `/shared/:token` | — |
-| Practice a mock interview | `/interview-prep` | `/career-growth-hub` |
-| Review past interviews | `/interview-history`, `/interview-replay/:id` | `/career-growth-hub` |
-| Search jobs | `/job-search` | `/jobs-hub` |
-| Track applications | `/job-tracker` | `/jobs-hub` |
-| Manage job alerts | `/job-alerts` | `/jobs-hub` |
-| Recruiter outreach | `/outreach` | `/jobs-hub` |
-| Generate a cover letter | `/cover-letter` | `/career-growth-hub` |
-| Generate cold emails | `/email-generator` | `/career-growth-hub` |
-| Optimize LinkedIn | `/linkedin-optimizer`, `/linkedin-dashboard` | `/career-growth-hub` |
-| Skill-gap analysis | `/skill-gap` | `/career-growth-hub` |
-| Analytics dashboard | `/analytics` | — |
-| Build a portfolio | `/portfolio-hub` | `/portfolio-hub` |
-| Deploy a portfolio | `/deployments` | `/portfolio-hub` |
-| Community channels | `/community` | `/community-hub` |
-| Fellowship challenges | `/fellowship/challenges` | `/community-hub` |
-| Repo analyzer | `/repo-analyzer/workspace` | — |
-| Project visualizer | `/project-visualizer/dashboard` | — |
-| GitHub dashboard | `/github-dashboard` | — |
-| Security & 2FA | `/security-settings` | — |
-| Admin console | `/admin/*` | — |
-| Live queue board | `/admin/queues` (Bull-Board) | — |
-
----
-
-## 📚 Documentation
-
-All long-form documentation lives in `docs/` and at the repo root:
-
-| File | Contents |
-|---|---|
-| [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md) | Full technical map — frontend/backend, route groups, data models, env vars, local setup, build/test, deployment, security, troubleshooting |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System diagrams and deeper technical flows |
-| [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) | MongoDB schema reference for every collection |
-| [docs/ai-features.md](docs/ai-features.md) | Multi-provider AI architecture, prompt engineering, skill-gap & trajectory logic |
-| [docs/user-guide.md](docs/user-guide.md) | Onboarding walkthrough + FAQ |
-| [docs/environment-setup.md](docs/environment-setup.md) | Step-by-step env configuration |
-| [docs/deployment-setup.md](docs/deployment-setup.md) | Netlify / Cloudflare / VPS / Docker deployment |
-| [docs/creating-portfolio-themes.md](docs/creating-portfolio-themes.md) | How to author a new portfolio theme |
-| [docs/cdn-setup.md](docs/cdn-setup.md) | Cloudinary and CDN configuration |
-| [docs/component-guide.md](docs/component-guide.md) | Frontend component conventions |
-| [docs/portfolio-architecture.md](docs/portfolio-architecture.md) | Deep dive into the portfolio system |
-| [API_DOCS/README.md](API_DOCS/README.md) | API documentation index |
-| [Real_life_usecase.md](Real_life_usecase.md) | End-to-end user journeys |
-| [SECURITY.md](SECURITY.md) | Vulnerability disclosure policy |
-| [CONTRIBUTING.md](CONTRIBUTING.md) / [CONTRIBUTION.md](CONTRIBUTION.md) | Contribution guide |
-| [CICD_DETECTOR_DOCUMENTATION.md](CICD_DETECTOR_DOCUMENTATION.md) | CI/CD detection internals |
-
----
-
-## 🧪 Testing
-
-```bash
-# Backend
-cd backend
-npm test                    # Jest
-npm run test:watch
-
-# Frontend
-cd frontend
-npm test                    # Vitest / React Testing Library
-npm run test:coverage
-```
-
-Tests live in `backend/src/__tests__/`, `backend/src/services/__tests__/`, and `frontend/src/__tests__/`.
-
----
-
-## 🚢 Deployment
-
-Career Pilot is built to deploy on the platform of your choice:
-
-- **Frontend** — `frontend/dist/` is static; works on Netlify, Vercel, Cloudflare Pages, GitHub Pages, Firebase Hosting, or any Nginx + CDN.
-- **Backend** — Node.js process; works on Render, Railway, Fly.io, EC2, GCP Cloud Run, or your own VPS. `Dockerfile` is included.
-- **Queues** — Redis 7 (Upstash, Memorystore, or self-hosted).
-- **Storage** — Firebase Storage (default), Cloudinary optional.
-- **MongoDB** — Atlas recommended; self-hosted works too.
-
-See [docs/deployment-setup.md](docs/deployment-setup.md) and [docs/cdn-setup.md](docs/cdn-setup.md) for full step-by-step instructions.
-
----
-
-## 🔄 Migrating from Other Tools
-
-Coming from another platform? Career Pilot ships importers that turn your existing footprint into Career Pilot data:
-
-| From | What gets imported |
-|---|---|
-| **LinkedIn** | `linkedinImporter.js` — profile, headline, experience, education, skills. Maps straight into a new resume. |
-| **GitHub** | `githubImporter.js` — public repos, languages, contribution stats; populates Portfolio "Projects" and GitHub Dashboard. |
-| **Existing resume PDF** | Drop into Cover Letter generator or Text-to-Resume — AI extracts and structures it. |
-| **Other resume builders** | Import JSON or use the Resume Builder wizard to recreate; AI enhancer will close the quality gap. |
-
-After import, run the **AI Enhancer** and **ATS Scorer** to make sure the resume meets Career Pilot's quality bar.
-
----
-
-## 🛣 Roadmap
-
-- ✅ Multi-provider AI with BYOK
-- ✅ 60+ resume templates, 250+ portfolio themes
-- ✅ Audio + video mock interviews with avatar
-- ✅ Coding round with hidden test execution
-- ✅ BullMQ job-alert queue with email tracking
-- ✅ Razorpay-powered fellowship challenges
-- ✅ Repo analyzer + project visualizer
-- 🔲 Native mobile apps (React Native)
-- 🔲 Public Skills Hub — share + remix community-built prompts
-- 🔲 Recruiter-side portal (companies post challenges, candidates apply)
-- 🔲 Interview pair-programming rooms with live coding
-- 🔲 Pluggable scraper marketplace
-- 🔲 Real-time multi-user resume co-editing (Yjs)
-
----
-
-## 🧠 Project Notes
-
-- The project is actively developed; expect weekly releases.
-- Local-only by default; cloud deploy is opt-in.
-- Firebase is the identity layer — configure a Firebase project before first run.
-- All AI endpoints are rate-limited per user per route.
-- Portfolio HTML is sanitized before serving; you cannot inject scripts.
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from developers of all levels — from **GSSoC** first-timers to senior engineers.
-
-### Quick start for contributors
-```bash
-git clone https://github.com/anurag3407/career-pilot.git
-cd career-pilot
-npm install
-cd backend && npm install && cd ..
-cd frontend && npm install && cd ..
-
-# Create a feature branch
-git checkout -b feature/your-feature
-
-# Make changes, commit, push, open a PR
-git add .
-git commit -m "feat(resume): add export to DOCX"
-git push origin feature/your-feature
-```
-
-### Recommended branch names
-- `feature/<short-description>`
-- `fix/<short-description>`
-- `docs/<short-description>`
-- `ai/<short-description>`
-- `refactor/<short-description>`
-
-### PR checklist
-- [ ] Change is described clearly in PR title and description
-- [ ] Code passes linting and local tests
-- [ ] Environment setup steps documented (if new vars introduced)
-- [ ] Breaking changes called out in the description
-- [ ] Linked to the issue it closes
-
-### Good first issues
-- Documentation improvements for setup or environment variables
-- Fixing UI/UX issues on the dashboard or resume builder
-- Backend bug fixes around authentication and job search
-- Adding a new portfolio theme (see `docs/creating-portfolio-themes.md`)
-- Adding a new resume template
-- Writing tests for an existing service
-- Improving AI prompt quality for a specific workflow
-
-If you are part of GSSoC or a first-time contributor, comment on an issue or open a discussion to request mentorship.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for the full policy.
-
----
-
-## 👥 Maintainers
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/anurag3407">
-          <img src="https://github.com/anurag3407.png" width="100" style="border-radius: 50%;" alt="anurag3407"/><br />
-          <sub><b>anurag3407</b></sub>
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/Mohnish27-dev">
-          <img src="https://github.com/Mohnish27-dev.png" width="100" style="border-radius: 50%;" alt="Mohnish27-dev"/><br />
-          <sub><b>Mohnish27-dev</b></sub>
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/Kaushal00Vaid">
-          <img src="https://github.com/Kaushal00Vaid.png" width="100" style="border-radius: 50%;" alt="Kaushal00Vaid"/><br />
-          <sub><b>Kaushal00Vaid</b></sub>
-        </a>
-      </td>
-    </tr>
-  </table>
-</div>
-
----
-
-## 💬 Community
-
-- 💬 [Discord Community](https://discord.gg/dpDMVywS) — Join our server to chat, ask questions, and share ideas!
-- 🐛 [GitHub Issues](https://github.com/anurag3407/career-pilot/issues)
-- 📚 [Full Documentation](docs/PROJECT_DOCUMENTATION.md)
-- 🌟 Star the repo to follow releases
-
----
-
-## 📄 License
-
-Career Pilot is open-source under the **MIT License** — see [LICENSE](LICENSE).
+上游代码仍按 [MIT](LICENSE) 分发。本分支是在该基线上的本地精简，不是上游作者提供的校园发行版。

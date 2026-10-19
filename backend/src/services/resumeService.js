@@ -1,5 +1,6 @@
 import { getDefaultProvider } from '../config/aiProviders.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { logEvent } from '../utils/diagnostics.js';
 
 /**
  * Analyzes a resume using AI and returns a structured score with feedback
@@ -91,7 +92,7 @@ ${resumeText}`;
 
     return analysisData;
   } catch (error) {
-    console.error('Error analyzing resume:', error);
+    logEvent('resume.analysis_failed');
     
     // If JSON parsing failed, it's likely the AI didn't return valid JSON
     if (error instanceof SyntaxError) {

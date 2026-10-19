@@ -1,0 +1,12 @@
+/* Campus workflows use plain CSS; do not scan dormant Tailwind template sources. */
+:root { --background: #f4efe6; --foreground: #1c1915; }
+*, *::before, *::after { box-sizing: border-box; }
+html { line-height: 1.5; -webkit-text-size-adjust: 100%; }
+body { margin: 0; color: var(--foreground); background: var(--background); font-family: "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; -webkit-font-smoothing: antialiased; }
+button, input, textarea, select { font: inherit; }
+button { text-transform: none; }
+img, video, canvas { display: block; max-width: 100%; }
+svg { vertical-align: middle; }
+h1, h2, h3, h4, p { margin-top: 0; }
+fieldset { min-width: 0; }
+::selection { color: #f4fff9; background: #0f6e56; }

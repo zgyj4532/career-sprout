@@ -94,3 +94,6 @@ lint_output.txt
 # Misc
 *.pdf
 !resume.pdf
+
+# Local phase plan kit. Keep it in the working tree, do not back it up.
+phase1-kit/

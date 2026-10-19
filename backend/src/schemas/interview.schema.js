@@ -22,7 +22,9 @@ export const startInterviewSchema = z.object({
     .string({ required_error: 'experienceLevel is required' })
     .min(1, 'experienceLevel cannot be empty'),
   questionCount: z.number().int().min(2).max(20).optional().default(10),
-  resumeText: z.string().nullish(),
+  resumeText: z.string().max(20000).nullish(),
+  resumeId: z.string().regex(/^[a-fA-F0-9]{24}$/).optional(),
+  jobId: z.string().regex(/^[a-fA-F0-9]{24}$/).optional(),
 
   // v2 additions
   mode: z.enum(['behavioral', 'technical', 'coding', 'mixed']).optional().default('behavioral'),
@@ -49,7 +51,7 @@ export const submitAnswerSchema = z.object({
     .min(1, 'questionId cannot be empty'),
   transcript: z
     .string({ required_error: 'transcript is required' })
-    .min(1, 'transcript cannot be empty'),
+    .trim().min(1, 'transcript cannot be empty').max(20000),
   duration: z.number().min(0, 'duration must be a non-negative number'),
   expressionMetrics: z
     .object({

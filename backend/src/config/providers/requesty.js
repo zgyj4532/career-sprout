@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { aiCallsCounter } from '../../middleware/metrics.js';
+import { logEvent } from '../../utils/diagnostics.js';
 
 // Exponential backoff helper
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -15,7 +16,7 @@ const withRetry = async (fn, maxRetries = 3, baseDelayMs = 1000) => {
         attempt++;
         // Exponential backoff with jitter
         const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
-        console.warn(`Requesty rate limit hit. Retrying in ${Math.round(delay)}ms... (Attempt ${attempt}/${maxRetries - 1})`);
+        logEvent('ai.retry', { provider: 'requesty', attempt, status: error?.status });
         await sleep(delay);
       } else {
         throw error;
@@ -69,7 +70,7 @@ export class RequestyAdapter {
 
       return { text: completion.choices[0]?.message?.content || '', usage };
     } catch (error) {
-      console.error('Requesty generateContent Error:', error);
+      logEvent('ai.failed', { provider: 'requesty', status: error?.status });
 
       // Handle known errors gracefully
       if (error?.status === 401) {
@@ -105,7 +106,7 @@ export class RequestyAdapter {
       const u = completion.usage;
       yield { done: true, usage: u ? { prompt: u.prompt_tokens ?? 0, completion: u.completion_tokens ?? 0, total: u.total_tokens ?? 0 } : undefined };
     } catch (error) {
-      console.error('Requesty generateContentStream Error:', error);
+      logEvent('ai.failed', { provider: 'requesty', status: error?.status });
       if (error?.status === 401) throw new Error('Requesty API Key is invalid.');
       if (error?.status === 402) throw new Error('Requesty account has insufficient credits.');
       if (error?.status === 429) throw new Error('Requesty rate limit exceeded.');

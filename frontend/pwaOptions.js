@@ -2,11 +2,12 @@ export const pwaOptions = {
   registerType: 'autoUpdate',
   includeAssets: ['user.svg', 'pwa-192x192.jpg', 'pwa-512x512.jpg'],
   manifest: {
-    name: 'Career Pilot',
-    short_name: 'CareerPilot',
-    description: 'AI-powered career platform',
-    theme_color: '#000000',
-    background_color: '#000000',
+    name: '职芽 · CareerSprout',
+    short_name: '职芽',
+    description: '从现在开始，让每一次练习长成未来。',
+    lang: 'zh-CN',
+    theme_color: '#0f6e56',
+    background_color: '#f4efe6',
     display: 'standalone',
     icons: [
       {

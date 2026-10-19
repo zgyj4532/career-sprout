@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-16T05:27:06.033Z",
+  "interviewId": "6ad1b57d997c262c8321bcd9",
+  "transcript": "欢迎使用阿里云。",
+  "results": [
+    {
+      "name": "start",
+      "status": "PASS",
+      "detail": "status=200 id=6ad1b57d997c262c8321bcd9 requestId="
+    },
+    {
+      "name": "read",
+      "status": "PASS",
+      "detail": "status=200 message="
+    },
+    {
+      "name": "transcribe",
+      "status": "PASS",
+      "detail": "status=200 code= text=欢迎使用阿里云。 upstream=chatcmpl-8bfb30eb-1780-9bb0-8737-1b7b2cb00ef1"
+    },
+    {
+      "name": "answer",
+      "status": "PASS",
+      "detail": "status=200 code= feedback=你的回答“欢迎使用阿里云”与重复报名问题无关，因此目前无法评估你的问题定位能力及前后端开发知识。表达本身简短、字面含义明确，但没有形成针对题目的分析或解决方案。"
+    },
+    {
+      "name": "saved-answer",
+      "status": "PASS",
+      "detail": "status=200 answers=1"
+    },
+    {
+      "name": "complete",
+      "status": "PASS",
+      "detail": "status=200 score=11 summary=本次行为面试完成了2道题中的1道，评估样本有限，尚不足以全面判断你的能力。当前回答的相关性为0%，清晰度为20%，说明需要优先改善审题和回答结构，让内容直接回应"
+    },
+    {
+      "name": "history",
+      "status": "PASS",
+      "detail": "status=200 listed=true"
+    }
+  ]
+}

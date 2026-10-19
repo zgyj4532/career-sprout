@@ -1,4 +1,6 @@
 import { AIProviderFactory, getDefaultProvider, SUPPORTED_PROVIDERS } from '../config/aiProviders.js';
+import { logEvent } from '../utils/diagnostics.js';
+import { campusError } from '../campus/errors.js';
 
 /**
  * Middleware: extractAIProvider
@@ -47,32 +49,17 @@ export const extractAIProvider = async (req, res, next) => {
     }
 
     // --- Case 2: No custom headers – check for server-side fallback ---
-    const envProvider = process.env.AI_PROVIDER || 'gemini';
-    let envKey = null;
-
-    if (envProvider === 'gemini') envKey = process.env.GEMINI_API_KEY;
-    else if (envProvider === 'openai') envKey = process.env.OPENAI_API_KEY;
-    else if (envProvider === 'groq') envKey = process.env.GROQ_API_KEY;
-    else if (envProvider === 'openrouter') envKey = process.env.OPENROUTER_API_KEY;
-    else if (envProvider === 'requesty') envKey = process.env.REQUESTY_API_KEY;
-
-    if (envKey) {
-      req.aiProvider = AIProviderFactory.create(envProvider, envKey);
+    try {
+      const { createServerProvider } = await import('../config/aiProviders.js');
+      req.aiProvider = createServerProvider();
       req.aiProviderSource = 'server_env';
       return next();
+    } catch (providerError) {
+      if (providerError.statusCode !== 503) throw providerError;
+      return next(campusError(503, 'AI_KEY_MISSING', 'AI 服务尚未配置，请继续手动编辑或联系维护者。'));
     }
-
-    // --- Case 3: No custom headers and no env fallback – reject gracefully ---
-    return res.status(403).json({
-      success: false,
-      error: 'API key is required. Please add your API key in Settings to use this feature.',
-      requireApiKey: true
-    });
   } catch (error) {
-    console.error('AI provider middleware error:', error.message);
-    return res.status(500).json({
-      success: false,
-      error: `Failed to initialize AI provider: ${error.message}`,
-    });
+    logEvent('ai.initialization_failed', { code: 'AI_UNAVAILABLE' });
+    return next(campusError(503, 'AI_UNAVAILABLE', 'AI 服务暂时不可用，请稍后重试。'));
   }
 };
