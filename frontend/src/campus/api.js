@@ -3,12 +3,12 @@ import { safeValidationDetails } from './validation'
 const events = []
 const MAX_EVENTS = 200
 const safeCode = (value) => typeof value === 'string' && /^[A-Za-z0-9_.:-]{1,100}$/.test(value) ? value : undefined
-const routes = /^\/api\/(?:campus(?:\/(?:auth|me|jobs|teachers|teacher|resumes))?|resumes|interview|user-profiles)(?:\/|$)/
+const routes = /^\/api\/(?:campus(?:\/(?:auth|me|jobs|teachers|teacher|resumes|imports))?|resumes|interview|user-profiles)(?:\/|$)/
 
 function routeTemplate(path) {
   const pathname = path.split('?')[0]
   if (!routes.test(pathname)) return '/api/other'
-  const literals = new Set(['api', 'campus', 'auth', 'status', 'register', 'login', 'verify-email', 'resend-verification', 'me', 'jobs', 'teachers', 'teacher', 'resumes', 'interview', 'user-profiles', 'analyze', 'gap', 'polish', 'target', 'targets', 'approve', 'sharing', 'candidates', 'export', 'download', 'start', 'answer', 'complete', 'transcribe', 'history'])
+  const literals = new Set(['api', 'campus', 'auth', 'status', 'register', 'login', 'verify-email', 'resend-verification', 'me', 'jobs', 'teachers', 'teacher', 'resumes', 'imports', 'interview', 'user-profiles', 'analyze', 'gap', 'polish', 'target', 'targets', 'approve', 'sharing', 'candidates', 'export', 'download', 'start', 'answer', 'complete', 'transcribe', 'history', 'continue', 'confirm', 'cache'])
   return pathname.split('/').map((part) => !part || literals.has(part) ? part : ':id').join('/')
 }
 
@@ -59,6 +59,22 @@ export class CampusApiError extends Error {
 
 const RECOVERY_MESSAGES = {
   VALIDATION_FAILED: '有些填写内容需要调整，请按下面的提示修改；输入仍保留。',
+  DISCOVERY_LIMIT: '交流回答最多 4000 字，请缩短后再保存；现有文字仍保留，不会自动截断。',
+  PROFILE_CHANGED: '个人资料已在其他页面更新。当前编辑仍保留，请核对最新资料后再保存。',
+  PROFILE_CONFLICT: '个人资料有新的修改，请核对冲突并明确选择；当前内容仍保留。',
+  PROFILE_CONFIRMATION_PENDING: '资料确认仍在处理中，请先检查保存进度，不要重复添加。',
+  GENERATION_PENDING: '内容正在生成，请检查当前进度，不必重复提交已保存回答。',
+  GENERATION_FAILED: '本次生成未完成，已保存回答仍保留，可以重试生成。',
+  JOB_CHANGED: '岗位已在其他页面更新，当前编辑仍保留；请核对最新版本后再保存。',
+  OPERATION_PENDING: '保存仍在处理中，请检查保存结果，不要重复创建。',
+  SAVE_PENDING: '保存仍在处理中，请检查保存结果，不要重复创建。',
+  SAVE_UNKNOWN: '保存结果尚未确认，编辑仍保留；请先检查这次保存结果。',
+  MATERIAL_DELETED: '这次保存的材料后来已被删除，不会通过重试重新创建；当前编辑仍保留。',
+  CONFIRMATION_PENDING: '资料确认正在处理中，请检查保存进度，不要重复添加。',
+  CONFIRMATION_FROZEN: '这次确认已开始保存，请先恢复原确认结果，不能替换正在保存的内容。',
+  PROFILE_CAPACITY: '个人资料已达到容量上限；当前确认内容仍保留，请先整理已有资料。',
+  OPERATION_CONFLICT: '这次保存操作与已记录的内容不一致。当前编辑仍保留，请先检查保存结果。',
+  SAVE_NOT_FOUND: '尚未找到这次保存的确认结果。',
   ASR_SILENCE: '没有检测到足够的语音，请靠近麦克风重新录音，或改用文字。',
   ASR_EMPTY_AUDIO: '录音为空，请重新录音，或改用文字。',
   ASR_EMPTY: '转写服务未识别到文字，请重新录音，或手动输入回答。',
@@ -69,6 +85,8 @@ const RECOVERY_MESSAGES = {
   ASR_BUSY: '语音服务正在处理另一段录音，请稍后重试转写；你的录音与文字仍保留。',
   ASR_UPSTREAM: '语音服务暂未返回可用结果，请稍后重试转写，或改用文字。',
   PDF_BUSY: '已有 PDF 正在生成，请稍后重试下载；已保存的简历不会丢失。',
+  REVISION_CONFLICT: '简历已在其他页面更新。正文没有写回标题，请刷新后再保存。',
+  RESUME_DELETING: '这份简历正在删除，不能新建关联内容。',
   RESUME_TOO_LONG: '简历超过一页半 A4 的可打印篇幅，请精简后保存并重新导出；内容未被截断。',
   EXPORT_BUSY: '已有批量导出正在进行，请稍后重试下载。',
 }
@@ -99,7 +117,7 @@ export async function campusFetch(path, options = {}) {
     status = response.status
     responseId = safeCode(response.headers.get('X-Request-ID')) || requestId
     const contentType = response.headers.get('content-type') || ''
-    if (response.ok && /application\/(pdf|zip|x-zip-compressed|octet-stream)/i.test(contentType)) {
+    if (response.ok && (options.responseType === 'blob' || /application\/(pdf|zip|x-zip-compressed|octet-stream|vnd\.openxmlformats-officedocument)/i.test(contentType) || /^image\//i.test(contentType))) {
       return await response.blob()
     }
     if (response.status === 204) return null

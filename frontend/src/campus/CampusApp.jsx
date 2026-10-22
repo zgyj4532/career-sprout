@@ -1,18 +1,22 @@
-import { NavLink, Route, Routes, BrowserRouter, useLocation, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, Route, Routes, createBrowserRouter, RouterProvider, useLocation, Link } from 'react-router-dom'
 import './campus.css'
 import Particles from './bits/Particles'
 import { CORE_NAV } from './nav'
 import HomePage from './pages/HomePage'
+import { CampusSessionProvider, SessionNavigation } from './auth'
+import UnsavedWorkProvider from './components/UnsavedWorkProvider'
+
 import ResumePage from './pages/ResumePage'
 import JobsPage from './pages/JobsPage'
 import ProfilePage from './pages/ProfilePage'
 import InterviewPage from './pages/InterviewPage'
+import DiscoveryPage from './pages/DiscoveryPage'
 import InterviewSessionPage from './pages/InterviewSessionPage'
-import { HistoryPage, HistoryDetailPage } from './pages/HistoryPage'
 import AuthPage from './pages/AuthPage'
 import TeacherPage from './pages/TeacherPage'
 import ClosedPage from './pages/ClosedPage'
-import { CampusSessionProvider, SessionNavigation } from './auth'
+import { HistoryPage, HistoryDetailPage } from './pages/HistoryPage'
 
 function devNote() {
   const campus = import.meta.env.VITE_APP_PROFILE === 'campus-local'
@@ -42,6 +46,7 @@ function WorkspaceRoutes() {
     <Routes>
       <Route path="/resume" element={<ResumePage />} />
       <Route path="/interview" element={<InterviewPage />} />
+      <Route path="/discovery" element={<DiscoveryPage />} />
       <Route path="/jd" element={<JobsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/history" element={<HistoryPage />} />
@@ -64,12 +69,12 @@ function CampusShell() {
     return (
       <div className="campus campus-practice">
         <header className="campus-room-bar">
-          <Link to="/interview">退出面试间</Link>
+          <Link to="/interview">退出练习</Link>
         </header>
         <main className="campus-room-main">
-          <Routes>
-            <Route path="/interview/session/:id" element={<InterviewSessionPage />} />
-          </Routes>
+            <Routes>
+              <Route path="/interview/session/:id" element={<InterviewSessionPage />} />
+            </Routes>
         </main>
       </div>
     )
@@ -127,7 +132,7 @@ function CampusShell() {
           <SessionNavigation />
         </header>
         <main className="campus-main">
-          <WorkspaceRoutes />
+            <WorkspaceRoutes />
         </main>
       </div>
     </div>
@@ -135,9 +140,6 @@ function CampusShell() {
 }
 
 export default function CampusApp() {
-  return (
-    <BrowserRouter>
-      <CampusSessionProvider><CampusShell /></CampusSessionProvider>
-    </BrowserRouter>
-  )
+  const [router] = useState(() => createBrowserRouter([{ path: '*', element: <CampusSessionProvider><UnsavedWorkProvider><CampusShell /></UnsavedWorkProvider></CampusSessionProvider> }]))
+  return <RouterProvider router={router} />
 }

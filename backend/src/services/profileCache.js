@@ -28,6 +28,15 @@ export const cacheProfileResponse = (
   res,
   next,
 ) => {
+  // Campus material is private and must be read fresh, including /:uid.
+  // Bypass before cache lookup so cached public-route data cannot skip auth.
+  if (req.campusRequest) return next();
+  // Public and owner payloads are not equivalent. Never serve a cached owner
+  // response (or an older public projection) to another authenticated account.
+  if (req.params.uid && req.params.uid !== req.user.uid) {
+    res.set(CACHE_HEADER, 'BYPASS');
+    return next();
+  }
   if (
     Object.keys(
       req.query ?? {},

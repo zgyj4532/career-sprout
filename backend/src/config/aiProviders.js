@@ -46,9 +46,13 @@ class GeminiAdapter {
     this.providerName = 'gemini';
   }
 
-  async generateContent(prompt) {
+  async generateContent(prompt, options = {}) {
     aiCallsCounter.inc({ provider: this.providerName });
-    const result = await this.model.generateContent(prompt);
+    const request = { contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: {
+      ...(options.maxTokens ? { maxOutputTokens: options.maxTokens } : {}),
+      ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+    } };
+    const result = await this.model.generateContent(request, { ...(options.signal ? { signal: options.signal } : {}), ...(options.timeout ? { timeout: options.timeout } : {}) });
     const response = await result.response;
     const text = response.text();
     const um = response.usageMetadata;
@@ -94,12 +98,21 @@ class OpenAIAdapter {
     this.providerName = 'openai';
   }
 
-  async generateContent(prompt) {
+  async generateContent(prompt, options = {}) {
     aiCallsCounter.inc({ provider: this.providerName });
+    const images = options.imageDataUrls || (options.imageDataUrl ? [options.imageDataUrl] : []);
+    const content = images.length
+      ? [{ type: 'text', text: prompt }, ...images.map((url) => ({ type: 'image_url', image_url: { url } }))]
+      : prompt;
     const completion = await this.client.chat.completions.create({
-      model: this.modelName,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
+      model: options.model || this.modelName,
+      messages: [{ role: 'user', content }],
+      temperature: options.temperature ?? 0.7,
+      ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
+    }, {
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(options.maxRetries !== undefined ? { maxRetries: options.maxRetries } : {}),
+      ...(options.timeout !== undefined ? { timeout: options.timeout } : {}),
     });
     const u = completion.usage;
     const usage = u
@@ -145,13 +158,14 @@ class CustomAdapter {
     this.providerName = 'custom';
   }
 
-  async generateContent(prompt) {
+  async generateContent(prompt, options = {}) {
     aiCallsCounter.inc({ provider: this.providerName });
     const completion = await this.client.chat.completions.create({
       model: this.modelName,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-    });
+      temperature: options.temperature ?? 0.7,
+      ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
+    }, { ...(options.signal ? { signal: options.signal } : {}), ...(options.timeout ? { timeout: options.timeout } : {}), ...(options.maxRetries !== undefined ? { maxRetries: options.maxRetries } : {}) });
     const u = completion.usage;
     const usage = u
       ? {
@@ -198,14 +212,14 @@ class GroqAdapter {
     this.providerName = 'groq';
   }
 
-  async generateContent(prompt) {
+  async generateContent(prompt, options = {}) {
     aiCallsCounter.inc({ provider: this.providerName });
     const completion = await this.client.chat.completions.create({
       model: this.modelName,
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 4096,
-    });
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens || 4096,
+    }, { ...(options.signal ? { signal: options.signal } : {}), ...(options.timeout ? { timeout: options.timeout } : {}), ...(options.maxRetries !== undefined ? { maxRetries: options.maxRetries } : {}) });
     const u = completion.usage;
     const usage = u
       ? {

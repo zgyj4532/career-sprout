@@ -10,9 +10,9 @@ const answerSchema = new mongoose.Schema({
     transcript: { type: String, default: '' },
     duration: { type: Number, default: 0 },
     analysis: {
-        relevance: { type: Number, default: 0 },
-        clarity: { type: Number, default: 0 },
-        confidence: { type: Number, default: 0 },
+        relevance: { type: Number, default: null, min: 0, max: 100 },
+        clarity: { type: Number, default: null, min: 0, max: 100 },
+        confidence: { type: Number, default: null, min: 0, max: 100 },
         feedback: { type: String, default: '' },
         suggestions: [String],
         fillerWords: {
@@ -34,17 +34,18 @@ const answerSchema = new mongoose.Schema({
             totalTests: { type: Number, default: 0 },
             timeComplexity: { type: String, default: '' },
             spaceComplexity: { type: String, default: '' },
-            codeQuality: { type: Number, default: 0 },
+            codeQuality: { type: Number, default: null, min: 0, max: 100 },
             bugs: [String]
         }
     },
     expressionMetrics: {
-        averageConfidence: { type: Number, default: 0 },
-        eyeContactPercentage: { type: Number, default: 0 },
-        headMovementStability: { type: Number, default: 0 },
-        overallExpressionScore: { type: Number, default: 0 }
+        averageConfidence: { type: Number, default: null },
+        eyeContactPercentage: { type: Number, default: null },
+        headMovementStability: { type: Number, default: null },
+        overallExpressionScore: { type: Number, default: null, min: 0, max: 100 }
     },
     submittedAt: { type: Date, default: Date.now },
+    observations: { type: mongoose.Schema.Types.Mixed, default: undefined },
 
     // v2 additions
     code: { type: String, default: '' },
@@ -72,6 +73,15 @@ const codingQuestionSchema = new mongoose.Schema({
 
 const interviewSchema = new mongoose.Schema({
     userId: { type: String, required: true, index: true, alias: 'odId' },
+    purpose: { type: String, enum: ['interview', 'discovery'] },
+    scoreVersion: String,
+    scoring: { type: mongoose.Schema.Types.Mixed, default: undefined },
+    discovery: { type: mongoose.Schema.Types.Mixed, default: undefined },
+    confirmationPending: { type: Boolean, default: false },
+    generation: {
+        kind: String, status: String, token: String, leaseUntil: Date,
+        answerCount: Number, errorCode: String
+    },
     jobRole: { type: String, required: true },
     title: { type: String, default: '', trim: true, maxlength: 40 },
     industry: { type: String, required: true },
@@ -96,14 +106,14 @@ const interviewSchema = new mongoose.Schema({
     status: { type: String, enum: ['in_progress', 'completed', 'abandoned'], default: 'in_progress' },
     totalQuestionCount: { type: Number, default: 10 },
     contextSummary: { type: String, default: '' },
-    overallScore: { type: Number, default: 0 },
+    overallScore: { type: Number, default: null },
     overallFeedback: {
         summary: String,
         topStrengths: [String],
         areasToImprove: [String],
         recommendations: [String],
         expressionAnalysis: {
-            overallConfidence: { type: Number, default: 0 },
+            overallConfidence: { type: Number, default: null },
             feedback: String
         }
     },

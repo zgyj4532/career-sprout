@@ -1,0 +1,7 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Use behavior regressions and actual browser proof, not wiring assertions."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Preserve runtime HTTP validation, absent data semantics and error envelopes."}
+{"file":".trellis/spec/project/campus-phase1/verification.md","reason":"Existing local baseline, authorization and external acceptance boundaries."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/research/runtime-baseline.md","reason":"Do not mistake incomplete preview for completed visual/novice acceptance."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/research/local-flow-audit.md","reason":"Guard import/voice state, completion reconciliation and score provenance."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/research/acceptance-matrix.md","reason":"Proposed observable safety and usability scenarios, with scope-dependent gates and blocked human acceptance."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/design.md","reason":"Verify score provenance, discovery isolation, truthful profile writes, media state and durable recovery against agreed contracts."}

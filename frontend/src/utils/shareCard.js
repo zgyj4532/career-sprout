@@ -1,4 +1,5 @@
 import html2canvas from 'html2canvas';
+import { interviewScore, scoreRule } from './interviewScores';
 
 /**
  * shareCard — utilities for turning the offscreen ShareCard into a PNG and
@@ -68,7 +69,7 @@ export const shareImage = async ({ blob, text, url, fileName = 'careerpilot-scor
  * Build the human-readable tweet / share caption for an interview result.
  */
 export const buildShareCaption = (interview) => {
-  const score = Math.round(interview.overallScore || 0);
+  const score = interviewScore(interview);
   const role = interview.jobRole || 'my next role';
-  return `Just scored ${score}/100 on a CareerPilot AI mock interview for ${role} 🎯 Practice with your own AI — free, open source.`;
+  return score === null ? `Completed an unscored CareerPilot conversation. ${scoreRule(interview)}.` : `Scored ${score}/100 on a CareerPilot interview for ${role}. ${scoreRule(interview)}.`;
 };

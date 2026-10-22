@@ -5,6 +5,7 @@ const FIELD_LABELS = {
   sourceText: '原始材料', jobId: '岗位', draft: '简历草稿', revision: '版本', teacherId: '教师', targetIds: '导出版本', displayName: '姓名', studyStage: '年级',
   education: '教育经历', institution: '学校', degree: '学历', field: '专业', startYear: '开始年份', endYear: '结束年份', skills: '技能标签', bio: '简介', jobRole: '岗位方向', location: '所在地',
   originalText: '简历正文', enhancedText: '润色正文', preferences: '偏好', industry: '行业', questionId: '题目', transcript: '回答文字', duration: '录音时长', mode: '练习类型', language: '语言', questionCount: '题数',
+  importedEducation: '导入教育经历', fullText: '完整原文', brief: '精简稿', useConcise: '采用精简稿', dateText: '时间原文', precision: '日期精度', current: '至今', organization: '机构', sourceBlockId: '来源段落', otherMaterials: '其他原文材料', manualRole: '手填方向', savedJobTitle: '已保存岗位', count: '题数', text: '经历文字',
 }
 const CODES = new Set(['invalid_type', 'invalid_value', 'invalid_format', 'too_small', 'too_big', 'not_multiple_of', 'unrecognized_keys', 'invalid_union', 'invalid_key', 'invalid_element', 'custom'])
 

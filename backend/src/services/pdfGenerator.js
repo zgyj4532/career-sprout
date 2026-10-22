@@ -7,6 +7,13 @@ import { campusError } from '../campus/errors.js';
 import { logEvent, safeErrorMetadata } from '../utils/diagnostics.js';
 
 let active = false;
+export function heavyWorkBusy() { return active; }
+export function tryAcquireHeavyWork() {
+  if (active) return false;
+  active = true;
+  return true;
+}
+export function releaseHeavyWork() { active = false; }
 const allowedTags = new Set(['h1', 'h2', 'h3', 'h4', 'p', 'ul', 'ol', 'li', 'strong', 'b', 'em', 'i', 'br', 'hr', 'blockquote', 'pre', 'code', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span']);
 const escape = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 export function sanitizeResumeHtml(html) {

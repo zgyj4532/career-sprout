@@ -1,4 +1,5 @@
 import { Award, Target } from 'lucide-react';
+import { interviewScore, scoreRule } from '../utils/interviewScores';
 
 /**
  * ShareCard — visually rich card rendered offscreen and captured by
@@ -11,12 +12,12 @@ import { Award, Target } from 'lucide-react';
 const ShareCard = ({ interview }, ref) => {
   if (!interview) return null;
 
-  const score = Math.round(interview.overallScore || 0);
+  const score = interviewScore(interview);
   const date = interview.completedAt
     ? new Date(interview.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : '';
-  const topStrength = interview.overallFeedback?.topStrengths?.[0] || 'Strong communication';
-  const topImprovement = interview.overallFeedback?.areasToImprove?.[0] || 'Sharpen edge cases';
+  const topStrength = interview.overallFeedback?.topStrengths?.[0] || 'Not assessed';
+  const topImprovement = interview.purpose === 'discovery' ? interview.discovery?.advice?.[0] || 'No advice recorded' : interview.overallFeedback?.areasToImprove?.[0] || 'No advice recorded';
 
   return (
     <div
@@ -47,12 +48,13 @@ const ShareCard = ({ interview }, ref) => {
 
         <div className="flex flex-col items-center justify-center w-40 h-40 rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-2xl">
           <Award className="w-12 h-12 text-white/90 mb-1" />
-          <span className="text-5xl font-bold">{score}</span>
+          <span className="text-5xl font-bold">{score ?? '—'}</span>
           <span className="text-xs uppercase tracking-wide text-purple-200 mt-1">
-            out of 100
+            {score === null ? 'Unscored' : 'out of 100'}
           </span>
         </div>
       </div>
+      <p>{scoreRule(interview)}</p>
 
       <div className="relative grid grid-cols-2 gap-6 mt-8">
         <div className="p-6 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 backdrop-blur">

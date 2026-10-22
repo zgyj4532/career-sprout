@@ -1,5 +1,6 @@
 import express from 'express';
-import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+import { ApiError } from '../middleware/errorHandler.js';
+import { accountWriteHandler as asyncHandler } from '../campus/accountWrites.js';
 import { verifyToken } from '../middleware/auth.js';
 import {
   cacheProfileResponse,
@@ -11,6 +12,8 @@ import Interview from '../models/Interview.model.js';
 
 import { validate } from '../middleware/validate.js';
 import { updateProfileSchema, setAvatarSchema } from '../schemas/userProfile.schema.js';
+import { preserveEducation } from '../campus/importSave.js';
+import { writeProfileFields, profileJson, publicProfileJson } from '../campus/profileWrite.js';
 
 const router = express.Router();
 
@@ -31,7 +34,7 @@ router.get('/me', cacheProfileResponse, asyncHandler(async (req, res) => {
     });
     profile = profile.toObject();
   }
-  res.json({ success: true, profile });
+  res.json({ success: true, profile: profileJson(profile) });
 }));
 
 // Update own profile
@@ -50,7 +53,7 @@ router.put('/me', validate(updateProfileSchema), asyncHandler(async (req, res) =
   if (jobRole !== undefined) update.jobRole = String(jobRole).slice(0, 100);
   if (skills !== undefined) {
     update.skills = Array.isArray(skills)
-      ? skills.slice(0, 20).map(s => String(s).trim()).filter(Boolean)
+      ? skills.map(s => String(s).trim()).filter(Boolean)
       : [];
   }
   if (location !== undefined) update.location = String(location).slice(0, 100);
@@ -66,29 +69,18 @@ router.put('/me', validate(updateProfileSchema), asyncHandler(async (req, res) =
   if (gender !== undefined) update.gender = gender;
   if (company !== undefined) update.company = String(company).slice(0, 100);
   if (yearsOfExperience !== undefined) update.yearsOfExperience = yearsOfExperience;
-  if (collegeStudent !== undefined) update.collegeStudent = Boolean(collegeStudent);
+  if (collegeStudent !== undefined) { update.collegeStudent = collegeStudent; update.collegeStudentKnown = collegeStudent !== null; }
   if (studyStage !== undefined) {
     update.studyStage = studyStage;
-    update.collegeStudent = studyStage !== '已毕业';
+    if (studyStage && collegeStudent === undefined) { update.collegeStudent = studyStage !== '已毕业'; update.collegeStudentKnown = true; }
   }
   if (openToWork !== undefined) update.openToWork = Boolean(openToWork);
   if (resumeHeadline !== undefined) update.resumeHeadline = String(resumeHeadline).slice(0, 300);
 
   if (education !== undefined) {
-    update.education = Array.isArray(education)
-      ? education.slice(0, 20).map(e => ({
-        institution: String(e.institution || '').slice(0, 150),
-        degree: String(e.degree || '').slice(0, 100),
-        field: String(e.field || '').slice(0, 100),
-        startYear: typeof e.startYear === 'number' ? e.startYear : undefined,
-        endYear: typeof e.endYear === 'number' ? e.endYear : undefined,
-      })).filter(e => e.institution || e.degree)
-      : [];
-    // Strip undefined keys so Mongoose doesn't store them
-    update.education = update.education.map(e =>
-      Object.fromEntries(Object.entries(e).filter(([, v]) => v !== undefined))
-    );
+    update.education = preserveEducation(education);
   }
+  if (req.body.otherMaterials !== undefined) update.otherMaterials = String(req.body.otherMaterials).slice(0, 20000);
 
   if (languages !== undefined) {
     update.languages = Array.isArray(languages)
@@ -96,14 +88,20 @@ router.put('/me', validate(updateProfileSchema), asyncHandler(async (req, res) =
       : [];
   }
 
-  const profile = await UserProfile.findOneAndUpdate(
-    { uid },
-    { $set: update },
-    { new: true, upsert: true }
-  ).select('+phone +dateOfBirth +gender');
+  const profile = await writeProfileFields(UserProfile, uid, update, req.body.expectedUpdatedAt);
 
-  await invalidateProfileCache(uid);
-  res.json({ success: true, profile });
+  let cachePending = false;
+  try {
+    await invalidateProfileCache(uid);
+  } catch {
+    cachePending = true;
+  }
+  res.json({ success: true, saved: true, cachePending, profile: profileJson(profile) });
+}));
+
+router.post('/me/cache', asyncHandler(async (req, res) => {
+  await invalidateProfileCache(req.user.uid);
+  res.json({ success: true, saved: true, cachePending: false });
 }));
 
 // Set avatar URL (client uploads to Firebase Storage, then persists the URL here)
@@ -139,7 +137,7 @@ router.get('/me/stats', asyncHandler(async (req, res) => {
   const uid = req.user.uid;
   const [resumesCreated, interviewsDone] = await Promise.all([
     Resume.countDocuments({ userId: uid }),
-    Interview.countDocuments({ odId: uid, status: 'completed' }),
+    Interview.countDocuments({ userId: uid, status: 'completed', purpose: { $ne: 'discovery' } }),
   ]);
   res.json({ success: true, stats: { resumesCreated, interviewsDone } });
 }));
@@ -152,9 +150,10 @@ router.get('/me/activity', asyncHandler(async (req, res) => {
 
 // Get public profile by uid
 router.get('/:uid', cacheProfileResponse, asyncHandler(async (req, res) => {
+  if (req.campusRequest && req.params.uid !== req.user.uid) throw new ApiError(403, 'Access denied.');
   const profile = await UserProfile.findOne({ uid: req.params.uid });
   if (!profile) throw new ApiError(404, 'Profile not found');
-  res.json({ success: true, profile });
+  res.json({ success: true, profile: req.params.uid === req.user.uid ? profileJson(profile) : publicProfileJson(profile) });
 }));
 
 // Get public stats by uid
@@ -165,7 +164,7 @@ router.get('/:uid/stats', asyncHandler(async (req, res) => {
   }
   const [resumesCreated, interviewsDone] = await Promise.all([
     Resume.countDocuments({ userId: uid }),
-    Interview.countDocuments({ odId: uid, status: 'completed' }),
+    Interview.countDocuments({ userId: uid, status: 'completed', purpose: { $ne: 'discovery' } }),
   ]);
   res.json({ success: true, stats: { resumesCreated, interviewsDone } });
 }));

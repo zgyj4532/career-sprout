@@ -7,6 +7,10 @@ const userProfileSchema = new mongoose.Schema({
     unique: true,
     index: true,
   },
+  lastImportId: { type: String, default: null },
+  confirmationReceipts: { type: [String], default: [] },
+  collegeStudentKnown: { type: Boolean, default: false },
+  discoveryPrivateFields: { type: [String], default: undefined },
   displayName: {
     type: String,
     default: '',
@@ -100,7 +104,7 @@ const userProfileSchema = new mongoose.Schema({
   },
   collegeStudent: {
     type: Boolean,
-    default: false,
+    default: null,
   },
   studyStage: {
     type: String,
@@ -113,12 +117,22 @@ const userProfileSchema = new mongoose.Schema({
     default: false,
   },
   education: [{
+    id: { type: String, maxlength: 80 },
+    fullText: { type: String, maxlength: 100000 },
     institution: { type: String, trim: true, maxlength: 150 },
     degree: { type: String, trim: true, maxlength: 100 },
     field: { type: String, trim: true, maxlength: 100 },
     startYear: { type: Number, min: 1900, max: 2100 },
     endYear: { type: Number, min: 1900, max: 2100 },
+    dateText: { type: String, trim: true, maxlength: 80, default: '' },
+    precision: { type: String, enum: ['day', 'month', 'year', 'unknown', ''], default: '' },
+    current: { type: Boolean, default: false },
   }],
+  otherMaterials: {
+    type: String,
+    default: '',
+    maxlength: 20000,
+  },
   languages: [{
     type: String,
     trim: true,

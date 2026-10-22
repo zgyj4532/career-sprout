@@ -1,7 +1,8 @@
 import express from 'express';
 import { verifyToken } from '../middleware/auth.js';
 import { aiRateLimiter } from '../middleware/rateLimiter.js';
-import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+import { ApiError } from '../middleware/errorHandler.js';
+import { accountWriteHandler as asyncHandler } from '../campus/accountWrites.js';
 import { paginate, paginatedResponse } from '../middleware/paginate.js';
 import Resume from '../models/Resume.model.js';
 import ResumeVersion from '../models/ResumeVersion.model.js';
@@ -14,14 +15,36 @@ import {
   createResumeVersionSchema,
   updateResumeVersionSchema,
   createAtsHistorySchema,
+  restoreResumeSchema,
+  reorderResumeSchema,
 } from '../schemas/resume.schema.js';
 import { scrapeLinkedInProfile, profileToResumeText } from '../services/linkedinImporter.js';
 import { fetchGitHubProfile, convertGitHubToResumeText } from '../services/githubImporter.js';
 import { getDefaultProvider } from '../config/aiProviders.js';
 import { analyzeResume } from '../services/resumeService.js';
 import { logEvent } from '../utils/diagnostics.js';
+import { campusError } from '../campus/errors.js';
+import { planResumeUpdate } from '../campus/resumeRevision.js';
+import { withResumeAssociation, deleteResumeOwned } from '../campus/resumeDelete.js';
+import { saveMaterial, recoverMaterialSave } from '../campus/materialSave.js';
 
 const router = express.Router();
+
+for (const name of ['resumeId', 'versionId']) router.param(name, (req, res, next, value) => {
+  if (!/^[a-fA-F0-9]{24}$/.test(value)) return next(campusError(400, 'INVALID_ID', '编号格式不正确。'));
+  next();
+});
+
+async function saveResumeBody(resumeId, userId, updates) {
+  return withResumeAssociation(resumeId, userId, 'version', async (current) => {
+    const plan = planResumeUpdate(current, updates);
+    if (plan.error === 'conflict') throw campusError(409, 'REVISION_CONFLICT', '简历已在其他页面更新，请保留当前内容并刷新。');
+    if (plan.error) throw new ApiError(400, 'No valid fields to update');
+    const saved = await Resume.findOneAndUpdate(plan.filter, plan.update, { new: true, runValidators: true }).lean();
+    if (!saved) throw campusError(409, 'REVISION_CONFLICT', '简历已在其他页面更新，请保留当前内容并刷新。');
+    return saved;
+  });
+}
 
 /**
  * @swagger
@@ -33,14 +56,15 @@ const router = express.Router();
  *         description: Success
  */
 
+router.get('/save-operations/:operationId', verifyToken, asyncHandler(async (req, res) => res.json({ success: true, data: await recoverMaterialSave('resume', req.user.uid, req.params.operationId) })));
 // Get all resumes for a user (paginated)
 router.get('/', verifyToken, paginate(), asyncHandler(async (req, res) => {
   const userId = req.user.uid;
   const { page, limit, skip, sort } = req.paginate;
 
-  const total = await Resume.countDocuments({ userId });
+  const total = await Resume.countDocuments({ userId, deleting: { $ne: true } });
 
-  const userResumes = await Resume.find({ userId })
+  const userResumes = await Resume.find({ userId, deleting: { $ne: true } })
     .sort(sort)
     .skip(skip)
     .limit(limit)
@@ -49,6 +73,8 @@ router.get('/', verifyToken, paginate(), asyncHandler(async (req, res) => {
   const resumes = userResumes.map(resume => ({
     id: resume._id.toString(),
     ...resume,
+    revision: resume.revision ?? 1,
+    contentRevision: resume.contentRevision ?? 1,
     _id: undefined
   }));
 
@@ -73,7 +99,7 @@ router.get('/:resumeId', verifyToken, asyncHandler(async (req, res) => {
   const { resumeId } = req.params;
   const userId = req.user.uid;
 
-  const resume = await Resume.findOne({ _id: resumeId, userId }).lean();
+  const resume = await Resume.findOne({ _id: resumeId, userId, deleting: { $ne: true } }).lean();
 
   if (!resume) {
     throw new ApiError(404, 'Resume not found');
@@ -84,6 +110,8 @@ router.get('/:resumeId', verifyToken, asyncHandler(async (req, res) => {
     data: {
       id: resume._id.toString(),
       ...resume,
+      revision: resume.revision ?? 1,
+      contentRevision: resume.contentRevision ?? 1,
       _id: undefined
     }
   });
@@ -107,6 +135,7 @@ router.get('/:resumeId', verifyToken, asyncHandler(async (req, res) => {
 // Create a new resume
 router.post('/', verifyToken, validate(createResumeSchema), asyncHandler(async (req, res) => {
   const userId = req.user.uid;
+  if (req.body.operationId) return res.status(201).json({ success: true, data: await saveMaterial({ kind: 'resume', uid: userId, body: req.body }) });
   const {
     originalText,
     enhancedText,
@@ -131,7 +160,7 @@ router.post('/', verifyToken, validate(createResumeSchema), asyncHandler(async (
   });
 
   try {
-    await ResumeVersion.create({
+    await withResumeAssociation(newResume._id, userId, 'version', () => ResumeVersion.create({
       resumeId: newResume._id,
       userId,
       versionNumber: 1,
@@ -142,9 +171,9 @@ router.post('/', verifyToken, validate(createResumeSchema), asyncHandler(async (
       atsScore: newResume.atsScore !== undefined && newResume.atsScore !== null ? newResume.atsScore : null,
       tags: ['initial-draft'],
       metadata: { source: 'editor' }
-    });
+    }));
   } catch (err) {
-    await Resume.findByIdAndDelete(newResume._id);
+    await deleteResumeOwned(newResume._id, userId);
     throw err;
   }
 
@@ -160,6 +189,8 @@ router.post('/', verifyToken, validate(createResumeSchema), asyncHandler(async (
       preferences: newResume.preferences,
       title: newResume.title,
       pdfUrl: newResume.pdfUrl,
+      revision: newResume.revision,
+      contentRevision: newResume.contentRevision,
       createdAt: newResume.createdAt,
       lastModified: newResume.lastModified
     }
@@ -189,27 +220,9 @@ router.post('/', verifyToken, validate(createResumeSchema), asyncHandler(async (
 router.put('/:resumeId', verifyToken, validate(updateResumeSchema), asyncHandler(async (req, res) => {
   const { resumeId } = req.params;
   const userId = req.user.uid;
+  if (req.body.operationId) return res.json({ success: true, data: await saveMaterial({ kind: 'resume', uid: userId, id: resumeId, body: req.body }) });
   const updates = req.body;
-
-  const allowedUpdates = ['originalText', 'enhancedText', 'jobRole', 'atsScore', 'preferences', 'title', 'pdfUrl', 'sectionOrder', 'customSections'];
-  const updateData = {};
-  for (const key of allowedUpdates) {
-    if (updates[key] !== undefined) updateData[key] = updates[key];
-  }
-
-  if (Object.keys(updateData).length === 0) {
-    throw new ApiError(400, 'No valid fields to update');
-  }
-
-  const updatedResume = await Resume.findOneAndUpdate(
-    { _id: resumeId, userId },
-    { $set: updateData },
-    { new: true, runValidators: true }
-  ).lean();
-
-  if (!updatedResume) {
-    throw new ApiError(404, 'Resume not found');
-  }
+  const updatedResume = await saveResumeBody(resumeId, userId, updates);
 
   logEvent('resume.saved');
   res.json({
@@ -242,24 +255,10 @@ router.put('/:resumeId', verifyToken, validate(updateResumeSchema), asyncHandler
  *         description: Success
  */
 // Reorder sections
-router.put('/:resumeId/reorder', verifyToken, asyncHandler(async (req, res) => {
+router.put('/:resumeId/reorder', verifyToken, validate(reorderResumeSchema), asyncHandler(async (req, res) => {
   const { resumeId } = req.params;
   const userId = req.user.uid;
-  const { sectionOrder } = req.body;
-
-  if (!sectionOrder || !Array.isArray(sectionOrder)) {
-    throw new ApiError(400, 'Invalid section order');
-  }
-
-  const updatedResume = await Resume.findOneAndUpdate(
-    { _id: resumeId, userId },
-    { $set: { sectionOrder } },
-    { new: true, runValidators: true }
-  ).lean();
-
-  if (!updatedResume) {
-    throw new ApiError(404, 'Resume not found');
-  }
+  const updatedResume = await saveResumeBody(resumeId, userId, req.body);
 
   res.json({
     success: true,
@@ -284,21 +283,14 @@ router.put('/:resumeId/reorder', verifyToken, asyncHandler(async (req, res) => {
  *       200:
  *         description: Success
  */
-// Delete a resume
+// Delete a resume. The record is marked deleting before cleanup, and success
+// is returned only after the related rows are gone. A missing resume can
+// still be cleaned when this user already has a tombstone.
 router.delete('/:resumeId', verifyToken, asyncHandler(async (req, res) => {
   const { resumeId } = req.params;
   const userId = req.user.uid;
-
-  const resume = await Resume.findOneAndDelete({ _id: resumeId, userId });
-
-  if (!resume) {
-    throw new ApiError(404, 'Resume not found');
-  }
-
-  res.json({
-    success: true,
-    message: 'Resume deleted successfully'
-  });
+  await deleteResumeOwned(resumeId, userId);
+  res.json({ success: true, message: 'Resume deleted successfully' });
 }));
 
 // Preview LinkedIn profile before importing
@@ -355,7 +347,7 @@ router.post('/import/linkedin', verifyToken, asyncHandler(async (req, res) => {
   });
 
   try {
-    await ResumeVersion.create({
+    await withResumeAssociation(resume._id, userId, 'version', () => ResumeVersion.create({
       resumeId: resume._id,
       userId,
       versionNumber: 1,
@@ -366,9 +358,9 @@ router.post('/import/linkedin', verifyToken, asyncHandler(async (req, res) => {
       atsScore: null,
       tags: ['linkedin-import'],
       metadata: { source: 'linkedin' }
-    });
+    }));
   } catch (err) {
-    await Resume.findByIdAndDelete(resume._id);
+    await deleteResumeOwned(resume._id, userId);
     throw err;
   }
 
@@ -383,6 +375,8 @@ router.post('/import/linkedin', verifyToken, asyncHandler(async (req, res) => {
       preferences: resume.preferences,
       title: resume.title,
       pdfUrl: resume.pdfUrl,
+      revision: resume.revision,
+      contentRevision: resume.contentRevision,
       createdAt: resume.createdAt,
       lastModified: resume.lastModified,
     },
@@ -477,7 +471,7 @@ router.post('/import/github', verifyToken, asyncHandler(async (req, res) => {
   });
 
   try {
-    await ResumeVersion.create({
+    await withResumeAssociation(resume._id, userId, 'version', () => ResumeVersion.create({
       resumeId: resume._id,
       userId,
       versionNumber: 1,
@@ -488,9 +482,9 @@ router.post('/import/github', verifyToken, asyncHandler(async (req, res) => {
       atsScore: null,
       tags: ['github-import'],
       metadata: { source: 'github' }
-    });
+    }));
   } catch (err) {
-    await Resume.findByIdAndDelete(resume._id);
+    await deleteResumeOwned(resume._id, userId);
     throw err;
   }
 
@@ -505,6 +499,8 @@ router.post('/import/github', verifyToken, asyncHandler(async (req, res) => {
       preferences: resume.preferences,
       title: resume.title,
       pdfUrl: resume.pdfUrl,
+      revision: resume.revision,
+      contentRevision: resume.contentRevision,
       createdAt: resume.createdAt,
       lastModified: resume.lastModified,
     },
@@ -553,7 +549,7 @@ ${text}`;
     });
 
     try {
-      await ResumeVersion.create({
+      await withResumeAssociation(resume._id, userId, 'version', () => ResumeVersion.create({
         resumeId: resume._id,
         userId,
         versionNumber: 1,
@@ -564,9 +560,9 @@ ${text}`;
         atsScore: null,
         tags: ['text-import'],
         metadata: { source: 'text-to-resume' }
-      });
+      }));
     } catch (err) {
-      await Resume.findByIdAndDelete(resume._id);
+      await deleteResumeOwned(resume._id, userId);
       throw err;
     }
 
@@ -579,6 +575,8 @@ ${text}`;
         enhancedText: resume.enhancedText,
         jobRole: resume.jobRole,
         title: resume.title,
+        revision: resume.revision,
+        contentRevision: resume.contentRevision,
         createdAt: resume.createdAt
       }
     });
@@ -639,13 +637,10 @@ router.post('/:resumeId/versions', verifyToken, validate(createResumeVersionSche
   const userId = req.user.uid;
   const { title, originalText, enhancedText, jobRole, atsScore, tags, metadata } = req.body;
 
-  const resume = await Resume.findOne({ _id: resumeId, userId });
-  if (!resume) {
-    throw new ApiError(404, 'Resume not found');
-  }
+  const newVersion = await withResumeAssociation(resumeId, userId, 'version', async () => {
 
   let retries = 3;
-  let newVersion;
+  let createdVersion;
   while (retries > 0) {
     // Find latest version number
     const latestVersion = await ResumeVersion.findOne({ resumeId })
@@ -657,7 +652,7 @@ router.post('/:resumeId/versions', verifyToken, validate(createResumeVersionSche
     const defaultTitle = title || `Version ${nextVersionNum} - ${new Date().toLocaleDateString()}`;
 
     try {
-      newVersion = await ResumeVersion.create({
+      createdVersion = await ResumeVersion.create({
         resumeId,
         userId,
         versionNumber: nextVersionNum,
@@ -678,6 +673,8 @@ router.post('/:resumeId/versions', verifyToken, validate(createResumeVersionSche
       throw err;
     }
   }
+  return createdVersion;
+  });
 
   res.status(201).json({
     success: true,
@@ -705,6 +702,7 @@ router.put('/:resumeId/versions/:versionId', verifyToken, validate(updateResumeV
   const userId = req.user.uid;
   const updates = req.body;
 
+  const version = await withResumeAssociation(resumeId, userId, 'version', async () => {
   const version = await ResumeVersion.findOne({ _id: versionId, resumeId, userId });
   if (!version) {
     throw new ApiError(404, 'Resume version not found');
@@ -715,6 +713,8 @@ router.put('/:resumeId/versions/:versionId', verifyToken, validate(updateResumeV
   if (updates.jobRole !== undefined) version.jobRole = updates.jobRole;
 
   await version.save();
+  return version;
+  });
 
   res.json({
     success: true,
@@ -741,6 +741,7 @@ router.delete('/:resumeId/versions/:versionId', verifyToken, asyncHandler(async 
   const { resumeId, versionId } = req.params;
   const userId = req.user.uid;
 
+  await withResumeAssociation(resumeId, userId, 'version', async () => {
   // Enforce a server-side minimum of one version before deletion
   const totalVersions = await ResumeVersion.countDocuments({ resumeId });
   if (totalVersions <= 1) {
@@ -751,6 +752,7 @@ router.delete('/:resumeId/versions/:versionId', verifyToken, asyncHandler(async 
   if (!deletedVersion) {
     throw new ApiError(404, 'Resume version not found');
   }
+  });
 
   res.json({
     success: true,
@@ -759,7 +761,7 @@ router.delete('/:resumeId/versions/:versionId', verifyToken, asyncHandler(async 
 }));
 
 // Restore resume to a specific version
-router.post('/:resumeId/versions/:versionId/restore', verifyToken, asyncHandler(async (req, res) => {
+router.post('/:resumeId/versions/:versionId/restore', verifyToken, validate(restoreResumeSchema), asyncHandler(async (req, res) => {
   const { resumeId, versionId } = req.params;
   const userId = req.user.uid;
 
@@ -768,22 +770,13 @@ router.post('/:resumeId/versions/:versionId/restore', verifyToken, asyncHandler(
     throw new ApiError(404, 'Resume version not found');
   }
 
-  const updatedResume = await Resume.findOneAndUpdate(
-    { _id: resumeId, userId },
-    {
-      $set: {
-        originalText: version.originalText,
-        enhancedText: version.enhancedText,
-        jobRole: version.jobRole,
-        atsScore: version.atsScore
-      }
-    },
-    { new: true }
-  ).lean();
-
-  if (!updatedResume) {
-    throw new ApiError(404, 'Resume not found');
-  }
+  const updatedResume = await saveResumeBody(resumeId, userId, {
+    revision: req.body.revision,
+    originalText: version.originalText,
+    enhancedText: version.enhancedText,
+    jobRole: version.jobRole,
+    atsScore: version.atsScore,
+  });
 
   res.json({
     success: true,
@@ -796,6 +789,8 @@ router.post('/:resumeId/versions/:versionId/restore', verifyToken, asyncHandler(
       jobRole: updatedResume.jobRole,
       atsScore: updatedResume.atsScore,
       title: updatedResume.title,
+      revision: updatedResume.revision,
+      contentRevision: updatedResume.contentRevision,
       createdAt: updatedResume.createdAt,
       lastModified: updatedResume.lastModified
     }
@@ -833,12 +828,7 @@ router.post('/:resumeId/ats-history', verifyToken, validate(createAtsHistorySche
   const userId = req.user.uid;
   const { jobRole, atsScore, scoreBreakdown, missingKeywords, improvementsCount } = req.body;
 
-  const resume = await Resume.findOne({ _id: resumeId, userId });
-  if (!resume) {
-    throw new ApiError(404, 'Resume not found');
-  }
-
-  const newLog = await ResumeAtsHistory.create({
+  const newLog = await withResumeAssociation(resumeId, userId, 'ats', () => ResumeAtsHistory.create({
     resumeId,
     userId,
     jobRole,
@@ -846,7 +836,7 @@ router.post('/:resumeId/ats-history', verifyToken, validate(createAtsHistorySche
     scoreBreakdown: scoreBreakdown || {},
     missingKeywords: missingKeywords || [],
     improvementsCount: improvementsCount || 0
-  });
+  }));
 
   res.status(201).json({
     success: true,

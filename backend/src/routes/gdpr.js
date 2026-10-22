@@ -19,6 +19,9 @@ import ResumeAtsHistory from '../models/ResumeAtsHistory.model.js';
 import ResumeVersion from '../models/ResumeVersion.model.js';
 import TokenUsage from '../models/TokenUsage.model.js';
 import TwoFactor from '../models/TwoFactor.model.js';
+import { CampusDiscoveryConfirmation, CampusSaveOperation, CampusStudent, CampusJob, CampusInterviewPrep } from '../campus/models.js';
+import { withAccountErasure } from '../campus/accountWrites.js';
+import { deleteResumeOwned } from '../campus/resumeDelete.js';
 
 const router = express.Router();
 
@@ -54,13 +57,13 @@ router.get(
       resumeAtsHistory,
       resumeVersions,
       tokenUsage,
-      twoFactor
+      twoFactor, discoveryConfirmations, materialSaveOperations, student, campusJobs, interviewPreparation
     ] = await Promise.all([
       UserProfile.findOne({ uid }).select('+phone +dateOfBirth +gender').lean(),
       Resume.find({ userId: uid }).lean(),
       Portfolio.find({ userId: uid }).lean(),
       TrackedJob.find({ userId: uid }).lean(),
-      Interview.find({ odId: uid }).lean(),
+      Interview.find({ userId: uid }).lean(),
       JobAlert.find({ userId: uid }).lean(),
       NotificationLog.find({ userId: uid }).lean(),
       ProjectAnalysis.find({ userId: uid }).lean(),
@@ -68,7 +71,12 @@ router.get(
       ResumeAtsHistory.find({ userId: uid }).lean(),
       ResumeVersion.find({ userId: uid }).lean(),
       TokenUsage.find({ userId: uid }).lean(),
-      TwoFactor.findOne({ uid }).lean()
+      TwoFactor.findOne({ uid }).lean(),
+      CampusDiscoveryConfirmation.find({ userId: uid }).lean(),
+      CampusSaveOperation.find({ userId: uid }).lean(),
+      CampusStudent.findOne({ uid }).lean(),
+      CampusJob.find({ creatorUid: uid }).lean(),
+      CampusInterviewPrep.findOne({ uid }).lean()
     ]);
 
     res.status(200).json({
@@ -92,7 +100,7 @@ router.get(
         resumeVersions,
 
         tokenUsage,
-        twoFactor
+        twoFactor, discoveryConfirmations, materialSaveOperations, student, campusJobs, interviewPreparation
       }
     });
   })
@@ -103,78 +111,36 @@ router.get(
  * @desc Delete all user data (Right to Erasure)
  * @access Private
  */
-router.delete(
-  '/delete',
-  asyncHandler(async (req, res) => {
-    const uid = req.user.uid;
-
-    if (!uid) {
-      return res.status(400).json({
-        success: false,
-        message: 'User UID not found'
-      });
-    }
-
-    const [
-      profileResult,
-      resumeResult,
-      portfolioResult,
-      trackedJobResult,
-      interviewResult,
-      jobAlertResult,
-      notificationLogResult,
-      projectAnalysisResult,
-      repoAnalysisHistoryResult,
-      resumeAtsHistoryResult,
-      resumeVersionResult,
-      tokenUsageResult,
-      twoFactorResult
-    ] = await Promise.all([
-      UserProfile.deleteOne({ uid }),
-      Resume.deleteMany({ userId: uid }),
-      Portfolio.deleteMany({ userId: uid }),
-      TrackedJob.deleteMany({ userId: uid }),
-      Interview.deleteMany({ odId: uid }),
-
-      JobAlert.deleteMany({ userId: uid }),
-      NotificationLog.deleteMany({ userId: uid }),
-
-      ProjectAnalysis.deleteMany({ userId: uid }),
-      RepoAnalysisHistory.deleteMany({ userId: uid }),
-
-      ResumeAtsHistory.deleteMany({ userId: uid }),
-      ResumeVersion.deleteMany({ userId: uid }),
-
-      TokenUsage.deleteMany({ userId: uid }),
-      TwoFactor.deleteOne({ uid })
-    ]);
-
-    await invalidateProfileCache(uid);
-
-    res.status(200).json({
-      success: true,
-      message: 'All user data deleted successfully',
-      deleted: {
-        profile: profileResult.deletedCount || 0,
-        resumes: resumeResult.deletedCount || 0,
-        portfolios: portfolioResult.deletedCount || 0,
-        trackedJobs: trackedJobResult.deletedCount || 0,
-        interviews: interviewResult.deletedCount || 0,
-
-        jobAlerts: jobAlertResult.deletedCount || 0,
-        notificationLogs: notificationLogResult.deletedCount || 0,
-
-        projectAnalyses: projectAnalysisResult.deletedCount || 0,
-        repoAnalysisHistory: repoAnalysisHistoryResult.deletedCount || 0,
-
-        resumeAtsHistory: resumeAtsHistoryResult.deletedCount || 0,
-        resumeVersions: resumeVersionResult.deletedCount || 0,
-
-        tokenUsage: tokenUsageResult.deletedCount || 0,
-        twoFactor: twoFactorResult.deletedCount || 0
-      }
+export function eraseAccountData(uid) {
+  return withAccountErasure(uid, async () => {
+    const resumes = await Resume.find({ userId: uid }).select('_id').lean();
+    for (const resume of resumes) await deleteResumeOwned(resume._id, uid);
+    // Old operation IDs remain cancelled without retaining text/snapshots.
+    // New authenticated requests may re-onboard after this erasure completes.
+    const saveOperations = await CampusSaveOperation.updateMany({ userId: uid }, {
+      $set: { status: 'cancelled' }, $unset: { frozen: '', result: '', leaseToken: '', leaseUntil: '' },
     });
-  })
-);
+    const collections = [
+      ['profile', UserProfile, { uid }], ['portfolios', Portfolio, { userId: uid }],
+      ['trackedJobs', TrackedJob, { userId: uid }], ['interviews', Interview, { userId: uid }],
+      ['jobAlerts', JobAlert, { userId: uid }], ['notificationLogs', NotificationLog, { userId: uid }],
+      ['projectAnalyses', ProjectAnalysis, { userId: uid }], ['repoAnalysisHistory', RepoAnalysisHistory, { userId: uid }],
+      ['resumeAtsHistory', ResumeAtsHistory, { userId: uid }], ['resumeVersions', ResumeVersion, { userId: uid }],
+      ['tokenUsage', TokenUsage, { userId: uid }], ['twoFactor', TwoFactor, { uid }],
+      ['discoveryConfirmations', CampusDiscoveryConfirmation, { userId: uid }],
+      ['student', CampusStudent, { uid }], ['campusJobs', CampusJob, { creatorUid: uid }],
+      ['interviewPreparation', CampusInterviewPrep, { uid }],
+    ];
+    const deleted = { resumes: resumes.length, materialSaveOperations: saveOperations.modifiedCount };
+    for (const [name, model, filter] of collections) deleted[name] = (await model.deleteMany(filter)).deletedCount;
+    await invalidateProfileCache(uid);
+    return deleted;
+  });
+}
+
+router.delete('/delete', asyncHandler(async (req, res) => {
+  const deleted = await eraseAccountData(req.user.uid);
+  res.status(200).json({ success: true, message: 'All user data deleted successfully', deleted });
+}));
 
 export default router;

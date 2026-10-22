@@ -5,6 +5,7 @@ import { studentSchema, availabilitySchema, requirementsSchema } from '../schema
 import { sanitizeResumeHtml, assertPdfLayout } from '../../services/pdfGenerator.js';
 import { safeMetadata } from '../../utils/diagnostics.js';
 import { requireTeacher } from '../../middleware/auth.js';
+import { assertPolishGrounding } from '../ai.js';
 
 test('time coverage requires the complete interval and days, absence remains unknown', () => {
   const required = { startDate: '2026-10-01', endDate: '2026-12-31', daysPerWeek: 3 };
@@ -49,4 +50,27 @@ test('teacher allowlist never elevates unverified or local identities', () => {
       let error; requireTeacher(req, {}, (value) => { error = value; }); assert.equal(error.statusCode, 403);
     }
   } finally { if (previous === undefined) delete process.env.CAMPUS_TEACHER_UIDS; else process.env.CAMPUS_TEACHER_UIDS = previous; }
+});
+
+test('polish rejects strengthened participation, skill claims and dropped negations without new numbers', () => {
+  for (const [source, draft] of [
+    ['参与校园网站开发', '负责校园网站开发'],
+    ['协助整理课程资料', '主导整理课程资料'],
+    ['了解 SQL', '精通 SQL'],
+    ['熟悉 Python', '精通 Python'],
+    ['没有独立完成上线', '独立完成上线'],
+    ['未负责部署', '负责部署'],
+    ['不是项目负责人', '项目负责人'],
+    ['不能独立完成部署', '独立完成部署'],
+    ['不熟悉 SQL', '熟悉 SQL'],
+    ['服务 30 名同学', '服务 100 名同学'],
+  ]) assert.throws(() => assertPolishGrounding(source, draft), { code: 'AI_UNGROUNDED', statusCode: 502 });
+  assert.doesNotThrow(() => assertPolishGrounding('参与校园网站开发，服务 30 名同学；没有独立负责上线。', '## 课程项目\n参与校园网站开发，服务 30 名同学。没有独立负责上线。'));
+  assert.doesNotThrow(() => assertPolishGrounding('负责课程项目，熟悉 SQL。', '熟悉 SQL；负责课程项目。'));
+});
+
+test('observed synthetic polish omission is rejected while the qualified suggestion is accepted', () => {
+  const source = '参与校园资料整理项目，使用Excel整理30条课程记录，没有担任负责人。';
+  assert.throws(() => assertPolishGrounding(source, '## 项目经历\n\n### 校园资料整理项目\n- 参与校园资料整理，使用 Excel 整理 30 条课程记录。'), { code: 'AI_UNGROUNDED' });
+  assert.doesNotThrow(() => assertPolishGrounding(source, '- 参与校园资料整理项目，使用Excel整理30条课程记录，没有担任负责人。'));
 });

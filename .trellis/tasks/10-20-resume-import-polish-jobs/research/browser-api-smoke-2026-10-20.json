@@ -1,0 +1,64 @@
+{
+  "scope": "isolated synthetic UID/database; not formal accounts/human usability",
+  "date": "2026-10-20",
+  "observed": {
+    "profileInitialNoCrash": true,
+    "failedOriginalRetained": true,
+    "resumeContinueAfterRestartWithoutReupload": true,
+    "resumeConfirmSaved": true,
+    "confirmRetryResumeCount": 1,
+    "ordinaryProfileSavePreservesDatesAndFullText": true,
+    "unknownSkillLevel": null,
+    "renameStatus": 200,
+    "pureRenameContentRevision": 1,
+    "staleBodyStatus": 409,
+    "restoreAfterManualChanges": 409,
+    "afterRejectedRestoreStatus": "saved",
+    "mobile390": {
+      "scrollWidth": 390,
+      "viewport": 390,
+      "saveBottom": 652.484375,
+      "navigationTop": 773,
+      "saveUnobscured": true
+    },
+    "desktop1440": {
+      "scrollWidth": 1440,
+      "viewport": 1440
+    },
+    "realScreenshotTwoCities": {
+      "status": 201,
+      "candidates": 2,
+      "HangzhouDays": 3,
+      "ShanghaiDays": 4,
+      "skills": [
+        "SQL",
+        "Python"
+      ]
+    },
+    "sourceImagesRecovered": 2,
+    "conflictingCandidateRequiresChoice": true,
+    "screenshotSavedPrivate": true,
+    "preparationReturn": {
+      "route": "/interview",
+      "jobRole": "软件测试实习生",
+      "manualRolePreserved": true,
+      "questionCount": 6,
+      "textPreserved": true
+    },
+    "cancelReturnsPrep": true,
+    "deleteOtherResumePreservesUnsavedBuffer": true
+  },
+  "failuresFixedDuringSmoke": [
+    "Mongoose hydrated blocks caused DataCloneError25; corrected plain boundary and continued existing original",
+    "Duplicated rendered education facts observed; renderer fix separately tested, previously saved text intentionally not overwritten"
+  ],
+  "notProof": [
+    "human novice trials",
+    "physical microphone/mobile",
+    "formal Clerk multi-account login"
+  ],
+  "screenshots": [
+    "mobile save above navigation observed inline",
+    "desktop editor observed inline; showed duplication subsequently corrected"
+  ]
+}

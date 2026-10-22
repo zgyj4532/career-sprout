@@ -44,7 +44,7 @@ test('owner-scoped jobs, exact target revisions, consent revocation and source c
   const availability = { startDate: '2026-10-01', endDate: '2026-12-31', daysPerWeek: 3 };
   const job = await CampusJob.create({ creatorUid: owner, authorKind: 'student', company: 'Fixture', title: 'Fixture', description: 'SQL', status: 'published', availability });
   const source = await Resume.create({ userId: owner, originalText: '确认的课程经历' });
-  const target = await CampusTarget.create({ studentId: owner, sourceResumeId: source._id, sourceRevision: source.lastModified, jobId: job._id, jobRevision: job.updatedAt, title: 'Fixture', draft: '确认的课程经历' });
+  const target = await CampusTarget.create({ studentId: owner, sourceResumeId: source._id, sourceRevision: source.contentRevision, jobId: job._id, jobRevision: job.updatedAt, title: 'Fixture', draft: '确认的课程经历' });
   await CampusStudent.create({ uid: owner, availability });
   await CampusGrant.create({ studentId: owner, teacherId: 'user_teacher' });
   assert.equal(await authorizedExportTarget(target._id, job, 'user_teacher'), null);
@@ -72,6 +72,8 @@ test('owner-scoped jobs, exact target revisions, consent revocation and source c
   assert.equal(await authorizedExportTarget(target._id, changedJob, 'user_teacher'), null);
   await CampusJob.updateOne({ _id: job._id }, { $set: { updatedAt: job.updatedAt } }, { timestamps: false });
   await Resume.updateOne({ _id: source._id }, { $set: { lastModified: new Date(source.lastModified.getTime() + 1) } }, { timestamps: false });
+  assert.notEqual((await call(`/me/targets/${target._id}/approve`, 'POST', { revision: 2 })).body.code, 'SOURCE_CHANGED');
+  await Resume.updateOne({ _id: source._id }, { $inc: { contentRevision: 1, revision: 1 } });
   assert.equal((await call(`/me/targets/${target._id}/approve`, 'POST', { revision: 2 })).body.code, 'SOURCE_CHANGED');
   assert.equal((await call('/me/targets')).body.data[0].approved, false);
   assert.equal(await authorizedExportTarget(target._id, job, 'user_teacher'), null);
@@ -86,4 +88,17 @@ test('atomic answer predicate accepts only one duplicate and never closed sessio
   assert.equal((await Interview.findById(session._id)).answers.length, 1);
   await Interview.updateOne({ _id: session._id }, { $set: { status: 'completed' } });
   await assert.rejects(() => persistInterviewAnswer({ id: session._id, userId: owner, questionId: 'q2', answerCount: 1, update: { $push: { answers: { questionId: 'q2', question: '其他经历？', transcript: '确认内容' } } } }), { code: 'ANSWER_ALREADY_SUBMITTED' });
+});
+
+test('teacher cannot export a deleting source even while an approved target remains', async () => {
+  const studentId = 'deleting-source-student';
+  const availability = { startDate: '2026-10-01', endDate: '2026-12-31', daysPerWeek: 3 };
+  const job = await CampusJob.create({ creatorUid: studentId, authorKind: 'student', title: 'Fixture', company: 'Fixture', description: 'SQL', status: 'published', availability });
+  const source = await Resume.create({ userId: studentId, originalText: 'Confirmed material' });
+  const target = await CampusTarget.create({ studentId, sourceResumeId: source._id, sourceRevision: 1, jobId: job._id, jobRevision: job.updatedAt, title: 'Fixture', draft: 'Confirmed material', approvedRevision: 1 });
+  await CampusStudent.create({ uid: studentId, availability });
+  await CampusGrant.create({ studentId, teacherId: 'user_teacher' });
+  assert.ok(await authorizedExportTarget(target.id, job, 'user_teacher'));
+  await Resume.updateOne({ _id: source._id }, { $set: { deleting: true } });
+  assert.equal(await authorizedExportTarget(target.id, job, 'user_teacher'), null);
 });

@@ -1,0 +1,49 @@
+{
+  "scope": "isolated synthetic account/database, actual configured provider and browser; not human/device acceptance",
+  "date": "2026-10-21",
+  "discovery": {
+    "realAdaptiveQuestionPersisted": true,
+    "realSummaryCandidateKinds": ["collegeStudent", "major", "interest", "experience"],
+    "score": null,
+    "confirmationReadDoesNotWrite": true,
+    "editedInterestSaved": true,
+    "repeatedConfirmationNoDuplicate": true,
+    "completedReplayReturnsExisting": true,
+    "ordinaryProfileSavePreservesExplicitNonstudent": true,
+    "ordinaryProfileSavePreservesMajorAndIdeaSource": true,
+    "emptyConversationBrowserExitNoFabricatedSummary": true
+  },
+  "formalInterview": {
+    "actualModelQuestionsAndFeedback": true,
+    "browserAnswerEditorCount": 1,
+    "savedAnswers": 2,
+    "lastAnswerTransitionsToReport": true,
+    "scoreVersion": "available-v1",
+    "overallScore": 75,
+    "expression": {"score": null, "observed": 0, "answered": 2, "weight": 0.2, "effectiveWeight": 0, "status": "unavailable"},
+    "completeReplayStatus": 200,
+    "replayScoringUnchanged": true
+  },
+  "saveContinue": {
+    "resumeCreateReplaySameId": true,
+    "browserEditedResumeSavedThenSelectedInPreparation": true,
+    "browserPrivateJobSavedThenReturned": true,
+    "jobStatus": "draft",
+    "preparationQuestionCountPreserved": 2,
+    "preparationResumePreserved": true
+  },
+  "surface": {
+    "desktopWidth": 1440,
+    "narrowWidth": 390,
+    "narrowReportScrollWidth": 390,
+    "sameReportExpandedDefaultHeightBeforeRefinement": 2726,
+    "sameReportDefaultHeightAfterRefinement": 1020,
+    "remainingAdviceAccessibleOnExpansion": true,
+    "focusedSummaryTop": 627.71875,
+    "focusedSummaryBottom": 671.71875,
+    "narrowViewportHeight": 844,
+    "emptyImportHistoryClosed": true,
+    "originalPreimplementationScreenshotBaseline": false
+  },
+  "limits": ["Original before/after baseline unavailable; report heights compare two in-session rendering revisions of the same synthetic model data", "Native dialog automation acceptance was inconclusive; declined back retained dirty text, later explicit save enabled navigation", "No human novice trials or physical mobile acceptance", "No claim that every model output is semantically complete"]
+}

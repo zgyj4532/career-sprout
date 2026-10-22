@@ -1,0 +1,71 @@
+# Backend workflow implementation
+
+## Boundary
+
+Implement approved design sections 2/3/5 and backend recovery from 4/6 in the existing owned Interview, UserProfile, CampusStudent, Resume and CampusJob paths. Add focused discovery generation, score aggregation, session lease, confirmation and material-save modules rather than a second conversation stack. Reuse configured AI providers, owner checks, field comparisons, deterministic IDs and existing resume association locks. Preserve all existing dirty source and import behavior. No UI edits, new provider, automatic resume creation from conversation, teacher grants, public publishing, historical score migration, commits or pushes.
+
+Behavior gaps: the existing interview requires material/role and scores every answer, completion is not replay-safe, profiles lack explicit unknown identity/idea state, and creates cannot reconcile a lost acknowledgement. New records retain purpose/score provenance; legacy records retain their stored policy. Profile confirmation writes only explicitly reviewed candidates, with atomic target receipts and expected-field comparisons; ordinary/import writers remain protected by shared comparison contracts.
+
+## Verification
+
+NOT_RUN by assignment: no lint, tests, builds, formatters or smoke during implementation. Parent owns one integrated pass, actual configured-model evidence and browser/API fault proof. Physical mobile and novice-student acceptance remain separate ICP-blocked release gates.
+
+## Delivered APIs and models
+
+- `POST /api/interview/discovery/start {questionCount?:2..20,language?:string}`: zero-material start, neutral invitation; returns `data.interviewId,purpose,questions,totalQuestionCount,mode,language` within the existing session envelope.
+- Discovery `POST /:id/answer {questionId,transcript,duration}` saves accepted text without model/scoring. `POST /:id/continue {}` performs one bounded configured-provider call and stores the next question before response. GET canonical session reconciles answer/next-question response loss. Per-answer 4,000 and session 40,000 character bounds; maximum 20 turns.
+- `POST /:id/complete {}`: renewable session lease, conditional completion, existing result on replay, explicit failed/expired retry. Discovery empty exit makes no model call. Canonical `generation` exposes kind/status/leaseUntil/errorCode but never the internal lease token.
+- `GET /:id/profile-confirmation`: `status,candidates,expected:{collegeStudent:null|boolean,major:string},frozen,steps,cachePending,result`. `POST` body `{candidates:[{id,value,state?}],expected,resolutions?:{collegeStudent:'keep'|'replace',major:'keep'|'replace'}}`. Model source claims are validated separately from edited user-confirmed values. Viewing/skipping writes nothing.
+- Confirmation is a distinct owner/session ledger, not an invented upload. Atomic target receipts close the crash-between-target-and-ledger gap, including subsequent ordinary edits. Fresh merges plus expected-field/array CAS preserve concurrent changes. Partial retry only processes unfinished targets; frozen candidates stay unchanged, fresh conflict choices remain possible. Confirmation cannot delete its source session while partially saved. No resume or permission side effects.
+- New `available-v1` formal score contract: `scoring={version,mode,basis,answeredCount,dimensions,overallScore,comparisonKey}`; dimension fields `score,observed,answered,weight,effectiveWeight,status`. Null is unavailable, 0 is genuine. Default missing observation fields are null. New answer scores are finite/bounded; text confidence is wording only. Campus expression input is ignored. Discovery excluded from analytics and profile interview counts. Versionless legacy completion keeps original formula and history is never rewritten.
+- Resume POST/PUT and campus job POST/PATCH accept body `operationId`, not an HTTP header. Recovery GET `/api/resumes/save-operations/:operationId` and `/api/campus/jobs/save-operations/:operationId` returns the original acknowledged resource/version. Resume update uses existing `revision`; job update uses `expectedUpdatedAt`. Payload-bound durable operation/target receipts prevent duplicate creation or repeat version increments. Pre-commit validation/conflict releases the unsaved ledger. Existing tombstones remain authoritative.
+- Profile ordinary PUT accepts per-target `expectedUpdatedAt`; campus/me returns student.updatedAt and canonical profile.updatedAt. Discovery-confirmed targets reject blind writers. Import comparison includes receipts. Nullable collegeStudent plus collegeStudentKnown separates unknown legacy defaults from explicit false. Experience state/source IDs roundtrip; ideas excluded from resume achievement projection; in-progress material labelled unfinished. Matching remains based exclusively on explicit skill assessments, which discovery never creates.
+- Existing configured provider adapters now honor bounded timeout/cancellation/retry options for these operations; no provider or model migration. GDPR export/delete includes the two new ledgers, and Interview deletion uses canonical userId.
+
+## Files changed
+
+New focused modules: `backend/src/services/{discoveryService,interviewScoring,interviewWorkflow}.js`, `backend/src/campus/{discoveryConfirmation,materialSave,profileWrite}.js`.
+
+Existing integration: `backend/src/models/{Interview,UserProfile,Resume}.model.js`; `backend/src/campus/{models,schemas,growth,confirmLedger,importSave}.js`; `backend/src/routes/{interview,resume,userProfile,gdpr}.js`; `backend/src/schemas/{interview,resume,userProfile}.schema.js`; `backend/src/services/{interviewService,interviewAnswers}.js`; `backend/src/config/aiProviders.js`, `backend/src/config/providers/{openrouter,requesty}.js`; `backend/package.json`.
+
+Behavior regressions: new `backend/src/campus/__tests__/noviceWorkflow.test.js` and `noviceRecovery.test.js`; extended `campusIsolation.test.js` for owner denial across discovery actions and zero-answer HTTP replay. Both new suites are included in test:campus. Cases exercise real Mongo persistence with controlled provider/failure branches, not claims of actual AI validation. Tests isolate cache environment and close owned resources.
+
+Permanent documentation: appended backend contracts to `.trellis/spec/project/campus-phase1/verification.md`; this task report records implementation and unexercised verification.
+
+## Parent integrated checks
+
+1. `npm run test:campus --prefix backend` (includes both new suites).
+2. From backend, `node --test src/schemas/__tests__/schemas.test.js src/schemas/__tests__/interview-extended.test.js src/services/__tests__/interview-coding.test.js` plus scoped lint of changed active files; provider adapter contract tests if present.
+3. Actual isolated configured-model proof: discovery start -> save nonstudent/interest/idea answer -> continue -> end -> GET confirmation -> edit value -> explicit confirm -> replay/refresh -> ordinary profile save with acknowledged updatedAt. Separately verify skipped confirmation leaves profile untouched and no-answer completion calls no model.
+4. Real HTTP response loss after accepted answer, persisted next question/completion, target receipt and save operation; partial confirmation/concurrent edits and wrong owner; new formal answer without expression metrics and completed duplicate request. Distinguish controlled failure evidence from model calls.
+
+## Verification status and limits
+
+No tests, lint, build, formatter, local server, or real AI calls were run by this implementation agent. All verification above is pending parent integration. Model extraction intentionally omits unsupported/ambiguous facts instead of inventing fallbacks; quoted summaries retain user wording. Provider execution that ends before result persistence can require a deliberate retry after lease expiry; completed/persisted results never trigger another model call. Physical/mobile novice acceptance remains independently blocked by deployment/ICP and is not claimed.
+
+## Review corrections (security and correctness)
+
+All findings in `review-backend-security.md` and `review-backend-correctness.md` were accepted from source evidence. Corrections add `campus/accountWrites.js`, `CampusAccountWriteState`, and `noviceSafety.test.js`; extend resumeDelete and the existing HTTP isolation regression. No check was run by this agent.
+
+- GDPR export/erasure includes canonical CampusStudent and the campus jobs/preparation written through these flows. Erasure drains admitted account writes, closes admission with durable deleting/epoch state, redacts operation text snapshots, then reopens only for genuinely fresh requests. Interrupted erasure remains retryable through DELETE. This does not disable a valid authenticated account permanently.
+- Normal resume deletion redacts save-operation snapshots and keeps cancelled operation IDs. Create/retry, initial version and final acknowledgement now share deletion's resource lock, with an in-lock tombstone recheck. Missing/cancelled completion ledger cannot report saved success.
+- Active confirmation admission lasts through target mutation regardless lease expiry. Keep-existing decisions record atomic target receipts, so stopped-process recovery and future replay cannot apply a superseded replacement. The implementation explicitly retains the existing single-writer server-process boundary; it does not claim multi-process transactions.
+- Expired generation is atomically cancelled (old token unset) before answer save, continue or deletion, so process death does not permanently strand an unanswered question.
+- Grounding now excludes quoted/other-person identity/major and negated completed claims, preserving ambiguous content in original transcript plus safe uncertainty notices. Ordinary self-statements and direct contextual answers are supported; no invented facts are used as fallback.
+- Legacy explicit true remains known, while legacy default false and explicit null remain unknown. Pre-first-write capacity/validation conflicts release the confirmation ledger for editing. Gemini forwards output-token/temperature controls; available-v1 formal summaries honor the selected language.
+
+Parent follow-up verification should run `noviceSafety.test.js`, `noviceWorkflow.test.js`, `noviceRecovery.test.js`, `campusIsolation.test.js`, and `resumeSafety.test.js` after integration. Parent reported the initial pre-correction campus suite passed103/103; this report does not claim that evidence verifies these later fixes.
+
+Round-two grounding corrections: source excerpts are expanded by the server to the complete supporting sentence from the accepted answer (ambiguous repeated fragments retain the full answer), before identity polarity, subject, or achievement-state checks. Summaries/advice citations also retain that complete support. Explicit plans/not-started language takes precedence over “正在计划”, while actual work with incomplete results remains in progress. Regression helper now accepts independent transcript/excerpt values and covers all three reported short-excerpt/planning cases. No checks run.
+
+Round-two privacy correction: confirmation now atomically marks identity/education paths in server-owned `UserProfile.discoveryPrivateFields`; ordinary foreign-account profile reads use a private-field-stripping projection while preserving unrelated public profile fields. Foreign reads bypass cache before lookup. Owner reads and owner-only GDPR export remain complete. Earlier confirmation receipts without field markers conservatively hide identity/education. Update schemas cannot clear markers; imports set only their own fields and preserve markers. Scoped references found no other public canonical attendance/education reader (teacher matching selects only uid/displayName; portfolio restoration operates on unrelated public fields). Added two-account noncampus HTTP regression through actual profile route middleware, including owner read followed by foreign read and query-cache bypass, plus schema/projection preservation checks. No checks run.
+
+Final privacy transition correction: `privateProfileFields` is now shared by public serialization and confirmation planning. Initializing explicit markers unions the effective legacy receipt-based protection, so a later attendance-only confirmation cannot expose earlier private education (and major-only cannot expose attendance). The noncampus HTTP regression persists legacy records, checks foreign reads before confirmation, performs each one-field confirmation, checks persisted markers and checks foreign reads afterward. No checks run.
+
+Executed parent feedback: targeted173 tests had172 passes and a legacy-transition CAS failure. Root cause in Mongoose9 query casting: equality against a document-array baseline adds schema defaults/subdocument IDs absent from legacy BSON (even path-based `$expr` literals are cast). Confirmation now schema-validates prepared after-values but performs the atomic target mutation with `model.collection.updateOne`, native current `_id`, exact persisted before-values/absence conditions, explicit timestamp and receipt. Native fixture remains unchanged. Fault injection targets the actual native mutation boundary; an added concurrent legacy-education mutation regression asserts exact BSON/absent-marker predicates and proves CAS still rejects newer data. No rerun by this agent.
+
+## Parent verification update
+
+Parent reported after the native-CAS correction: all26 critical tests passed; scoped backend lint exited0 with0 errors and18 warnings. Warnings were not suppressed or restyled; they include intentional redaction destructures and existing unused parameters. These are parent-executed results, not independent runs by this agent. Real configured-model/API/browser smoke remained pending at this report update.
+
+Permanent deployment contracts in `.trellis/spec/project/campus-phase1/verification.md` explicitly retain the single-writer process boundary, durable restart state, server-owned private markers across ordinary/import edits, conservative legacy-marker inheritance, and pre-cache foreign-account projection. No production multi-process fencing or automatic publication is claimed.

@@ -17,6 +17,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { interviewScore, scoreRule } from '../utils/interviewScores';
 
 export default function InterviewReplay() {
   const { id } = useParams();
@@ -97,6 +98,7 @@ export default function InterviewReplay() {
       </div>
     );
   }
+  if (interview.purpose === 'discovery') return <section className="max-w-4xl mx-auto p-8"><h1>Interest discovery · unscored</h1><p>{interview.discovery?.summary || 'No saved summary.'}</p><ul>{(interview.discovery?.advice || []).map((text, index) => <li key={index}>{text}</li>)}</ul>{(interview.answers || []).map(answer => <article key={answer.questionId}><h2>{answer.question}</h2><p>{answer.transcript}</p></article>)}<button type="button" onClick={() => navigate('/interview-history')}>Back to history</button></section>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
@@ -114,10 +116,11 @@ export default function InterviewReplay() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
               {interview.jobRole || "Mock Interview"}
-              <span className={`px-3 py-1 rounded-full text-sm font-bold border ${getScoreBadgeColor(interview.overallScore || 0)}`}>
-                {interview.overallScore || 0}% Score
+              <span className={`px-3 py-1 rounded-full text-sm font-bold border ${interviewScore(interview) === null ? '' : getScoreBadgeColor(interviewScore(interview))}`}>
+                {interviewScore(interview) === null ? 'Unscored' : `${interviewScore(interview)}% Score`}
               </span>
             </h1>
+            <p>{scoreRule(interview)}</p>
 
             <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-1.5">

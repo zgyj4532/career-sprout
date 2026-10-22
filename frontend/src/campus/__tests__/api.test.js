@@ -37,6 +37,11 @@ describe('campus HTTP boundary', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers({ 'content-type': 'application/zip' }), blob: async () => blob }))
     expect(await campusFetch('/api/campus/teacher/jobs/abc/export')).toBe(blob)
   })
+  it.each(['image/png', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])('downloads owned source %s without JSON parsing', async (type) => {
+    const blob = new Blob(['source'], { type })
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers({ 'content-type': type }), blob: async () => blob }))
+    expect(await campusFetch('/api/campus/imports/example/source')).toBe(blob)
+  })
   it('bounds exported diagnostics and removes payloads, queries and UIDs', async () => {
     let exported
     vi.stubGlobal('URL', { createObjectURL: vi.fn((blob) => { exported = blob; return 'blob:test' }), revokeObjectURL: vi.fn() })

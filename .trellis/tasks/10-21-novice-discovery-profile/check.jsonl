@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/10-21-novice-usability-information-reduction/prd.md", "reason": "Approved requirements and observable acceptance"}
+{"file": ".trellis/tasks/10-21-novice-usability-information-reduction/design.md", "reason": "Approved shared contracts and safety boundaries"}
+{"file": ".trellis/tasks/10-21-novice-usability-information-reduction/implement.md", "reason": "Execution, integration verification and rollback"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Preserve draft and canonical data ownership"}

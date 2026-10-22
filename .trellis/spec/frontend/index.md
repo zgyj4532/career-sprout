@@ -6,7 +6,7 @@
 
 ## Overview
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+Campus conventions below are grounded in the current React/Vite implementation. Read the relevant files before editing; the upstream full application has separate dormant modules.
 
 ---
 
@@ -14,25 +14,26 @@ This directory contains guidelines for frontend development. Fill in each file w
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| [Directory Structure](./directory-structure.md) | Entry boundary and campus module layout | Populated |
+| [Component Guidelines](./component-guidelines.md) | Forms, AI adoption, null and accessibility boundaries | Populated |
+| [Hook Guidelines](./hook-guidelines.md) | Media ownership and stale-response protection | Populated |
+| [State Management](./state-management.md) | Server records versus unsaved inputs | Populated |
+| [Quality Guidelines](./quality-guidelines.md) | Actual commands and behavior/surface proof | Populated |
+| [Type Safety](./type-safety.md) | JavaScript runtime validation and HTTP envelopes | Populated |
 
 ---
 
-## How to Fill These Guidelines
+## Pre-Development Checklist
 
-For each guideline file:
+- Read directory structure and the guide covering the changed behavior.
+- For API changes, read type safety and `.trellis/spec/project/campus-phase1/verification.md`.
+- For async forms/media, read state management and hook guidelines.
+- Read quality guidelines before choosing verification commands.
+- Preserve the campus configuration-time entry boundary; do not load the dormant full app.
 
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
+## Quality Check
 
-The goal is to help AI assistants and new team members understand how YOUR project works.
+Run relevant behavior regressions and actual browser smoke. Report executed commands and external limits separately; a documented command is not a passing result.
 
 ---
 

@@ -1,0 +1,7 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Preserve semantic controls, explicit adoption and visible recovery while simplifying presentation."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Preserve canonical saved state, dirty drafts, account-scoped preparation and stale-response guards."}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Preserve audio ownership and cleanup during disclosure or future voice workflow changes."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/research/local-flow-audit.md","reason":"Concrete page reduction candidates and behavioral scope decisions; not implementation approval."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/research/mature-patterns.md","reason":"Evidence-backed disclosure, confirmation and accessibility design constraints."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/research/upstream-patterns.md","reason":"Pinned upstream interaction patterns and explicit restore/scoring/retry pitfalls; do not copy weaker guarantees."}
+{"file":".trellis/tasks/10-21-novice-usability-information-reduction/design.md","reason":"Final proposed cross-layer contracts for discovery, profile confirmation, scoring and save-continue; requires final user approval."}

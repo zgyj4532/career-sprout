@@ -1,0 +1,32 @@
+{
+  "scope": "isolated synthetic account; actual configured model/API; not human/device acceptance",
+  "results": [
+    {
+      "action": "discovery_start",
+      "id": "6ad88c1043c51aeb272e0038",
+      "purpose": "discovery"
+    },
+    {
+      "action": "adaptive_question_persisted",
+      "questions": 2,
+      "answers": 1
+    },
+    {
+      "action": "profile_confirm_replay",
+      "candidateKinds": [
+        "collegeStudent",
+        "major",
+        "interest",
+        "experience"
+      ],
+      "interests": 1,
+      "experiences": 1,
+      "unscored": true
+    },
+    {
+      "action": "resume_create_replay",
+      "id": "94d8fa392f56be2e138405dd",
+      "revision": 1
+    }
+  ]
+}

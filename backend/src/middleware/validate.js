@@ -18,6 +18,7 @@ const formatZodErrors = (zodError) =>
 
 
 const campusFields = new Set(['root', 'interests', 'experiences', 'id', 'kind', 'title', 'context', 'actions', 'result', 'skillAssessments', 'name', 'level', 'evidence', 'availability', 'startDate', 'endDate', 'daysPerWeek', 'targetJobId', 'company', 'description', 'source', 'authorKind', 'requirements', 'required', 'status', 'sourceText', 'jobId', 'draft', 'revision', 'teacherId', 'targetIds', 'displayName', 'studyStage', 'education', 'institution', 'degree', 'field', 'startYear', 'endYear', 'skills', 'bio', 'jobRole', 'location', 'website', 'github', 'linkedin', 'avatarUrl', 'phone', 'headline', 'dateOfBirth', 'gender', 'yearsOfExperience', 'collegeStudent', 'openToWork', 'languages', 'resumeHeadline', 'originalText', 'enhancedText', 'preferences', 'industry', 'experienceLevel', 'questionCount', 'resumeText', 'resumeId', 'mode', 'language', 'companyName', 'companyRole', 'codingLanguage', 'jobDescriptionText', 'skipWarmup', 'version', 'paperSize']);
+for (const field of ['importedEducation', 'fullText', 'brief', 'useConcise', 'dateText', 'precision', 'current', 'organization', 'sourceBlockId', 'otherMaterials', 'manualRole', 'savedJobTitle', 'count', 'text']) campusFields.add(field);
 const issueCodes = new Set(['invalid_type', 'invalid_value', 'invalid_format', 'too_small', 'too_big', 'not_multiple_of', 'unrecognized_keys', 'invalid_union', 'invalid_key', 'invalid_element', 'custom']);
 
 export function safeValidationDetails(details) {

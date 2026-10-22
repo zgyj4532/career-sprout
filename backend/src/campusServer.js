@@ -24,6 +24,8 @@ import campusAuthRoutes, { listTeachers } from './campus/auth.js';
 import campusGrowthRoutes from './campus/growth.js';
 import campusTargetRoutes from './campus/targets.js';
 import campusSharingRoutes from './campus/sharing.js';
+import campusImportRoutes from './campus/imports.js';
+import campusJobImageRoutes from './campus/jobImages.js';
 import { closeCacheConnection } from './middleware/cacheLayer.js';
 
 const BLOCKED_ENHANCE = new Set([
@@ -112,7 +114,7 @@ export function createCampusApp() {
   for (const mount of ['/api/campus', '/api/resumes', '/api/interview', '/api/enhance', '/api/user-profiles']) app.use(mount, diagnosticMount(mount));
   app.use('/api/campus', verifyToken);
   app.get('/api/campus/teachers', listTeachers);
-  app.use('/api/campus', campusGrowthRoutes, campusTargetRoutes, campusSharingRoutes);
+  app.use('/api/campus', campusJobImageRoutes, campusGrowthRoutes, campusTargetRoutes, campusSharingRoutes, campusImportRoutes);
   app.use('/api/resumes', (req, res, next) => {
     if (req.path.startsWith('/import/')) {
       return res.status(404).json({

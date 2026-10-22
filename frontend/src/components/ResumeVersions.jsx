@@ -11,6 +11,7 @@ export default function ResumeVersions({
   currentEnhancedText, 
   currentJobRole, 
   currentAtsScore,
+  currentRevision,
   onRestore 
 }) {
   const [versions, setVersions] = useState([])
@@ -96,7 +97,7 @@ export default function ResumeVersions({
 
     try {
       toast.loading('Restoring resume version...', { id: 'restore' })
-      const res = await resumeApi.restoreVersion(resumeId, version.id)
+      const res = await resumeApi.restoreVersion(resumeId, version.id, currentRevision)
       toast.success('Resume restored successfully!', { id: 'restore' })
       if (onRestore) {
         onRestore(res.data)

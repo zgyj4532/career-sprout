@@ -4,6 +4,7 @@ import { interviewApi } from "../services/api";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format, subDays, isAfter } from "date-fns";
 import { Calendar, Briefcase, Clock, Trophy, ChevronRight, FilterX } from "lucide-react";
+import { comparisonKey, interviewScore, scoreRule } from '../utils/interviewScores';
 
 export default function InterviewHistory() {
   const [history, setHistory] = useState([]);
@@ -13,6 +14,7 @@ export default function InterviewHistory() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [scoreFilter, setScoreFilter] = useState("all");
+  const [scoreGroup, setScoreGroup] = useState('');
 
   const navigate = useNavigate();
 
@@ -50,7 +52,8 @@ export default function InterviewHistory() {
       if (dateFilter === "30days" && !isAfter(sessionDate, subDays(new Date(), 30))) return false;
 
       // Score Filter
-      const score = session.overallScore || 0;
+      const score = interviewScore(session);
+      if (scoreFilter !== 'all' && score === null) return false;
       if (scoreFilter === "high" && score < 80) return false;
       if (scoreFilter === "medium" && (score < 50 || score >= 80)) return false;
       if (scoreFilter === "low" && score >= 50) return false;
@@ -59,14 +62,14 @@ export default function InterviewHistory() {
     }).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // Sort chronological for chart
   }, [history, roleFilter, dateFilter, scoreFilter]);
 
-  // Format data for chart
-  const chartData = useMemo(() => {
-    return filteredHistory.map(session => ({
-      ...session,
-      dateFormatted: format(new Date(session.completedAt || session.createdAt), "MMM d"),
-      score: session.overallScore || 0
-    }));
-  }, [filteredHistory]);
+  const scoreGroups = [...new Set(filteredHistory.map(comparisonKey).filter(Boolean))];
+  const selectedGroup = scoreGroups.includes(scoreGroup) ? scoreGroup : scoreGroups[0];
+  const comparable = filteredHistory.filter(session => comparisonKey(session) === selectedGroup && selectedGroup);
+  const chartData = comparable.map(session => ({
+    ...session,
+    dateFormatted: format(new Date(session.completedAt || session.createdAt), 'MMM d'),
+    score: interviewScore(session)
+  }));
 
   const clearFilters = () => {
     setRoleFilter("all");
@@ -186,12 +189,13 @@ export default function InterviewHistory() {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-foreground text-sm leading-tight group-hover:text-primary transition-colors line-clamp-1 flex-1 pr-2">
-                        {session.jobRole || "General Interview"}
+                        {session.purpose === 'discovery' ? 'Interest discovery' : session.jobRole || 'General Interview'}
                       </h4>
-                      <div className={`shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${getScoreBadgeColor(session.overallScore || 0)}`}>
-                        {session.overallScore || 0}%
+                      <div className={`shrink-0 px-2 py-0.5 rounded text-xs font-bold border ${interviewScore(session) === null ? '' : getScoreBadgeColor(interviewScore(session))}`}>
+                        {interviewScore(session) === null ? 'Unscored' : `${interviewScore(session)}%`}
                       </div>
                     </div>
+                    <p className="text-xs text-muted-foreground">{scoreRule(session)}</p>
                     
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
@@ -267,6 +271,7 @@ export default function InterviewHistory() {
                 </div>
               )}
             </div>
+            <label>Compare only the same scoring scope<select value={selectedGroup || ''} onChange={event => setScoreGroup(event.target.value)}>{scoreGroups.map(group => <option key={group} value={group}>{scoreRule(filteredHistory.find(session => comparisonKey(session) === group))}</option>)}</select></label>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-card border border-border rounded-xl p-4 text-center">
@@ -276,29 +281,25 @@ export default function InterviewHistory() {
               <div className="bg-card border border-border rounded-xl p-4 text-center">
                 <p className="text-sm text-muted-foreground mb-1">Avg Score</p>
                 <p className="text-2xl font-bold text-primary">
-                  {filteredHistory.length > 0 
-                    ? Math.round(filteredHistory.reduce((acc, curr) => acc + (curr.overallScore || 0), 0) / filteredHistory.length) 
-                    : 0}%
+                  {comparable.length ? `${Math.round(comparable.reduce((sum, session) => sum + interviewScore(session), 0) / comparable.length)}%` : '—'}
                 </p>
               </div>
               <div className="bg-card border border-border rounded-xl p-4 text-center">
                 <p className="text-sm text-muted-foreground mb-1">Highest Score</p>
                 <p className="text-2xl font-bold text-emerald-500">
-                  {filteredHistory.length > 0 
-                    ? Math.max(...filteredHistory.map(s => s.overallScore || 0)) 
-                    : 0}%
+                  {comparable.length ? `${Math.max(...comparable.map(interviewScore))}%` : '—'}
                 </p>
               </div>
               <div className="bg-card border border-border rounded-xl p-4 text-center">
                 <p className="text-sm text-muted-foreground mb-1">Recent Trend</p>
                 <p className={`text-2xl font-bold ${
-                  filteredHistory.length >= 2 
-                    ? ((filteredHistory[filteredHistory.length - 1]?.overallScore || 0) >= (filteredHistory[filteredHistory.length - 2]?.overallScore || 0) 
+                  comparable.length >= 2
+                    ? (interviewScore(comparable[comparable.length - 1]) >= interviewScore(comparable[comparable.length - 2])
                         ? 'text-emerald-500' : 'text-amber-500')
                     : 'text-muted-foreground'
                 }`}>
-                  {filteredHistory.length >= 2 
-                    ? ((filteredHistory[filteredHistory.length - 1]?.overallScore || 0) >= (filteredHistory[filteredHistory.length - 2]?.overallScore || 0) 
+                  {comparable.length >= 2
+                    ? (interviewScore(comparable[comparable.length - 1]) >= interviewScore(comparable[comparable.length - 2])
                         ? '↗' : '↘')
                     : '-'}
                 </p>

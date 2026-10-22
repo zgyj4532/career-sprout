@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/project/campus-phase1/index.md", "reason": "校园增量规范入口，任务以 prd 为验收、design 为约束"}
+{"file": ".trellis/spec/project/campus-phase1/scope.md", "reason": "阶段裁剪：不误删简历、鉴权和数据隔离"}
+{"file": ".trellis/spec/project/campus-phase1/verification.md", "reason": "校园测试命令与真实能力边界"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "导入从文件到确认再到档案的跨层数据流"}
+{"file": ".trellis/tasks/10-20-resume-import-polish-jobs/research/vision-live-probe.md", "reason": "识图探针：通道可用但会漏字段，产品代码仍是纯文本"}
+{"file": ".trellis/tasks/10-20-resume-import-polish-jobs/research/issue-1-requirements.md", "reason": "Issue 原文范围、未点名条目和禁止假识别"}
+{"file": ".trellis/tasks/10-20-resume-import-polish-jobs/research/current-profile-resume-job.md", "reason": "档案简历岗位面试的现有入口和缺口"}
+{"file": ".trellis/tasks/10-20-resume-import-polish-jobs/research/chat-api-vision.md", "reason": "校园路径不能发图、2MB JSON、导入 404 和限流"}

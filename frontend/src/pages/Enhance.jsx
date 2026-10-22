@@ -382,7 +382,7 @@ function buildSectionItems(resume) {
   return ids.map((id) => ({ id, label: labelFor(id) }))
 }
 
-function SectionOrderPanel({ resumeId, resume }) {
+function SectionOrderPanel({ resumeId, resume, onSaved }) {
   const [items, setItems] = useState(() => buildSectionItems(resume))
   const [saving, setSaving] = useState(false)
 
@@ -397,7 +397,8 @@ function SectionOrderPanel({ resumeId, resume }) {
     if (!resumeId) return
     setSaving(true)
     try {
-      await resumeApi.reorderSections(resumeId, next.map((i) => i.id))
+      const saved = await resumeApi.reorderSections(resumeId, next.map((i) => i.id), resume.revision)
+      onSaved(saved.data)
       toast.success('Section order saved')
     } catch (_e) {
       toast.error('Failed to save section order')
@@ -556,7 +557,8 @@ export default function Enhance() {
         triggerConfetti({ duration: 4000, particleCount: 220, spread: 140 })
       }
 
-      await resumeApi.update(resumeId, { jobRole })
+      const saved = await resumeApi.update(resumeId, { jobRole, revision: resume.revision })
+      setResume(saved.data)
 
       // Log to ATS history
       try {
@@ -738,18 +740,14 @@ export default function Enhance() {
       }
       
       // Save final enhanced text
-      await resumeApi.update(resumeId, {
+      const saved = await resumeApi.update(resumeId, {
+        revision: resume.revision,
         enhancedText: streamedResume,
         jobRole: jobRole,
         preferences: apiPreferences
       })
 
-      setResume((current) => ({
-        ...current,
-        enhancedText: streamedResume,
-        jobRole,
-        preferences: apiPreferences
-      }))
+      setResume(saved.data)
 
       setEnhancementComplete(true)
 
@@ -790,7 +788,8 @@ export default function Enhance() {
       const response = await enhanceApi.scoreResume(resume.originalText)
       setScoreData(response.data)
       // Save the score back to the resume history
-      await resumeApi.update(resumeId, { atsScore: response.data.overallScore })
+      const saved = await resumeApi.update(resumeId, { atsScore: response.data.overallScore, revision: resume.revision })
+      setResume(saved.data)
       toast.success('Resume scored!')
     } catch (error) {
       toast.error(error.message || 'Failed to score resume')
@@ -885,7 +884,7 @@ export default function Enhance() {
         )}
 
         {/* Section Order (drag-and-drop) — always available once loaded */}
-        {resume && <SectionOrderPanel resumeId={resumeId} resume={resume} />}
+        {resume && <SectionOrderPanel resumeId={resumeId} resume={resume} onSaved={setResume} />}
 
         {/* Analyzing State */}
         {analyzing && <ResumeAnalysisSkeleton />}

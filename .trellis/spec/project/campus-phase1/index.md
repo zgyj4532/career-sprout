@@ -4,6 +4,6 @@
 
 - `scope.md`：目标、裁剪顺序和禁止项。
 - `wsl-local.md`：WSL 运行、依赖、端口与本地鉴权契约。
-- `verification.md`：质量门、证据和真实能力边界；末尾记录已批准的CareerSprout后续跨层API、权限、录音、内存与构建契约。
+- `verification.md`：质量门、证据和真实能力边界；记录已批准的CareerSprout跨层API、权限、录音、内存与构建契约，以及新手交流/资料确认/评分/保存恢复的七节可执行规范。
 
 以上文件位于 `.trellis/spec/project/campus-phase1/`。本阶段以任务 prd.md 为验收范围，design.md 为实现约束，implement.md 为执行顺序。
