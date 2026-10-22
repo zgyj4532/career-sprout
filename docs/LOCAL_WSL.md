@@ -5,7 +5,7 @@
 ## 环境
 
 - 复用已有 Ubuntu 24.04 WSL，不重装、不注销。
-- 当前仍在 `/mnt/e/github/career-pilot`（Windows：`E:\github\career-pilot`）。目标目录是 `career-sprout`，但当前omp主会话持有目录句柄，Windows/WSL改名均被拒绝。关闭此会话及占用旧目录的终端后，可在PowerShell运行 `powershell -NoProfile -ExecutionPolicy Bypass -File E:\github\rename-careersprout.ps1`；脚本只做不覆盖的完整目录改名，不杀进程、不删Git或数据。完成后从 `/mnt/e/github/career-sprout` 运行doctor/dev。不要把Windows的node_modules拷进WSL。
+- 当前目录为 `/mnt/e/github/career-sprout`（Windows：`E:\github\career-sprout`）。2026-10-20 已从此目录运行 doctor 和 dev:local，并确认 `/api/health` 的 MongoDB、Redis 均健康；旧目录句柄阻塞已解除，不再运行旧改名脚本。不要把 Windows 的 node_modules 拷进 WSL。
 - Node 优先 `24.14.1`（`.nvmrc`）。系统 Node 20 仍能跑脚本，但安装和启动会优先改用 nvm 里的 24。
 - Python 使用系统 `python3` 3.12，不替换系统 Python。
 - MongoDB 8.0 与 Redis 7.4 只由 `compose.local.yml` 管理，项目名 `career-pilot-local`。
@@ -41,6 +41,8 @@ npm run dev:local
 
 浏览器访问 `http://127.0.0.1:5173`。前端把 `/api` 代理到 `127.0.0.1:5002`。
 
+启动器先等待 `/api/health` 确认 MongoDB/Redis 就绪，再启动前端；看到 Vite 的 Local 地址后访问。Node 24 后端默认启用 `NODE_USE_ENV_PROXY=1`，使用已有 `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY`。本机地址须在 `NO_PROXY` 中；这不会配置或购买代理。需要禁用时显式设置 `NODE_USE_ENV_PROXY=0`。已观察到未启用此支持时 WSL 直连模型主机 `EHOSTUNREACH`，启用后同一 Luna 模型请求成功。
+
 ## 身份
 
 没有 Clerk 密钥时，`setup:local` 生成的本地配置会打开 `DEV_BYPASS_AUTH`。它只在 `NODE_ENV=development`、`APP_PROFILE=campus-local`、监听 `127.0.0.1`，且变更请求的 `Origin` 是本机前端时生效。它不是注册，也不是多用户隔离。已配置 `CLERK_SECRET_KEY` 时旁路关闭，正式认证仍走 Clerk。
@@ -70,6 +72,15 @@ npm run test:campus --prefix backend
 PDF和ASR全进程单任务，忙时429而不是无限积压；取消会释放已获得的资源。ASR最长180秒、上传10MiB、解码后6MiB上限。WebM等压缩录音需要 `FFMPEG_PATH` 指向可运行的ffmpeg；现有WSL默认尝试Windows Scoop的ffmpeg。不要将缺转码器错误当作录音成功。
 
 改名只改代码路径和拥有的GitHub仓库；数据库 `career_pilot_local`、Compose项目 `career-pilot-local` 及卷名不变。旧资料应在迁移后重新读取确认，不执行 `down -v`。
+
+## 导入材料与容量
+
+- 原件默认存放在 WSL `~/.career-sprout/imports`，可用后端 `CAMPUS_IMPORT_DIR` 指向私密持久目录；不要配置成公开静态目录或自动清理的临时目录。
+- 每人未完成导入最多 10 份、个人保留材料最多 80MiB；全局最多 500MiB。保存后的原件继续计入字节容量，只有主动丢弃才释放。应用不自动删除其他人的材料。
+- 文件流式落盘；PDF/Word/图片解析与 PDF 导出共用单任务准入。上传等待不占解析位；解析超时终止子进程后释放。DOCX 解压最多 20MiB、PDF最多30页、图片最多4000万像素且只接收单帧。
+- 每次整理先用 Luna，只有校验失败才用同一输入试一次 Sol；已有完成结果恢复时复用，不重新计日额度。服务器每日每账号最多20次导入整理操作。
+- 当前校园后端单进程运行；简历关联写入和删除共享进程内准入，删除标记、墓碑和导入执行单持久化。不要直接扩成多进程部署而不补分布式准入。
+- 档案“保存成功但缓存等待刷新”不是数据丢失；仅重试缓存刷新。校园简历/面试读档案绕过旧的120秒缓存。
 
 
 ## 不要做的事

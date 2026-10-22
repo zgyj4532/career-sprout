@@ -1,0 +1,22 @@
+{
+  "polish": {
+    "status": 200,
+    "draft": "- 参与校园资料整理项目，使用Excel整理30条课程记录，没有担任负责人。"
+  },
+  "pdf": {
+    "status": 200,
+    "bytes": 94934,
+    "pages": 1,
+    "chineseTextPresent": true,
+    "visual": "Rendered with PDFium; one A4 page, Chinese legible, no clipping. Corrected source projection exported separately with duplicate education/title absent."
+  },
+  "interview": {
+    "status": 200,
+    "id": "6ad72d01976b8eac4b67dfa8",
+    "sourceResume": "a12a7d10869b70504b8f7756",
+    "jobId": "6ad726e70fa2a09800fda20b",
+    "readStatus": 200,
+    "jobRole": "软件测试实习生",
+    "sourceNegativeFactPresent": true
+  }
+}

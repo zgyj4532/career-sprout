@@ -1,0 +1,35 @@
+{
+  "id": "resume-import-polish-jobs",
+  "name": "resume-import-polish-jobs",
+  "title": "简历导入、润色、岗位截图与简历管理",
+  "description": "Issue #1：支持 PDF/DOCX/截图导入并生成可编辑档案，AI 润色不编造，岗位截图识别，简历重命名与删除。先验证聊天接口识图，再写懒人式执行方案。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-20",
+  "completedAt": null,
+  "branch": "feat/career-sprout-experience-polish",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "2026-10-20 续做：导入持久化、原件恢复、截图岗位与面试准备单、简历版本/删除及旧流程缺陷已接入。真实浏览器/API已验证保存重试与跨页恢复；样本质量和最终验证见research记录。2026-10-21 用户决定改用新服务器，当前备案阻塞部署；3–5名新手学生试用和物理手机验收标记为外部阻塞，不视为通过。正式认证按部署文档的Evren/Resend方向另行验收，不归档、不自动提交推送。",
+  "meta": {
+    "delivery_status": "local_verified_human_acceptance_blocked",
+    "external_acceptance": ["3_to_5_novice_students", "formal_auth_accounts", "physical_mobile"],
+    "acceptance_blockers": {
+      "3_to_5_novice_students": { "status": "blocked_external", "reason": "new_server_deployment_pending_icp_filing", "reportedAt": "2026-10-21" },
+      "physical_mobile": { "status": "blocked_external", "reason": "new_server_deployment_pending_icp_filing", "reportedAt": "2026-10-21" }
+    },
+    "human_audio": "user_confirmed_previous_sunday_on_2026_10_20",
+    "verification": "research/verification.md"
+  }
+}

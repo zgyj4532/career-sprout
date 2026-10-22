@@ -6,21 +6,26 @@ import CopyButton from '../CopyButton';
 export default function QuestionAnalysisCard({ answer, index }) {
   const [expanded, setExpanded] = useState(false);
   const analysis = answer.analysis || {};
-  const avgScore = Math.round(((analysis.relevance || 0) + (analysis.clarity || 0) + (analysis.confidence || 0)) / 3);
+  const observed = [analysis.relevance, analysis.clarity, analysis.confidence].filter(Number.isFinite);
+  const avgScore = observed.length ? Math.round(observed.reduce((sum, score) => sum + score, 0) / observed.length) : null;
+  const displayScore = (score) => Number.isFinite(score) ? `${score}%` : 'Not assessed';
 
   const getScoreBadgeColor = (score) => {
+    if (score === null) return 'text-muted-foreground border-border';
     if (score >= 80) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
     if (score >= 60) return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
     return 'bg-red-500/20 text-red-400 border-red-500/30';
   };
 
   const getScoreTextColor = (score) => {
+    if (score === null) return 'text-muted-foreground';
     if (score >= 80) return 'text-emerald-400';
     if (score >= 60) return 'text-amber-400';
     return 'text-red-400';
   };
 
   const getScoreLabel = (score) => {
+    if (score === null) return 'Not assessed';
     if (score >= 80) return 'Strong';
     if (score >= 60) return 'Good';
     return 'Needs Work';
@@ -28,7 +33,7 @@ export default function QuestionAnalysisCard({ answer, index }) {
 
   return (
     <div className="rounded-2xl bg-muted/30 border border-border/50 overflow-hidden transition-all duration-300 hover:border-border/80/50">
-      <button type="button" onClick={() => setExpanded(!expanded)} className="w-full p-4 flex items-center gap-4 text-left cursor-pointer">
+      <button type="button" aria-expanded={expanded} onClick={() => setExpanded(!expanded)} className="w-full p-4 flex items-center gap-4 text-left cursor-pointer">
         <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center shrink-0">
           <span className="text-violet-400 font-bold text-sm">{index + 1}</span>
         </div>
@@ -42,7 +47,7 @@ export default function QuestionAnalysisCard({ answer, index }) {
           </div>
         </div>
         <div className={`px-3 py-1.5 rounded-lg border text-sm font-semibold ${getScoreBadgeColor(avgScore)}`}>
-          {avgScore}%
+          {displayScore(avgScore)}<span className="block text-xs">{observed.length}/3 dimensions observed</span>
         </div>
         <div className="text-muted-foreground">
           {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
@@ -55,16 +60,16 @@ export default function QuestionAnalysisCard({ answer, index }) {
             {/* Score Breakdown */}
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-center">
-                <p className="text-2xl font-bold text-sky-400">{analysis.relevance || 0}%</p>
+                <p className="text-2xl font-bold text-sky-400">{displayScore(analysis.relevance)}</p>
                 <p className="text-xs text-muted-foreground mt-1">Relevance</p>
               </div>
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                <p className="text-2xl font-bold text-emerald-400">{analysis.clarity || 0}%</p>
+                <p className="text-2xl font-bold text-emerald-400">{displayScore(analysis.clarity)}</p>
                 <p className="text-xs text-muted-foreground mt-1">Clarity</p>
               </div>
               <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center">
-                <p className="text-2xl font-bold text-purple-400">{analysis.confidence || 0}%</p>
-                <p className="text-xs text-muted-foreground mt-1">Confidence</p>
+                <p className="text-2xl font-bold text-purple-400">{displayScore(analysis.confidence)}</p>
+                <p className="text-xs text-muted-foreground mt-1">Text Confidence</p>
               </div>
             </div>
 

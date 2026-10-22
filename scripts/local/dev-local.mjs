@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import path from 'node:path'
+import { setTimeout as delay } from 'node:timers/promises'
 import { ensureNode24, isWsl, node24, parseEnv, repoRoot } from './lib.mjs'
 import { infra } from './infra.mjs'
 import { logEvent, safeErrorMetadata } from '../../backend/src/utils/diagnostics.js'
@@ -22,6 +23,7 @@ const env = {
   HOST: '127.0.0.1',
   PORT: '5002',
   NODE_ENV: 'development',
+  NODE_USE_ENV_PROXY: process.env.NODE_USE_ENV_PROXY || backendEnvFile.NODE_USE_ENV_PROXY || '1',
   FRONTEND_URL: 'http://127.0.0.1:5173',
   MONGODB_URI: 'mongodb://127.0.0.1:27018/career_pilot_local',
   REDIS_URL: 'redis://127.0.0.1:6380',
@@ -63,6 +65,22 @@ process.on('SIGINT', () => stop(0))
 process.on('SIGTERM', () => stop(0))
 
 start(nodeBin, ['src/campusServer.js'], env, path.join(repoRoot, 'backend'))
+console.log('正在启动校园 API，等待数据库与缓存就绪…')
+let backendReady = false
+const readinessDeadline = Date.now() + 120000
+while (!stopping && Date.now() < readinessDeadline) {
+  try {
+    const response = await fetch('http://127.0.0.1:5002/api/health', { signal: AbortSignal.timeout(3000) })
+    const health = await response.json()
+    if (response.ok && health.profile === 'campus-local' && health.database?.ok && health.redis?.ok) { backendReady = true; break }
+  } catch { /* A cold dependency graph may still be loading. */ }
+  await delay(1000)
+}
+if (!backendReady) {
+  console.error('校园 API 未就绪，前端未启动。请查看 logs/backend.jsonl 后重试。')
+  stop(1)
+  await new Promise(() => {})
+}
 start(nodeBin, [path.join(repoRoot, 'frontend/node_modules/vite/bin/vite.js')], {
   ...process.env,
   VITE_APP_PROFILE: 'campus-local',
@@ -71,8 +89,8 @@ start(nodeBin, [path.join(repoRoot, 'frontend/node_modules/vite/bin/vite.js')], 
   VITE_BIND_LOOPBACK: '1',
 }, path.join(repoRoot, 'frontend'))
 
-logEvent('runtime.started')
-console.log('dev:local http://127.0.0.1:5173 -> http://127.0.0.1:5002')
+logEvent('runtime.started', { state: 'backend_ready' })
+console.log('校园 API 已就绪，等待下方 Vite Local 地址后打开网页。')
 if (nodeBin !== node24 && process.version !== 'v24.14.1') {
   console.log(`WARN node=${process.version}; preferred ${node24}`)
 }

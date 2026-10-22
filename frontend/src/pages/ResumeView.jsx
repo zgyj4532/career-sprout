@@ -746,6 +746,7 @@ export default function ResumeView() {
               currentEnhancedText={resume?.enhancedText}
               currentJobRole={resume?.jobRole}
               currentAtsScore={resume?.atsScore}
+              currentRevision={resume?.revision}
               onRestore={(updatedResume) => {
                 setResume(updatedResume)
                 if (!updatedResume.enhancedText) {

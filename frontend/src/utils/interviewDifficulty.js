@@ -1,3 +1,5 @@
+import { comparisonKey, interviewScore } from './interviewScores'
+
 export const DEFAULT_PROGRESS = {
   level: "Beginner",
   streak: 0,
@@ -7,14 +9,22 @@ export const DEFAULT_PROGRESS = {
   averageScore: 0
 };
 
-export const updateDifficulty = (
-  score,
-  progress
-) => {
+export function normalizeProgress(progress) {
+  if (progress?.version === 2) return progress
+  return { version: 2, legacy: progress || null, groups: {} }
+}
 
-  let updated = {
-    ...progress
-  };
+export function progressFor(record, progress) {
+  const key = comparisonKey(record)
+  return (key && normalizeProgress(progress).groups[key]) || DEFAULT_PROGRESS
+}
+
+export const updateDifficulty = (record, progress) => {
+  const ledger = normalizeProgress(progress)
+  const key = comparisonKey(record)
+  const score = interviewScore(record)
+  if (!key || score === null) return ledger
+  const updated = { ...progressFor(record, ledger) };
 
   updated.completedInterviews += 1;
 
@@ -70,5 +80,5 @@ export const updateDifficulty = (
     updated.failCount = 0;
   }
 
-  return updated;
+  return { ...ledger, groups: { ...ledger.groups, [key]: updated } };
 };

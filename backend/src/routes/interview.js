@@ -2,14 +2,14 @@ import express from 'express';
 import multer from 'multer';
 import { verifyToken } from '../middleware/auth.js';
 import { extractAIProvider } from '../middleware/aiKey.js';
-import { asyncHandler, ApiError } from '../middleware/errorHandler.js';
+import { ApiError, asyncHandler as middlewareHandler } from '../middleware/errorHandler.js';
+import { accountWriteHandler as asyncHandler } from '../campus/accountWrites.js';
 import Interview from '../models/Interview.model.js';
 import {
     generateInterviewQuestions,
     generateCodingQuestion,
     generateWarmupQuestions,
     analyzeAnswer,
-    generateOverallFeedback,
     getQuestionsFromBank,
     transcribeAudio,
     runCodeAgainstTests
@@ -28,10 +28,17 @@ import { parseJdFromUrl, parseJdFromText } from '../services/jdParser.service.js
 import { uploadAudioBuffer } from '../services/upload.service.js';
 import { ownedSource } from '../campus/targets.js';
 import { visibleJob } from '../campus/growth.js';
+import { readFreshProfile } from '../campus/profileRead.js';
 import { campusError } from '../campus/errors.js';
 import { logEvent } from '../utils/diagnostics.js';
-import { persistInterviewAnswer } from '../services/interviewAnswers.js';
+import { persistInterviewAnswer, cancelExpiredGeneration } from '../services/interviewAnswers.js';
 import { speechAdmission } from '../middleware/speechAdmission.js';
+import { z } from 'zod';
+import { firstDiscoveryQuestion } from '../services/discoveryService.js';
+import { completeInterview, continueDiscovery, ownedInterview } from '../services/interviewWorkflow.js';
+import { SCORE_VERSION, answerObservations, normalizeAnalysisScores, sessionJson, groupedAnalytics } from '../services/interviewScoring.js';
+import { confirmationSchema, confirmationView, confirmDiscovery } from '../campus/discoveryConfirmation.js';
+import { CampusDiscoveryConfirmation } from '../campus/models.js';
 
 const router = express.Router();
 
@@ -50,66 +57,45 @@ const audioUpload = multer({
 });
 
 // ---------------------------------------------------------------------------
-// Analytics aggregator (unchanged from v1)
+// Analytics compares only compatible formal-interview scoring scopes.
 // ---------------------------------------------------------------------------
-const buildInterviewAnalytics = async (uid) => {
-    const sessions = await Interview.aggregate([
-        { $match: { odId: uid, status: 'completed' } },
-        {
-            $project: {
-                completedAt: 1,
-                overallScore: 1,
-                communication: { $avg: '$answers.analysis.clarity' },
-                technicalAccuracy: { $avg: '$answers.analysis.relevance' },
-                confidence: { $avg: '$answers.expressionMetrics.averageConfidence' }
-            }
-        },
-        { $sort: { completedAt: 1 } },
-        {
-            $project: {
-                date: { $dateToString: { format: '%Y-%m-%d', date: '$completedAt' } },
-                overallScore: { $round: [{ $ifNull: ['$overallScore', 0] }, 0] },
-                communication: { $round: [{ $ifNull: ['$communication', 0] }, 0] },
-                technicalAccuracy: { $round: [{ $ifNull: ['$technicalAccuracy', 0] }, 0] },
-                confidence: { $round: [{ $ifNull: ['$confidence', 0] }, 0] }
-            }
-        }
-    ]);
+const buildInterviewAnalytics = async (uid) => groupedAnalytics(await Interview.find({ userId: uid, status: 'completed', purpose: { $ne: 'discovery' } }).sort({ completedAt: 1 }).lean());
 
-    const summary = {
-        count: sessions.length,
-        averageOverallScore: 0,
-        averageCommunication: 0,
-        averageTechnicalAccuracy: 0,
-        averageConfidence: 0
-    };
+const sessionProvider = middlewareHandler(async (req, res, next) => {
+    const session = await ownedInterview(req.params.id, req.user.uid);
+    const savingDiscovery = req.path.endsWith('/answer') && session.purpose === 'discovery';
+    const emptyDiscovery = req.path.endsWith('/complete') && session.purpose === 'discovery' && !session.answers.length;
+    const hasQuestion = req.path.endsWith('/continue') && (session.questions.some((question) => !session.answers.some((answer) => answer.questionId === question.questionId)) || session.answers.length >= session.totalQuestionCount);
+    if (savingDiscovery || emptyDiscovery || hasQuestion || session.status === 'completed') return next();
+    return extractAIProvider(req, res, next);
+});
 
-    if (sessions.length > 0) {
-        const totals = sessions.reduce((acc, session) => {
-            acc.overallScore += session.overallScore;
-            acc.communication += session.communication;
-            acc.technicalAccuracy += session.technicalAccuracy;
-            acc.confidence += session.confidence;
-            return acc;
-        }, { overallScore: 0, communication: 0, technicalAccuracy: 0, confidence: 0 });
-
-        summary.averageOverallScore = Math.round(totals.overallScore / sessions.length);
-        summary.averageCommunication = Math.round(totals.communication / sessions.length);
-        summary.averageTechnicalAccuracy = Math.round(totals.technicalAccuracy / sessions.length);
-        summary.averageConfidence = Math.round(totals.confidence / sessions.length);
-        summary.latestSession = sessions[sessions.length - 1];
-    }
-
-    return { sessions, summary };
-};
+router.post('/discovery/start', verifyToken, aiRateLimiter, validate(z.object({ questionCount: z.number().int().min(2).max(20).default(6), language: z.string().min(2).max(10).default('zh') }).strict()), asyncHandler(async (req, res) => {
+    const session = await Interview.create({ userId: req.user.uid, purpose: 'discovery', jobRole: '兴趣与经历交流', industry: '交流', experienceLevel: 'unknown', language: req.body.language, mode: 'behavioral', totalQuestionCount: req.body.questionCount, questions: [{ questionId: 'discovery-first', question: firstDiscoveryQuestion, type: 'discovery', difficulty: 'easy' }] });
+    res.json({ success: true, data: sessionJson(session) });
+}));
+router.post('/:id([0-9a-fA-F]{24})/continue', verifyToken, sessionProvider, aiRateLimiter, asyncHandler(async (req, res) => {
+    res.json({ success: true, data: sessionJson(await continueDiscovery(req.params.id, req.user.uid, req.aiProvider)) });
+}));
+router.get('/:id([0-9a-fA-F]{24})/profile-confirmation', verifyToken, asyncHandler(async (req, res) => {
+    res.json({ success: true, data: await confirmationView(await ownedInterview(req.params.id, req.user.uid)) });
+}));
+router.post('/:id([0-9a-fA-F]{24})/profile-confirmation', verifyToken, validate(confirmationSchema), asyncHandler(async (req, res) => {
+    res.json({ success: true, data: await confirmDiscovery(await ownedInterview(req.params.id, req.user.uid), req.body) });
+}));
 
 // ---------------------------------------------------------------------------
 // POST /api/interview/start
 // ---------------------------------------------------------------------------
 router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(startInterviewSchema), asyncHandler(async (req, res) => {
+    const freshProfile = await readFreshProfile(req.user.uid);
     if (req.body.resumeId) {
         const source = await ownedSource(req.body.resumeId, req.user.uid);
-        req.body.resumeText = source.originalText;
+        if (req.body.resumeRevision !== undefined && req.body.resumeRevision !== source.revision) throw campusError(409, 'SOURCE_CHANGED', '简历已更新，请重新确认要使用的版本。');
+        const missingSkills = (source.preferences?.skills || []).filter((skill) => !source.originalText.includes(skill));
+        req.body.resumeText = [source.originalText, missingSkills.length ? `技能：${missingSkills.join('、')}` : ''].filter(Boolean).join('\n\n');
+    } else if (!req.body.resumeText && freshProfile?.skills?.length) {
+        req.body.resumeText = freshProfile.skills.join('、');
     }
     if (req.body.jobId) {
         const job = await visibleJob(req.body.jobId, req.user.uid);
@@ -174,6 +160,7 @@ router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(st
 
     const interview = new Interview({
         userId: req.user.uid,
+        purpose: 'interview', scoreVersion: SCORE_VERSION,
         jobRole,
         industry,
         experienceLevel,
@@ -196,12 +183,14 @@ router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(st
         }] : []
     });
 
+    if (req.body.resumeId && req.body.resumeRevision !== undefined && (await ownedSource(req.body.resumeId, req.user.uid)).revision !== req.body.resumeRevision) throw campusError(409, 'SOURCE_CHANGED', '生成期间简历已更新，请重新确认版本。');
     await interview.save();
 
     res.json({
         success: true,
         data: {
             interviewId: interview._id,
+            purpose: 'interview', scoreVersion: SCORE_VERSION,
             questions: interview.questions,
             codingQuestion,
             totalQuestionCount: interview.totalQuestionCount,
@@ -269,7 +258,7 @@ router.post('/parse-jd', verifyToken, validate(parseJdSchema), asyncHandler(asyn
 router.post(
     '/:id([0-9a-fA-F]{24})/answer',
     verifyToken,
-    extractAIProvider,
+    sessionProvider,
     aiRateLimiter,
     audioUpload.single('audio'),
     asyncHandler(async (req, res) => {
@@ -291,7 +280,7 @@ router.post(
         }
         const data = parsed.data;
 
-        const interview = await Interview.findOne({ _id: id, odId: req.user.uid });
+        const interview = await Interview.findOne({ _id: id, userId: req.user.uid });
         if (!interview) {
             throw new ApiError(404, 'Interview not found');
         }
@@ -300,6 +289,7 @@ router.post(
             throw campusError(409, 'INTERVIEW_CLOSED', '面试已结束，不能继续提交回答。');
         }
 
+        if (interview.answers.length >= interview.totalQuestionCount) throw campusError(409, 'INTERVIEW_LIMIT', '本次回答已保存完毕，请查看反馈。');
         const question = interview.questions.find((q) => q.questionId === data.questionId);
         if (!question) {
             throw new ApiError(404, 'Question not found');
@@ -310,6 +300,11 @@ router.post(
             throw campusError(409, 'ANSWER_ALREADY_SUBMITTED', '该问题的回答已保存，请刷新面试状态。');
         }
 
+        if (interview.purpose === 'discovery') {
+            if (interview.answers.length >= interview.totalQuestionCount || data.transcript.length > 4000 || interview.answers.reduce((sum, answer) => sum + answer.transcript.length, 0) + data.transcript.length > 40000) throw campusError(422, 'DISCOVERY_LIMIT', '这次交流已到内容上限，请结束并查看整理结果。');
+            const saved = await persistInterviewAnswer({ id, userId: req.user.uid, questionId: data.questionId, answerCount: interview.answers.length, update: { $push: { answers: { questionId: data.questionId, question: question.question, transcript: data.transcript, duration: data.duration } } } });
+            return res.json({ success: true, data: { questionId: data.questionId, purpose: 'discovery', answeredCount: saved.answers.length, totalQuestions: saved.totalQuestionCount, questions: saved.questions, nextQuestion: null } });
+        }
         // Skip scoring entirely for warmup answers
         if (data.isWarmup && process.env.APP_PROFILE !== 'campus-local') {
             const answer = {
@@ -328,7 +323,7 @@ router.post(
             });
         }
 
-        const analysis = await analyzeAnswer(
+        let analysis = await analyzeAnswer(
             question.question,
             data.transcript,
             data.duration,
@@ -338,6 +333,9 @@ router.post(
             interview.totalQuestionCount,
             { language: interview.language, code: data.code, codingLanguage: data.codingLanguage, resumeText: interview.resumeText, jobDescriptionText: interview.jobDescriptionText, mode: interview.mode }
         );
+        if (interview.scoreVersion === SCORE_VERSION) analysis = normalizeAnalysisScores(analysis);
+        const hasPendingQuestion = interview.questions.some((item) => item.questionId !== data.questionId && !interview.answers.some((answer) => answer.questionId === item.questionId));
+        if (interview.mode !== 'coding' && interview.answers.length + 1 < interview.totalQuestionCount && !hasPendingQuestion && (typeof analysis.nextQuestion?.question !== 'string' || !analysis.nextQuestion.question.trim() || analysis.nextQuestion.question.length > 2000)) throw campusError(502, 'INTERVIEW_GENERATION_FAILED', '下一题未能可靠生成，当前文字仍保留，请重试保存。');
 
         // Upload audio to Cloudinary if present
         let audioUrl = '';
@@ -356,12 +354,8 @@ router.post(
             transcript: data.transcript,
             duration: data.duration,
             analysis,
-            expressionMetrics: data.expressionMetrics || {
-                averageConfidence: 0,
-                eyeContactPercentage: 0,
-                headMovementStability: 0,
-                overallExpressionScore: 0
-            },
+            expressionMetrics: process.env.APP_PROFILE === 'campus-local' ? {} : data.expressionMetrics || {},
+            ...(interview.scoreVersion === SCORE_VERSION ? { observations: answerObservations(analysis, process.env.APP_PROFILE === 'campus-local' ? null : data.expressionMetrics) } : {}),
             submittedAt: new Date(),
             code: data.code || '',
             audioUrl
@@ -410,7 +404,7 @@ router.post('/:id/answer', verifyToken, asyncHandler(async (req, res) => {
 // ---------------------------------------------------------------------------
 router.post('/:id([0-9a-fA-F]{24})/annotate/:answerId', verifyToken, validate(annotateSchema), asyncHandler(async (req, res) => {
     const { id, answerId } = req.params;
-    const interview = await Interview.findOne({ _id: id, odId: req.user.uid });
+    const interview = await Interview.findOne({ _id: id, userId: req.user.uid });
     if (!interview) throw new ApiError(404, 'Interview not found');
     const answer = interview.answers.id(answerId);
     if (!answer) throw new ApiError(404, 'Answer not found');
@@ -426,7 +420,7 @@ router.post('/:id([0-9a-fA-F]{24})/run-code', verifyToken, extractAIProvider, ai
     const { id } = req.params;
     const { code, language, problemId } = req.body;
 
-    const interview = await Interview.findOne({ _id: id, odId: req.user.uid });
+    const interview = await Interview.findOne({ _id: id, userId: req.user.uid });
     if (!interview) throw new ApiError(404, 'Interview not found');
 
     const codingQ = interview.questions.find((q) =>
@@ -453,8 +447,9 @@ router.post('/:id([0-9a-fA-F]{24})/run-code', verifyToken, extractAIProvider, ai
 // ---------------------------------------------------------------------------
 router.post('/:id([0-9a-fA-F]{24})/switch-provider', verifyToken, extractAIProvider, aiRateLimiter, asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const interview = await Interview.findOne({ _id: id, odId: req.user.uid });
+    const interview = await Interview.findOne({ _id: id, userId: req.user.uid });
     if (!interview) throw new ApiError(404, 'Interview not found');
+    if (interview.purpose === 'discovery' || interview.status !== 'in_progress' || interview.generation?.status === 'pending') throw campusError(409, 'INTERVIEW_CLOSED', '当前记录不能重新评分。');
 
     const lastAnswer = interview.answers[interview.answers.length - 1];
     if (!lastAnswer) {
@@ -466,7 +461,7 @@ router.post('/:id([0-9a-fA-F]{24})/switch-provider', verifyToken, extractAIProvi
         throw new ApiError(404, 'Question not found');
     }
 
-    const reAnalysis = await analyzeAnswer(
+    let reAnalysis = await analyzeAnswer(
         lastQuestion.question,
         lastAnswer.transcript,
         lastAnswer.duration,
@@ -476,20 +471,15 @@ router.post('/:id([0-9a-fA-F]{24})/switch-provider', verifyToken, extractAIProvi
         interview.totalQuestionCount,
         { language: interview.language, code: lastAnswer.code, codingLanguage: lastAnswer.codingLanguage }
     );
+    if (interview.scoreVersion === SCORE_VERSION) reAnalysis = normalizeAnalysisScores(reAnalysis);
 
-    lastAnswer.analysis = reAnalysis;
-    if (reAnalysis.newContextSummary) {
-        interview.contextSummary = reAnalysis.newContextSummary;
-    }
-
-    interview.providerHistory.push({
-        provider: req.aiProvider.providerName,
-        model: req.aiProvider.modelName || '',
-        action: 'switch',
-        timestamp: new Date()
-    });
-
-    await interview.save();
+    const set = { 'answers.$.analysis': reAnalysis };
+    if (interview.scoreVersion === SCORE_VERSION) set['answers.$.observations'] = answerObservations(reAnalysis, lastAnswer.expressionMetrics);
+    if (reAnalysis.newContextSummary) set.contextSummary = reAnalysis.newContextSummary;
+    const changed = await Interview.updateOne({ _id: id, userId: req.user.uid, status: 'in_progress', 'generation.status': { $ne: 'pending' }, updatedAt: interview.updatedAt, 'answers._id': lastAnswer._id }, {
+        $set: set, $push: { providerHistory: { provider: req.aiProvider.providerName, model: req.aiProvider.modelName || '', action: 'switch', timestamp: new Date() } },
+    }, { runValidators: true });
+    if (!changed.matchedCount) throw campusError(409, 'INTERVIEW_CHANGED', '进度已更新，请恢复进度，不会覆盖已生成的反馈。');
 
     res.json({
         success: true,
@@ -506,43 +496,9 @@ router.post('/:id([0-9a-fA-F]{24})/switch-provider', verifyToken, extractAIProvi
 // ---------------------------------------------------------------------------
 // POST /api/interview/:id/complete
 // ---------------------------------------------------------------------------
-router.post('/:id([0-9a-fA-F]{24})/complete', verifyToken, extractAIProvider, aiRateLimiter, asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
-    const interview = await Interview.findOne({ _id: id, odId: req.user.uid });
-    if (!interview) {
-        throw new ApiError(404, 'Interview not found');
-    }
-
-    if (interview.status !== 'in_progress') {
-        throw campusError(409, 'INTERVIEW_CLOSED', '面试已结束，请刷新查看已保存反馈。');
-    }
-
-    if (!interview.answers.length) throw campusError(400, 'NO_ANSWERS', '请至少完成一道回答后再生成反馈。');
-    const { overallScore, overallFeedback } = await generateOverallFeedback(interview, req.aiProvider);
-
-    const completedAt = new Date();
-    const duration = Math.round((completedAt - interview.startedAt) / 1000);
-    const completed = await Interview.findOneAndUpdate(
-        { _id: id, userId: req.user.uid, status: 'in_progress', answers: { $size: interview.answers.length } },
-        { $set: { status: 'completed', completedAt, duration, overallScore, overallFeedback } }, { new: true });
-    if (!completed) throw campusError(409, 'INTERVIEW_CHANGED', '回答已更新，请刷新后重新生成反馈。');
-    logEvent('interview.completed', { count: completed.answers.length });
-
-    res.json({
-        success: true,
-        data: {
-            interviewId: interview._id,
-            overallScore,
-            overallFeedback,
-            answeredQuestions: interview.answers.length,
-            totalQuestions: interview.questions.length,
-            duration,
-            answers: interview.answers
-        },
-        provider: req.aiProvider.providerName,
-        providerSource: req.aiProviderSource
-    });
+router.post('/:id([0-9a-fA-F]{24})/complete', verifyToken, sessionProvider, aiRateLimiter, asyncHandler(async (req, res) => {
+    const session = await completeInterview(req.params.id, req.user.uid, req.aiProvider);
+    res.json({ success: true, data: { ...sessionJson(session), answeredQuestions: session.answers.length, totalQuestions: session.totalQuestionCount } });
 }));
 
 router.post('/:id/complete', verifyToken, asyncHandler(async (req, res) => {
@@ -553,10 +509,10 @@ router.post('/:id/complete', verifyToken, asyncHandler(async (req, res) => {
 // GET /api/interview/history
 // ---------------------------------------------------------------------------
 router.get('/history', verifyToken, asyncHandler(async (req, res) => {
-    const interviews = await Interview.find({ odId: req.user.uid })
+    const interviews = await Interview.find({ userId: req.user.uid })
         .sort({ createdAt: -1 })
         .limit(50)
-        .select('title jobRole status overallScore createdAt completedAt totalQuestionCount answers.questionId')
+        .select('title jobRole purpose mode scoreVersion scoring status overallScore createdAt completedAt totalQuestionCount answers.questionId generation')
         .lean();
 
     res.json({
@@ -566,7 +522,8 @@ router.get('/history', verifyToken, asyncHandler(async (req, res) => {
             title: row.title || '',
             jobRole: row.jobRole,
             status: row.status,
-            overallScore: row.overallScore,
+            purpose: row.purpose || 'interview', mode: row.mode, scoreVersion: row.purpose === 'discovery' ? null : row.scoreVersion || 'legacy', scoring: row.purpose === 'discovery' ? null : row.scoring || null,
+            overallScore: row.purpose === 'discovery' ? null : row.overallScore ?? null,
             createdAt: row.createdAt,
             completedAt: row.completedAt,
             totalQuestionCount: row.totalQuestionCount,
@@ -590,8 +547,15 @@ router.patch('/:id([0-9a-fA-F]{24})', verifyToken, asyncHandler(async (req, res)
 }));
 
 router.delete('/:id([0-9a-fA-F]{24})', verifyToken, asyncHandler(async (req, res) => {
-    const deleted = await Interview.findOneAndDelete({ _id: req.params.id, userId: req.user.uid });
-    if (!deleted) throw new ApiError(404, '找不到这份档案');
+    await cancelExpiredGeneration(req.params.id, req.user.uid);
+    const pending = await CampusDiscoveryConfirmation.exists({ interviewId: req.params.id, userId: req.user.uid, status: { $ne: 'completed' } });
+    if (pending) throw campusError(409, 'CONFIRMATION_PENDING', '资料确认还未完成，请先恢复保存，避免丢失恢复依据。');
+    const deleted = await Interview.findOneAndDelete({ _id: req.params.id, userId: req.user.uid, confirmationPending: { $ne: true }, 'generation.status': { $ne: 'pending' } });
+    if (!deleted) {
+        if (await Interview.exists({ _id: req.params.id, userId: req.user.uid })) throw campusError(409, 'GENERATION_PENDING', '内容正在生成，请结束后删除。');
+        throw new ApiError(404, '找不到这份档案');
+    }
+    await CampusDiscoveryConfirmation.deleteOne({ interviewId: req.params.id, userId: req.user.uid });
     res.json({ success: true });
 }));
 
@@ -620,7 +584,7 @@ router.get('/:id([0-9a-fA-F]{24})', verifyToken, asyncHandler(async (req, res) =
 
     res.json({
         success: true,
-        data: interview
+        data: sessionJson(interview)
     });
 }));
 

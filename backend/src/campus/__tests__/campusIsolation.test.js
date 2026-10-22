@@ -109,7 +109,7 @@ describe('campus private resource isolation', () => {
     const detail = await call(server, 'GET', `/api/resumes/${resumeId}`);
     assert.equal(detail.status, 404, JSON.stringify(detail.json));
 
-    const updated = await call(server, 'PUT', `/api/resumes/${resumeId}`, { title: 'B 改 A' });
+    const updated = await call(server, 'PUT', `/api/resumes/${resumeId}`, { title: 'B 改 A', revision: 1 });
     assert.equal(updated.status, 404, JSON.stringify(updated.json));
 
     const removed = await call(server, 'DELETE', `/api/resumes/${resumeId}`);
@@ -125,6 +125,11 @@ describe('campus private resource isolation', () => {
 
     const interview = await call(server, 'GET', `/api/interview/${interviewId}`);
     assert.equal(interview.status, 404, JSON.stringify(interview.json));
+    for (const [method, suffix] of [['GET', '/profile-confirmation'], ['POST', '/profile-confirmation'], ['POST', '/continue'], ['POST', '/complete']]) {
+      const body = suffix === '/profile-confirmation' && method === 'POST' ? { candidates: [], expected: { collegeStudent: null, major: '' } } : method === 'POST' ? {} : undefined;
+      const denied = await call(server, method, `/api/interview/${interviewId}${suffix}`, body);
+      assert.equal(denied.status, 404, `${suffix}: ${JSON.stringify(denied.json)}`);
+    }
 
     const { default: Resume } = await import('../../models/Resume.model.js');
     const still = await Resume.findById(resumeId).lean();
@@ -144,6 +149,33 @@ describe('campus private resource isolation', () => {
     const reread = await call(server, 'GET', '/api/user-profiles/me');
     assert.equal(reread.status, 200, JSON.stringify(reread.json));
     assert.equal(reread.json.profile.studyStage, '');
+  });
+
+  test('zero-material discovery start and no-answer completion are durable and unscored', async () => {
+    process.env.DEV_BYPASS_AUTH = 'true';
+    const started = await call(server, 'POST', '/api/interview/discovery/start', { questionCount: 2, language: 'zh' });
+    assert.equal(started.status, 200, JSON.stringify(started.json));
+    const id = started.json.data.interviewId;
+    assert.equal(started.json.data.questions.length, 1);
+    assert.equal(started.json.data.purpose, 'discovery');
+    const completed = await call(server, 'POST', `/api/interview/${id}/complete`, {});
+    assert.equal(completed.status, 200, JSON.stringify(completed.json));
+    assert.equal(completed.json.data.overallScore, null);
+    assert.equal(completed.json.data.discovery.summary, '');
+    assert.deepEqual(completed.json.data.discovery.candidates, []);
+    const replay = await call(server, 'POST', `/api/interview/${id}/complete`, {});
+    assert.equal(replay.status, 200);
+    assert.equal(replay.json.data.completedAt, completed.json.data.completedAt);
+    const analytics = await call(server, 'GET', '/api/interview/analytics');
+    assert.equal(analytics.json.data.sessions.some((row) => String(row._id) === id), false);
+  });
+
+  test('expired generation permits owner deletion without calling the unavailable model', async () => {
+    const { default: Interview } = await import('../../models/Interview.model.js');
+    const session = await Interview.create({ userId: LOCAL_B, purpose: 'discovery', jobRole: '交流', industry: '交流', experienceLevel: 'unknown', generation: { status: 'pending', kind: 'complete', token: 'stale', leaseUntil: new Date(0) } });
+    const deleted = await call(server, 'DELETE', `/api/interview/${session.id}`);
+    assert.equal(deleted.status, 200, JSON.stringify(deleted.json));
+    assert.equal(await Interview.findById(session.id), null);
   });
 
   test('a configured Clerk secret blocks the local bypass even with a bearer token', async () => {

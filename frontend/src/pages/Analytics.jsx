@@ -27,13 +27,16 @@ import {
   Radar
 } from 'recharts'
 import { interviewApi } from '../services/api'
+import { comparisonKey, scoreRule } from '../utils/interviewScores'
+
+const metric = (value) => Number.isFinite(value) ? `${value}%` : 'Not assessed'
 
 const DEFAULT_SUMMARY = {
   count: 0,
-  averageOverallScore: 0,
-  averageCommunication: 0,
-  averageTechnicalAccuracy: 0,
-  averageConfidence: 0,
+  averageOverallScore: null,
+  averageCommunication: null,
+  averageTechnicalAccuracy: null,
+  averageConfidence: null,
   latestSession: null
 }
 
@@ -41,6 +44,7 @@ export default function Analytics() {
   const [analytics, setAnalytics] = useState({ sessions: [], summary: DEFAULT_SUMMARY })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [scoreGroup, setScoreGroup] = useState('')
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -52,7 +56,7 @@ export default function Analytics() {
         logger.log("Analytics Data loaded", { sessionCount: response.data?.sessions?.length })
         const payload = response.data || { sessions: [], summary: DEFAULT_SUMMARY }
         setAnalytics({
-          sessions: Array.isArray(payload.sessions) ? payload.sessions : [],
+          sessions: Array.isArray(payload.sessions) ? payload.sessions.filter((row) => row.purpose !== 'discovery') : [],
           summary: payload.summary || DEFAULT_SUMMARY
         })
       } catch (fetchError) {
@@ -67,35 +71,33 @@ export default function Analytics() {
     loadAnalytics()
   }, [])
 
+  const groups = [...new Set(analytics.sessions.map(comparisonKey).filter(Boolean))]
+  const selectedGroup = groups.includes(scoreGroup) ? scoreGroup : groups[0]
   const sessions = analytics.sessions
-  const summary = analytics.summary
-  const latestSession = summary.latestSession || sessions[sessions.length - 1] || {
-    date: '--',
-    overallScore: 0,
-    communication: 0,
-    technicalAccuracy: 0,
-    confidence: 0
-  }
+  const comparable = sessions.filter((row) => selectedGroup && comparisonKey(row) === selectedGroup)
+  const average = (key) => { const values = comparable.map((row) => row[key]).filter(Number.isFinite); return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null }
+  const summary = { count: sessions.length, averageOverallScore: average('overallScore'), averageCommunication: average('communication'), averageConfidence: average('confidence') }
+  const latestSession = sessions[sessions.length - 1] || { date: '--', overallScore: null, communication: null, technicalAccuracy: null, confidence: null }
 
   const radarData = [
     { subject: 'Communication', A: latestSession.communication, fullMark: 100 },
     { subject: 'Technical Accuracy', A: latestSession.technicalAccuracy, fullMark: 100 },
     { subject: 'Confidence', A: latestSession.confidence, fullMark: 100 },
     { subject: 'Overall Score', A: latestSession.overallScore, fullMark: 100 }
-  ]
+  ].filter((row) => Number.isFinite(row.A))
 
   const summaryStats = [
     { label: 'Sessions', value: summary.count, icon: Clock, accent: 'text-primary' },
-    { label: 'Avg. Score', value: `${summary.averageOverallScore}%`, icon: TrendingUp, accent: 'text-emerald-500' },
-    { label: 'Avg. Communication', value: `${summary.averageCommunication}%`, icon: BarChart3, accent: 'text-violet-500' },
-    { label: 'Avg. Confidence', value: `${summary.averageConfidence}%`, icon: Sparkles, accent: 'text-amber-500' }
+    { label: 'Avg. Score', value: metric(summary.averageOverallScore), icon: TrendingUp, accent: 'text-emerald-500' },
+    { label: 'Avg. Communication', value: metric(summary.averageCommunication), icon: BarChart3, accent: 'text-violet-500' },
+    { label: 'Avg. Text Confidence', value: metric(summary.averageConfidence), icon: Sparkles, accent: 'text-amber-500' }
   ]
 
-  const chartData = sessions || []
+  const chartData = comparable
 const hasSessions = sessions.length > 0
 
-const insights = analyzePerformance(sessions)
-const improvement = insights.improvement || 0
+const insights = analyzePerformance(comparable)
+const improvement = insights.improvement ?? 'Not comparable'
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,6 +113,7 @@ const improvement = insights.improvement || 0
               <p className="mt-3 max-w-2xl text-sm text-muted-foreground leading-7">
                 Explore your mock interview history with trend lines, skill breakdowns, and session summaries powered by realtime analytics.
               </p>
+              <label>Scoring scope<select value={selectedGroup || ''} onChange={(event) => setScoreGroup(event.target.value)}>{groups.map((group) => <option key={group} value={group}>{scoreRule(sessions.find((session) => comparisonKey(session) === group))}</option>)}</select></label><p>Only compatible formal interview scores are compared. Discovery conversations are excluded.</p>
             </div>
 
             <Link
@@ -159,7 +162,7 @@ const improvement = insights.improvement || 0
                   <h2 className="mt-2 text-2xl font-black text-foreground">Latest session radar</h2>
                 </div>
                 <div className="text-sm font-medium text-muted-foreground">
-                  {latestSession.date} • Overall {latestSession.overallScore}%
+                  {latestSession.date} • Overall {metric(latestSession.overallScore)} · {scoreRule(latestSession)}
                 </div>
               </div>
 
@@ -302,29 +305,29 @@ const improvement = insights.improvement || 0
               <div className="space-y-4">
                 {hasSessions ? (
                   sessions.map((session) => (
-                    <div key={session.date} className="rounded-3xl border border-border/70 bg-background/80 p-4">
+                    <div key={session._id} className="rounded-3xl border border-border/70 bg-background/80 p-4">
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="text-sm font-bold text-foreground">{session.date}</p>
-                          <p className="text-xs text-muted-foreground">Overall score: {session.overallScore}%</p>
+                          <p className="text-xs text-muted-foreground">Overall score: {metric(session.overallScore)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-lg font-black text-foreground">{session.confidence}%</p>
+                          <p className="text-lg font-black text-foreground">{metric(session.confidence)}</p>
                           <p className="text-xs text-muted-foreground">Confidence</p>
                         </div>
                       </div>
                       <div className="mt-4 grid gap-3 sm:grid-cols-3">
                         <div className="rounded-2xl bg-card border border-border p-3 text-center">
                           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Communication</p>
-                          <p className="mt-2 text-xl font-black text-foreground">{session.communication}%</p>
+                          <p className="mt-2 text-xl font-black text-foreground">{metric(session.communication)}</p>
                         </div>
                         <div className="rounded-2xl bg-card border border-border p-3 text-center">
                           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Technical</p>
-                          <p className="mt-2 text-xl font-black text-foreground">{session.technicalAccuracy}%</p>
+                          <p className="mt-2 text-xl font-black text-foreground">{metric(session.technicalAccuracy)}</p>
                         </div>
                         <div className="rounded-2xl bg-card border border-border p-3 text-center">
                           <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Confidence</p>
-                          <p className="mt-2 text-xl font-black text-foreground">{session.confidence}%</p>
+                          <p className="mt-2 text-xl font-black text-foreground">{metric(session.confidence)}</p>
                         </div>
                       </div>
                     </div>

@@ -1,51 +1,24 @@
 # Hook Guidelines
 
-> How hooks are used in this project.
+## Lifecycle ownership
 
----
+`hooks/useAudioCapture.js` owns MediaRecorder, MediaStream tracks and timer cleanup. `hooks/useQuestionSpeech.js` owns speech playback. Do not couple waveform rendering or speech playback to capture ownership.
 
-## Overview
+Use state for rendered values and refs for mutable async ownership. `useAudioCapture` keeps `{generation,state,stream,recorder,timer,mounted}` in a ref. A generation is incremented on cancellation/unmount; a late permission result stops its tracks rather than starting a recording.
 
-<!--
-Document your project's hook conventions here.
+```js
+const generation = ++owner.current.generation
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+if (!owner.current.mounted || generation !== owner.current.generation) {
+  stream.getTracks().forEach(track => track.stop())
+  return
+}
+```
 
-Questions to answer:
-- What custom hooks do you have?
-- How do you handle data fetching?
-- What are the naming conventions?
-- How do you share stateful logic?
--->
+The recording indicator starts on MediaRecorder `onstart`, not on button click or permission request. Stop/cancel/unmount remove callbacks, stop tracks and clear timers. Default camera remains off. Capture limits and upload limits both apply; server limits remain authoritative.
 
-(To be filled by the team)
+## Effects and requests
 
----
+Effects that acquire resources return cleanup. Support React development StrictMode mount/cleanup behavior. Stable callbacks include real dependencies; do not suppress stale-closure warnings. `campusFetch` accepts AbortSignal and composes cancellation with its own timeout. Generation/revision checks are still needed to prevent older responses applying after a user edit.
 
-## Custom Hook Patterns
-
-<!-- How to create and structure custom hooks -->
-
-(To be filled by the team)
-
----
-
-## Data Fetching
-
-<!-- How data fetching is handled (React Query, SWR, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- Hook naming rules (use*, etc.) -->
-
-(To be filled by the team)
-
----
-
-## Common Mistakes
-
-<!-- Hook-related mistakes your team has made -->
-
-(To be filled by the team)
+Behavior regressions belong under `hooks/__tests__/`: permission resolves after cancel/unmount, repeat start is single-flight, actual start/stop transitions, and track release. Mock media only to exercise these branches; it does not prove human microphone quality.

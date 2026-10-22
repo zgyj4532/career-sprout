@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { expectedUpdatedAtSchema } from '../campus/schemas.js';
 
 // Reusable string field that tolerates null / undefined and coerces to ''.
 const optionalString = (max) =>
@@ -15,6 +16,11 @@ const yearSchema = z
   .max(2100, 'year must be <= 2100');
 
 const educationItemSchema = z.object({
+  id: z.string().max(80).optional(),
+  fullText: z.string().max(100000).optional(),
+  dateText: z.string().max(80).optional(),
+  precision: z.enum(['day', 'month', 'year', 'unknown', '']).optional(),
+  current: z.boolean().optional(),
   institution: z.string().trim().max(150).optional(),
   degree: z.string().trim().max(100).optional(),
   field: z.string().trim().max(100).optional(),
@@ -29,13 +35,14 @@ const educationItemSchema = z.object({
  * allowed so consumers can save a single field at a time.
  */
 export const updateProfileSchema = z.object({
+  expectedUpdatedAt: expectedUpdatedAtSchema,
   // Existing fields
   displayName: z.string().max(100, 'displayName must be at most 100 characters').optional(),
   bio: z.string().max(500, 'bio must be at most 500 characters').optional(),
   jobRole: z.string().max(100, 'jobRole must be at most 100 characters').optional(),
   skills: z
     .array(z.string().trim().min(1))
-    .max(20, 'You can list at most 20 skills')
+    .max(100, 'You can list at most 100 skills')
     .optional(),
   location: z.string().max(100, 'location must be at most 100 characters').optional(),
   website: z.string().max(200, 'website must be at most 200 characters').optional(),
@@ -65,7 +72,7 @@ export const updateProfileSchema = z.object({
     .min(0, 'yearsOfExperience must be >= 0')
     .max(80, 'yearsOfExperience must be <= 80')
     .optional(),
-  collegeStudent: z.boolean().optional(),
+  collegeStudent: z.boolean().nullable().optional(),
   studyStage: z.enum(['大一', '大二', '大三', '大四', '已毕业', '']).optional(),
   openToWork: z.boolean().optional(),
   education: z.array(educationItemSchema).max(20, 'You can list at most 20 education entries').optional(),
@@ -74,6 +81,7 @@ export const updateProfileSchema = z.object({
     .max(20, 'You can list at most 20 languages')
     .optional(),
   resumeHeadline: optionalString(300),
+  otherMaterials: z.string().max(20000).optional(),
 });
 
 /**

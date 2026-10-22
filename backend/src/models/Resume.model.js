@@ -46,6 +46,22 @@ const resumeSchema = new mongoose.Schema({
             return `Resume - ${new Date().toISOString().slice(0, 10)}`;
         }
     },
+    revision: {
+        type: Number,
+        default: 1,
+        min: 1,
+    },
+    contentRevision: {
+        type: Number,
+        default: 1,
+        min: 1,
+    },
+    lastImportId: { type: String, default: null },
+    saveReceipts: { type: [String], default: [] },
+    deleting: {
+        type: Boolean,
+        default: false,
+    },
     pdfUrl: {
         type: String,
         default: null

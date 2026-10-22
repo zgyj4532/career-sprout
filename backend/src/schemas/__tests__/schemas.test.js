@@ -266,15 +266,17 @@ describe('resume.schema — createResumeSchema', () => {
 
 describe('resume.schema — updateResumeSchema', () => {
   test('accepts partial updates', () => {
-    const result = updateResumeSchema.safeParse({ title: 'New Title' });
+    const result = updateResumeSchema.safeParse({ title: 'New Title', revision: 1 });
     assert.ok(result.success);
   });
 
   test('rejects empty object', () => {
-    // customSections defaults to [] so the schema now accepts {} but the
-    // downstream `.refine` check still rejects (no field to update).
-    const result = updateResumeSchema.safeParse({});
+    const result = updateResumeSchema.safeParse({ revision: 1 });
     assert.ok(!result.success, 'empty object should be rejected by the .refine()');
+  });
+  test('rejects blind writes and accepts custom-section-only updates', () => {
+    assert.equal(updateResumeSchema.safeParse({ title: 'blind' }).success, false);
+    assert.equal(updateResumeSchema.safeParse({ revision: 1, customSections: [] }).success, true);
   });
 });
 
@@ -699,10 +701,11 @@ describe('userProfile.schema — updateProfileSchema', () => {
     assert.ok(!result.success);
   });
 
-  test('rejects skills array > 20 items', () => {
+  test('rejects skills array above the imported-material limit', () => {
     const result = updateProfileSchema.safeParse({
-      skills: Array.from({ length: 21 }, (_, i) => `skill${i}`),
+      skills: Array.from({ length: 101 }, (_, i) => `skill${i}`),
     });
+    assert.equal(result.success, false);
   });
 
   test('accepts all new personal-info fields together', () => {

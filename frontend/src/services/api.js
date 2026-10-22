@@ -258,12 +258,12 @@ export const resumeApi = {
   },
 
   // Reorder sections
-  async reorderSections(resumeId, sectionOrder) {
+  async reorderSections(resumeId, sectionOrder, revision) {
     const headers = await getAuthHeaders()
     const response = await fetch(`${API_BASE}/resumes/${resumeId}/reorder`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ sectionOrder })
+      body: JSON.stringify({ sectionOrder, revision })
     })
     return handleResponse(response)
   },
@@ -409,11 +409,12 @@ export const resumeApi = {
   },
 
   // Restore resume to a specific version
-  async restoreVersion(resumeId, versionId) {
+  async restoreVersion(resumeId, versionId, revision) {
     const headers = await getAuthHeaders()
     const response = await fetch(`${API_BASE}/resumes/${resumeId}/versions/${versionId}/restore`, {
       method: 'POST',
-      headers
+      headers,
+      body: JSON.stringify({ revision })
     })
     return handleResponse(response)
   },

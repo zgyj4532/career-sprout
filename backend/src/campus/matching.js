@@ -20,7 +20,7 @@ export function matchStudent(student = {}, job = {}) {
     const assessment = skills.get(normalizeSkill(requirement.name));
     const entry = { name: requirement.name, requiredLevel: requirement.level, currentLevel: assessment?.level ?? null, evidence: assessment?.evidence || '' };
     if (requirement.required) requiredCount++;
-    if (!assessment) unknownSkills.push(entry);
+    if (assessment?.level == null) unknownSkills.push(entry);
     else if (assessment.level < requirement.level) missingSkills.push(entry);
     else { matchedSkills.push(entry); if (requirement.required) covered++; }
   }

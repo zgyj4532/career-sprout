@@ -8,7 +8,7 @@ import BodyLanguageTips from '../components/BodyLanguageTips';
 import VoiceToTextButton from '../components/VoiceToTextButton';
 import { interviewApi, uploadApi, resumeApi } from '../services/api';
 import ConfidenceMeter from "../components/ConfidenceMeter";
-import {DEFAULT_PROGRESS,updateDifficulty} from '../utils/interviewDifficulty';
+import { normalizeProgress, progressFor, updateDifficulty } from '../utils/interviewDifficulty';
 import LearningRecommendations from "../components/LearningRecommendations";
 import CopyButton from '../components/CopyButton';
 import QuestionAnalysisCard from '../components/interview/QuestionAnalysisCard';
@@ -16,6 +16,7 @@ import AvatarInterviewer from '../components/interview/AvatarInterviewer';
 import { useAIConfigStore } from '../stores/useAIConfigStore';
 import { SUPPORTED_LANGUAGES, getLanguage, DEFAULT_LANGUAGE_CODE } from '../constants/languages';
 import { captureCardToBlob, downloadBlob, shareImage, buildShareCaption } from '../utils/shareCard';
+import { interviewScore, scoreRule } from '../utils/interviewScores';
 
 // Code editor (Monaco) — ~3MB chunk, lazy-loaded only when mode === 'coding'
 const CodeEditor = lazy(() => import('../components/interview/CodeEditor'));
@@ -156,19 +157,8 @@ export default function InterviewPrep() {
   const [textAnswer, setTextAnswer] = useState('');
 
   const [overallResults, setOverallResults] = useState(null);
-  const [progressData, setProgressData] = useState(() => {
-
-  const stored =
-    localStorage.getItem(
-      "interviewProgress"
-    );
-
-  return stored
-    ? JSON.parse(stored)
-    : DEFAULT_PROGRESS;
-
-});
-  const [expressionSamples, setExpressionSamples] = useState([]);
+  const [progressLedger, setProgressLedger] = useState(() => normalizeProgress(JSON.parse(localStorage.getItem('interviewProgress') || 'null')));
+  const progressData = progressFor(overallResults, progressLedger);
 
   // Active AI config (BYOK) — for the avatar and provider-switch modal
   const activeConfig = useAIConfigStore((s) => s.activeProvider);
@@ -330,27 +320,11 @@ export default function InterviewPrep() {
 
   setFaceConfidence(confidence);
 
-  setExpressionSamples(prev => [
-    ...prev.slice(-60),
-    { confidence, timestamp: Date.now() }
-  ]);
 } else {
   setFaceConfidence(20);
 }
   };
 
-  const getAverageMetrics = () => {
-    if (expressionSamples.length === 0) {
-      return { averageConfidence: 60, eyeContactPercentage: 60, headMovementStability: 70, overallExpressionScore: 60 };
-    }
-    const avgConfidence = expressionSamples.reduce((sum, s) => sum + s.confidence, 0) / expressionSamples.length;
-    return {
-      averageConfidence: Math.round(avgConfidence),
-      eyeContactPercentage: Math.round(avgConfidence * 0.9),
-      headMovementStability: Math.round(70 + Math.random() * 15),
-      overallExpressionScore: Math.round(avgConfidence)
-    };
-  };
 
   const cleanupMedia = () => {
     if (animationFrameIdRef.current) {
@@ -790,7 +764,6 @@ export default function InterviewPrep() {
     transcriptRef.current = '';
     setRecordingTime(0);
     startTimeRef.current = Date.now();
-    setExpressionSamples([]);
     setError('');
     isRecordingRef.current = true;
     setIsRecording(true);
@@ -926,7 +899,6 @@ export default function InterviewPrep() {
     setIsRecording(false);
     // eslint-disable-next-line
     const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-    const metrics = getAverageMetrics();
 
     const finalTranscript = transcriptRef.current.trim() || transcript.trim();
 
@@ -955,7 +927,6 @@ export default function InterviewPrep() {
         questionId: questions[currentQuestionIndex].questionId,
         transcript: resolvedTranscript,
         duration,
-        expressionMetrics: metrics,
         code: formData.mode === 'coding' ? code : undefined,
         codingLanguage: formData.mode === 'coding' ? formData.codingLanguage : undefined,
         audioBlob
@@ -996,8 +967,7 @@ export default function InterviewPrep() {
       const response = await interviewApi.submitAnswer(interviewId, {
         questionId: questions[currentQuestionIndex].questionId,
         transcript: finalTranscript,
-        duration: 30, // Default for text answers
-        expressionMetrics: { averageConfidence: 0.8, eyeContactPercentage: 80, headMovementStability: 0.8, overallExpressionScore: 80 }
+        duration: 0
       });
 
       setAnswersSubmitted([...answersSubmitted, { questionIndex: currentQuestionIndex, transcript: finalTranscript }]);
@@ -1024,11 +994,11 @@ export default function InterviewPrep() {
   setLoading(true);
   try {
     const response = await interviewApi.completeInterview(interviewId);
-    const score = response.data.overallScore;
-    const previousLevel = progressData.level;
-    const updatedProgress = updateDifficulty(score,progressData);
-    localStorage.setItem("interviewProgress",JSON.stringify( updatedProgress));
-    setProgressData(updatedProgress);
+    const previousLevel = progressFor(response.data, progressLedger).level;
+    const updatedLedger = updateDifficulty(response.data, progressLedger);
+    const updatedProgress = progressFor(response.data, updatedLedger);
+    localStorage.setItem('interviewProgress', JSON.stringify(updatedLedger));
+    setProgressLedger(updatedLedger);
     if(
  previousLevel !==
  updatedProgress.level
@@ -1074,7 +1044,6 @@ ${updatedProgress.level}`
     setCurrentQuestionIndex(0);
     setOverallResults(null);
     setTranscript('');
-    setExpressionSamples([]);
     setAnswersSubmitted([]);
   };
 
@@ -1911,6 +1880,8 @@ ${updatedProgress.level}`
   }
 
   if (step === 'feedback' && overallResults) {
+    const score = interviewScore(overallResults);
+    const displayScore = (value) => Number.isFinite(value) ? `${Math.round(value)}%` : 'Not assessed';
     const getScoreColor = (score) => {
       if (score >= 80) return 'emerald';
       if (score >= 60) return 'amber';
@@ -1918,6 +1889,7 @@ ${updatedProgress.level}`
     };
 
     const getScoreLabel = (score) => {
+      if (!Number.isFinite(score)) return 'Not assessed';
       if (score >= 90) return 'Excellent';
       if (score >= 80) return 'Very Good';
       if (score >= 70) return 'Good';
@@ -1937,12 +1909,18 @@ ${updatedProgress.level}`
       amber: 'shadow-amber-500/30',
       red: 'shadow-red-500/30'
     }[scoreColor] || 'shadow-emerald-500/30';
-    const avgRelevance = overallResults.answers?.reduce((sum, a) => sum + (a.analysis?.relevance || 0), 0) / (overallResults.answers?.length || 1) || 0;
-    const avgClarity = overallResults.answers?.reduce((sum, a) => sum + (a.analysis?.clarity || 0), 0) / (overallResults.answers?.length || 1) || 0;
-    const avgConfidence = overallResults.answers?.reduce((sum, a) => sum + (a.analysis?.confidence || 0), 0) / (overallResults.answers?.length || 1) || 0;
+    const dimension = (key) => {
+      if (overallResults.scoreVersion === 'available-v1') return overallResults.scoring?.dimensions?.[key]?.score ?? null;
+      const values = (overallResults.answers || []).map(answer => answer.analysis?.[key]).filter(Number.isFinite);
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+    };
+    const avgRelevance = dimension('relevance');
+    const avgClarity = dimension('clarity');
+    const avgConfidence = dimension('confidence');
     const totalFillerWords = overallResults.answers?.reduce((sum, a) => sum + (a.analysis?.fillerWords?.count || 0), 0) || 0;
-    const expressionScore = overallResults.overallFeedback?.expressionAnalysis?.overallConfidence || 0;
+    const expressionScore = overallResults.scoreVersion === 'available-v1' ? dimension('expression') : overallResults.overallFeedback?.expressionAnalysis?.overallConfidence ?? null;
     const getCommunicationRating = () => {
+  if (!Number.isFinite(avgClarity) || !Number.isFinite(avgConfidence)) return 'Not assessed';
   if (avgClarity >= 85 && avgConfidence >= 85) return 'Excellent';
   if (avgClarity >= 75 && avgConfidence >= 75) return 'Strong';
   if (avgClarity >= 65 && avgConfidence >= 65) return 'Good';
@@ -1951,13 +1929,13 @@ ${updatedProgress.level}`
 
 const communicationTips = [];
 
-if (avgConfidence < 70) {
+if (Number.isFinite(avgConfidence) && avgConfidence < 70) {
   communicationTips.push(
     'Practice speaking more confidently and reduce hesitation.'
   );
 }
 
-if (avgClarity < 70) {
+if (Number.isFinite(avgClarity) && avgClarity < 70) {
   communicationTips.push(
     'Structure responses using the STAR method.'
   );
@@ -1971,7 +1949,7 @@ if (totalFillerWords > 5) {
 
 if (communicationTips.length === 0) {
   communicationTips.push(
-    'Excellent communication skills. Keep practicing regularly.'
+    'Review the specific feedback recorded for your answers.'
   );
 }
 
@@ -2001,11 +1979,11 @@ if (communicationTips.length === 0) {
   </h3>
 
   <p className="text-5xl font-bold text-primary">
-    {overallResults.overallScore}%
+    {displayScore(score)}
   </p>
 
   <p className="text-muted-foreground mt-2">
-    Based on confidence, communication, and answer quality.
+    {scoreRule(overallResults)}
   </p>
 </div>
 
@@ -2022,6 +2000,7 @@ if (communicationTips.length === 0) {
     <h2 className="text-2xl font-bold mb-4">
       Adaptive Interview Progress
     </h2>
+    {progressLedger.legacy && <details><summary>Retained historical progress · unknown scoring scope</summary><p>Level: {progressLedger.legacy.level}; completed: {progressLedger.legacy.completedInterviews}; original average: {progressLedger.legacy.averageScore}%. This record is not combined with current scoring groups.</p></details>}
 
     <div className="grid md:grid-cols-2 gap-4">
 
@@ -2033,6 +2012,7 @@ if (communicationTips.length === 0) {
         <p className="text-xl font-bold">
           {progressData.level}
         </p>
+        <p className="text-xs text-muted-foreground">Current compatible scope: {scoreRule(overallResults)}. Historical unscoped progress is retained separately.</p>
       </div>
 
       <div>
@@ -2041,7 +2021,7 @@ if (communicationTips.length === 0) {
         </p>
 
         <p className="text-xl font-bold">
-          {progressData.averageScore}%
+          {progressData.completedInterviews ? `${progressData.averageScore}%` : 'Not assessed'}
         </p>
       </div>
 
@@ -2095,7 +2075,7 @@ if (communicationTips.length === 0) {
                 <div className="relative">
                   <svg className="w-44 h-44 transform -rotate-90">
                     <circle cx="88" cy="88" r="76" stroke="currentColor" strokeWidth="12" fill="none" className="text-muted-foreground/60" />
-                    <motion.circle initial={{ strokeDashoffset: 478 }} animate={{ strokeDashoffset: 478 - (478 * overallResults.overallScore) / 100 }} transition={{ delay: 0.5, duration: 1.5, ease: 'easeOut' }} cx="88" cy="88" r="76" stroke="url(#scoreGradient)" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray="478" />
+                    {score !== null && <motion.circle initial={{ strokeDashoffset: 478 }} animate={{ strokeDashoffset: 478 - (478 * score) / 100 }} transition={{ delay: 0.5, duration: 1.5, ease: 'easeOut' }} cx="88" cy="88" r="76" stroke="url(#scoreGradient)" strokeWidth="12" fill="none" strokeLinecap="round" strokeDasharray="478" />}
                     <defs>
                       <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#818cf8" />
@@ -2105,7 +2085,7 @@ if (communicationTips.length === 0) {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                      {overallResults.overallScore}%
+                      {displayScore(score)}
                     </motion.span>
                     <span className="text-muted-foreground text-sm font-medium mt-1">{getScoreLabel(overallResults.overallScore)}</span>
                   </div>
@@ -2120,37 +2100,37 @@ if (communicationTips.length === 0) {
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-foreground text-sm flex items-center gap-2"><Target className="w-4 h-4 text-sky-400" />Answer Relevance</span>
-                        <span className="text-sky-400 font-semibold">{Math.round(avgRelevance)}%</span>
+                        <span className="text-sky-400 font-semibold">{displayScore(avgRelevance)}</span>
                       </div>
                       <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${avgRelevance}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full bg-gradient-to-r from-sky-500 to-sky-400 rounded-full" />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${avgRelevance ?? 0}%` }} transition={{ delay: 0.6, duration: 1 }} className="h-full bg-gradient-to-r from-sky-500 to-sky-400 rounded-full" />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-foreground text-sm flex items-center gap-2"><MessageSquare className="w-4 h-4 text-emerald-400" />Communication Clarity</span>
-                        <span className="text-emerald-400 font-semibold">{Math.round(avgClarity)}%</span>
+                        <span className="text-emerald-400 font-semibold">{displayScore(avgClarity)}</span>
                       </div>
                       <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${avgClarity}%` }} transition={{ delay: 0.7, duration: 1 }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${avgClarity ?? 0}%` }} transition={{ delay: 0.7, duration: 1 }} className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-foreground text-sm flex items-center gap-2"><Brain className="w-4 h-4 text-purple-400" />Verbal Confidence</span>
-                        <span className="text-purple-400 font-semibold">{Math.round(avgConfidence)}%</span>
+                        <span className="text-foreground text-sm flex items-center gap-2"><Brain className="w-4 h-4 text-purple-400" />Text Confidence</span>
+                        <span className="text-purple-400 font-semibold">{displayScore(avgConfidence)}</span>
                       </div>
                       <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${avgConfidence}%` }} transition={{ delay: 0.8, duration: 1 }} className="h-full bg-gradient-to-r from-secondary to-purple-400 rounded-full" />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${avgConfidence ?? 0}%` }} transition={{ delay: 0.8, duration: 1 }} className="h-full bg-gradient-to-r from-secondary to-purple-400 rounded-full" />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-foreground text-sm flex items-center gap-2"><Eye className="w-4 h-4 text-amber-400" />Body Language & Expression</span>
-                        <span className="text-amber-400 font-semibold">{Math.round(expressionScore)}%</span>
+                        <span className="text-amber-400 font-semibold">{displayScore(expressionScore)}</span>
                       </div>
                       <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${expressionScore}%` }} transition={{ delay: 0.9, duration: 1 }} className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full" />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${expressionScore ?? 0}%` }} transition={{ delay: 0.9, duration: 1 }} className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full" />
                       </div>
                     </div>
                   </div>
@@ -2176,8 +2156,8 @@ if (communicationTips.length === 0) {
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center mx-auto mb-2">
                     <TrendingUp className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <p className="text-2xl font-bold text-emerald-400">{Math.round((avgRelevance + avgClarity + avgConfidence) / 3)}%</p>
-                  <p className="text-xs text-muted-foreground mt-1">Avg Answer Quality</p>
+                  <p className="text-2xl font-bold text-emerald-400">{displayScore(score)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Canonical Overall Score</p>
                 </div>
                 <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
                   <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center mx-auto mb-2">
@@ -2215,7 +2195,7 @@ if (communicationTips.length === 0) {
           Communication Score
         </p>
         <p className="text-3xl font-bold text-emerald-400">
-          {Math.round(avgClarity)}
+          {displayScore(avgClarity)}
         </p>
       </div>
 
@@ -2224,7 +2204,7 @@ if (communicationTips.length === 0) {
           Confidence Score
         </p>
         <p className="text-3xl font-bold text-purple-400">
-          {Math.round(avgConfidence)}
+          {displayScore(avgConfidence)}
         </p>
       </div>
 

@@ -13,6 +13,7 @@ import { matchStudent } from './matching.js';
 import { campusError } from './errors.js';
 import { generatePDF } from '../services/pdfGenerator.js';
 import { logEvent } from '../utils/diagnostics.js';
+import { sourceContentMatches } from './resumeRevision.js';
 
 const zipAsync = promisify(zip);
 let exportActive = false;
@@ -57,13 +58,13 @@ router.get('/teacher/jobs/:id/candidates', requireTeacher, asyncHandler(async (r
   const profiles = new Map((await UserProfile.find({ uid: { $in: studentIds } }).select('uid displayName').lean()).map((profile) => [profile.uid, profile]));
   const allTargets = await CampusTarget.find({ studentId: { $in: studentIds }, jobId: job._id }).select('studentId sourceResumeId sourceRevision jobRevision revision approvedRevision title').limit(2001).lean();
   if (allTargets.length > 2000) throw campusError(422, 'CANDIDATE_LIMIT', '定向简历数量超过单次查询上限。');
-  const sources = new Map((await Resume.find({ _id: { $in: allTargets.map((target) => target.sourceResumeId) }, userId: { $in: studentIds } }).select('userId lastModified').lean()).map((source) => [String(source._id), source]));
+  const sources = new Map((await Resume.find({ _id: { $in: allTargets.map((target) => target.sourceResumeId) }, userId: { $in: studentIds }, deleting: { $ne: true } }).select('userId contentRevision').lean()).map((source) => [String(source._id), source]));
   const targetsByStudent = new Map();
   for (const target of allTargets) {
     const source = sources.get(String(target.sourceResumeId));
     if (!source || source.userId !== target.studentId) continue;
     const entries = targetsByStudent.get(target.studentId) || [];
-    entries.push({ id: String(target._id), revision: target.revision, approved: target.approvedRevision === target.revision && new Date(source.lastModified).getTime() === new Date(target.sourceRevision).getTime() && Boolean(target.jobRevision) && new Date(target.jobRevision).getTime() === new Date(job.updatedAt).getTime(), title: target.title });
+    entries.push({ id: String(target._id), revision: target.revision, approved: target.approvedRevision === target.revision && sourceContentMatches(source, target) && Boolean(target.jobRevision) && new Date(target.jobRevision).getTime() === new Date(job.updatedAt).getTime(), title: target.title });
     targetsByStudent.set(target.studentId, entries);
   }
   for (const grant of grants) {
@@ -75,10 +76,10 @@ router.get('/teacher/jobs/:id/candidates', requireTeacher, asyncHandler(async (r
   const currentJob = await visibleJob(req.params.id, req.user.uid);
   if (new Date(currentJob.updatedAt).getTime() !== new Date(job.updatedAt).getTime()) throw campusError(409, 'JOB_CHANGED', '岗位已更新，请刷新候选人列表。');
   const currentTargets = new Map((await CampusTarget.find({ _id: { $in: allTargets.map((target) => target._id) } }).select('studentId jobId jobRevision sourceResumeId sourceRevision revision approvedRevision').lean()).map((target) => [String(target._id), target]));
-  const currentSources = new Map((await Resume.find({ _id: { $in: allTargets.map((target) => target.sourceResumeId) } }).select('userId lastModified').lean()).map((source) => [String(source._id), source]));
+  const currentSources = new Map((await Resume.find({ _id: { $in: allTargets.map((target) => target.sourceResumeId) }, deleting: { $ne: true } }).select('userId contentRevision').lean()).map((source) => [String(source._id), source]));
   for (const group of Object.values(data)) for (const candidate of group) for (const entry of candidate.targets) {
     const target = currentTargets.get(entry.id), source = target && currentSources.get(String(target.sourceResumeId));
-    entry.approved = entry.approved && Boolean(target && source && target.studentId === candidate.studentId && source.userId === candidate.studentId && String(target.jobId) === String(job._id) && target.revision === entry.revision && target.approvedRevision === entry.revision && target.jobRevision && new Date(target.jobRevision).getTime() === new Date(currentJob.updatedAt).getTime() && new Date(source.lastModified).getTime() === new Date(target.sourceRevision).getTime());
+    entry.approved = entry.approved && Boolean(target && source && target.studentId === candidate.studentId && source.userId === candidate.studentId && String(target.jobId) === String(job._id) && target.revision === entry.revision && target.approvedRevision === entry.revision && target.jobRevision && new Date(target.jobRevision).getTime() === new Date(currentJob.updatedAt).getTime() && sourceContentMatches(source, target));
   }
   // Recheck every grant at response time; removed students never remain in an earlier group.
   const live = new Set((await CampusGrant.find({ teacherId: req.user.uid, studentId: { $in: studentIds } }).select('studentId').lean()).map((grant) => grant.studentId));
@@ -91,7 +92,8 @@ export async function authorizedExportTarget(targetId, job, teacherId, revision)
   if (!target || target.approvedRevision !== target.revision || (revision !== undefined && target.revision !== revision)) return null;
   if (!target.jobRevision || new Date(target.jobRevision).getTime() !== new Date(job.updatedAt).getTime()) return null;
   if (!await CampusGrant.exists({ studentId: target.studentId, teacherId })) return null;
-  if (!await Resume.exists({ _id: target.sourceResumeId, userId: target.studentId, lastModified: target.sourceRevision })) return null;
+  const source = await Resume.findOne({ _id: target.sourceResumeId, userId: target.studentId, deleting: { $ne: true } }).select('contentRevision').lean();
+  if (!source || !sourceContentMatches(source, target)) return null;
   const student = await CampusStudent.findOne({ uid: target.studentId }).lean();
   if (matchStudent(student || {}, job).timeStatus !== 'covered') return null;
   return target;

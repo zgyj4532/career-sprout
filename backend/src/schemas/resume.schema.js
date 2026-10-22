@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { operationIdSchema } from '../campus/schemas.js';
 
 /**
  * Sub-schema for user-defined custom sections (Gap #8). Each section has
@@ -24,6 +25,7 @@ const customSectionsField = z
  * POST /api/resumes
  */
 export const createResumeSchema = z.object({
+  operationId: operationIdSchema,
   originalText: z
     .string({ required_error: 'originalText is required' })
     .min(1, 'originalText cannot be empty'),
@@ -39,19 +41,26 @@ export const createResumeSchema = z.object({
  */
 export const updateResumeSchema = z
   .object({
+    operationId: operationIdSchema,
     originalText: z.string().min(1, 'originalText cannot be empty').optional(),
     enhancedText: z.string().nullish(),
     jobRole: z.string().nullish(),
     preferences: z.record(z.unknown()).optional(),
     title: z.string().max(200, 'title must be at most 200 characters').optional(),
     pdfUrl: z.string().url('pdfUrl must be a valid URL').nullish(),
-    customSections: customSectionsField.optional(),
+    customSections: z.array(customSectionItemSchema).max(20).optional(),
+    revision: z.number().int().positive(),
+    atsScore: z.number().min(0).max(100).nullable().optional(),
+    sectionOrder: z.array(z.string().min(1).max(80)).max(40).optional(),
   })
   .refine(
     (data) =>
-      Object.entries(data).some(([k, v]) => k !== 'customSections' && v !== undefined),
+      Object.entries(data).some(([k, v]) => !['revision', 'operationId'].includes(k) && v !== undefined),
     { message: 'At least one updatable field must be provided' }
   );
+
+export const restoreResumeSchema = z.object({ revision: z.number().int().positive() });
+export const reorderResumeSchema = restoreResumeSchema.extend({ sectionOrder: z.array(z.string().min(1).max(80)).max(40) });
 
 /**
  * GET /api/resumes/:resumeId/download  (query params)
@@ -68,7 +77,7 @@ export const createResumeVersionSchema = z.object({
   originalText: z.string().min(1, 'originalText cannot be empty'),
   enhancedText: z.string().nullish(),
   jobRole: z.string().nullish(),
-  atsScore: z.number().min(0).max(100).optional(),
+  atsScore: z.number().min(0).max(100).nullable().optional(),
   tags: z.array(z.string()).optional(),
   metadata: z.record(z.unknown()).optional().default({}),
 });

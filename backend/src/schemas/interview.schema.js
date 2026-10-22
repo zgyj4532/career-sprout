@@ -24,6 +24,7 @@ export const startInterviewSchema = z.object({
   questionCount: z.number().int().min(2).max(20).optional().default(10),
   resumeText: z.string().max(20000).nullish(),
   resumeId: z.string().regex(/^[a-fA-F0-9]{24}$/).optional(),
+  resumeRevision: z.number().int().positive().optional(),
   jobId: z.string().regex(/^[a-fA-F0-9]{24}$/).optional(),
 
   // v2 additions
@@ -55,10 +56,10 @@ export const submitAnswerSchema = z.object({
   duration: z.number().min(0, 'duration must be a non-negative number'),
   expressionMetrics: z
     .object({
-      averageConfidence: z.number().min(0).max(1).optional().default(0),
-      eyeContactPercentage: z.number().min(0).max(100).optional().default(0),
-      headMovementStability: z.number().min(0).max(1).optional().default(0),
-      overallExpressionScore: z.number().min(0).max(100).optional().default(0),
+      averageConfidence: z.number().min(0).max(1).optional(),
+      eyeContactPercentage: z.number().min(0).max(100).optional(),
+      headMovementStability: z.number().min(0).max(1).optional(),
+      overallExpressionScore: z.number().min(0).max(100).optional(),
     })
     .optional(),
 

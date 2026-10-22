@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { campusFetch } from '../api'
-import { FeedbackView, OverallView } from '../components/InterviewFeedback'
+import { RoomReport, ScoreBasis } from '../components/InterviewFeedback'
+import DiscoveryReport from '../components/DiscoveryReport'
 import RequestError from '../components/RequestError'
 
 function useStatus() {
@@ -10,7 +11,7 @@ function useStatus() {
 }
 
 function archiveTitle(row) {
-  return row?.title?.trim() || row?.jobRole || '未命名面试'
+  return row?.title?.trim() || (row?.purpose === 'discovery' ? '兴趣交流' : row?.jobRole || '未命名面试')
 }
 
 function archiveStatus(status) {
@@ -66,13 +67,22 @@ export function HistoryPage() {
   const [rows, setRows] = useState([])
   const [editing, setEditing] = useState('')
   const [pendingDelete, setPendingDelete] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState(false)
+  const [reload, setReload] = useState(0)
   useEffect(() => {
+    let active = true
+    setLoading(true); setError('')
     campusFetch('/api/interview/history')
-      .then((payload) => setRows(payload.data || []))
-      .catch(setError)
-  }, [])
+      .then((payload) => { if (active) setRows(payload.data || []) })
+      .catch((err) => { if (active) setError(err) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [reload])
 
   async function remove(id) {
+    if (deleting) return
+    setDeleting(true)
     setError('')
     try {
       await campusFetch(`/api/interview/${id}`, { method: 'DELETE' })
@@ -80,14 +90,15 @@ export function HistoryPage() {
       setPendingDelete('')
     } catch (err) {
       setError(err)
-    }
+    } finally { setDeleting(false) }
   }
 
   return (
     <section>
       <h1>历史档案</h1>
-      <p>每场面试一份档案。可以重命名，也可以删除。删除后不能恢复。</p>
-      <RequestError error={error} />
+      <p>兴趣交流不打分；正式面试保留当次评分范围与规则。删除记录后不能恢复。</p>
+      <RequestError error={error} onRetry={() => setReload((value) => value + 1)} />
+      {loading && <p role="status">正在读取历史档案…</p>}
       <ul className="campus-archives">
         {rows.map((row) => (
           <li className="campus-archive" key={row._id}>
@@ -107,28 +118,23 @@ export function HistoryPage() {
                   <p>
                     {archiveStatus(row.status)}
                     {archiveTime(row) ? ` · ${archiveTime(row)}` : ''}
-                    {row.status === 'completed' && Number.isFinite(row.overallScore) ? ` · ${row.overallScore}分` : ''}
+                    {row.purpose === 'discovery' ? ' · 兴趣交流 · 不评分' : ` · 正式面试 · ${row.scoreVersion === 'available-v1' ? '有效维度规则' : '旧规则成绩'}`}
+                    {row.purpose !== 'discovery' && row.status === 'completed' && Number.isFinite(row.overallScore) ? ` · ${row.overallScore}分` : ''}
                     {` · 已答 ${row.answeredCount || 0}/${row.totalQuestionCount || row.answeredCount || 0} 题`}
                   </p>
+                  {row.purpose !== 'discovery' && row.scoreVersion === 'available-v1' && <ScoreBasis item={row} />}
                 </div>
                 <div className="campus-archive-actions">
-                  <Link to={`/history/${row._id}`}>查看</Link>
-                  <button type="button" onClick={() => { setEditing(row._id); setPendingDelete('') }}>重命名</button>
-                  {pendingDelete === row._id ? (
-                    <>
-                      <button type="button" className="danger" onClick={() => remove(row._id)}>确认删除</button>
-                      <button type="button" onClick={() => setPendingDelete('')}>取消</button>
-                    </>
-                  ) : (
-                    <button type="button" className="danger" onClick={() => setPendingDelete(row._id)}>删除</button>
-                  )}
+                  <Link to={row.status === 'in_progress' ? `/interview/session/${row._id}` : `/history/${row._id}`}>{row.status === 'in_progress' ? '继续' : '查看'}</Link>
+                  <details><summary>管理记录</summary><button type="button" onClick={() => { setEditing(row._id); setPendingDelete('') }}>重命名</button><button type="button" className="danger" onClick={() => setPendingDelete(row._id)}>删除</button></details>
+                  {pendingDelete === row._id && <><span>删除后无法恢复。</span><button type="button" className="danger" disabled={deleting} onClick={() => remove(row._id)}>确认删除</button><button type="button" disabled={deleting} onClick={() => setPendingDelete('')}>取消</button></>}
                 </div>
               </>
             )}
           </li>
         ))}
       </ul>
-      {!error && rows.length === 0 && <p>还没有面试档案。</p>}
+      {!loading && !error && rows.length === 0 && <p>还没有交流或面试档案。<Link to="/discovery">开始聊聊兴趣</Link></p>}
     </section>
   )
 }
@@ -140,24 +146,34 @@ export function HistoryDetailPage() {
   const [item, setItem] = useState(null)
   const [editing, setEditing] = useState(false)
   const [pendingDelete, setPendingDelete] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [reload, setReload] = useState(0)
+  const [deleting, setDeleting] = useState(false)
   useEffect(() => {
+    let active = true
+    setItem(null); setError(''); setLoading(true)
     campusFetch(`/api/interview/${id}`)
-      .then((payload) => setItem(payload.data))
-      .catch(setError)
-  }, [id])
+      .then((payload) => { if (active) setItem(payload.data) })
+      .catch((err) => { if (active) setError(err) })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [id, reload])
 
   async function remove() {
+    if (deleting) return
+    setDeleting(true)
     try {
       await campusFetch(`/api/interview/${id}`, { method: 'DELETE' })
       navigate('/history')
     } catch (err) {
       setError(err)
-    }
+    } finally { setDeleting(false) }
   }
 
   return (
     <section className="campus-form">
-      <RequestError error={error} />
+      <RequestError error={error} onRetry={() => setReload((value) => value + 1)} />
+      {loading && <p role="status">正在读取档案…</p>}
       {item && (
         <>
           {editing ? (
@@ -172,31 +188,24 @@ export function HistoryDetailPage() {
           ) : (
             <>
               <h1>{archiveTitle(item)}</h1>
-              <p>{archiveStatus(item.status)}{archiveTime(item) ? ` · ${archiveTime(item)}` : ''}{item.status === 'completed' && Number.isFinite(item.overallScore) ? ` · ${item.overallScore}分` : ''}</p>
+              <p>{archiveStatus(item.status)}{archiveTime(item) ? ` · ${archiveTime(item)}` : ''}{item.purpose === 'discovery' ? ' · 兴趣交流 · 不评分' : ' · 正式面试'}</p>
               <div className="campus-archive-actions">
                 <button type="button" onClick={() => setEditing(true)}>重命名</button>
                 {pendingDelete ? (
                   <>
-                    <button type="button" className="danger" onClick={remove}>确认删除</button>
-                    <button type="button" onClick={() => setPendingDelete(false)}>取消</button>
+                    <span>删除后无法恢复。</span><button type="button" className="danger" disabled={deleting} onClick={remove}>确认删除</button>
+                    <button type="button" disabled={deleting} onClick={() => setPendingDelete(false)}>取消</button>
                   </>
                 ) : (
                   <button type="button" className="danger" onClick={() => setPendingDelete(true)}>删除</button>
                 )}
                 <Link to="/history">返回列表</Link>
-                {item.status !== 'completed' && <Link to={`/interview/session/${id}`}>继续练习或重试总评</Link>}
+                {item.status !== 'completed' && <Link to={`/interview/session/${id}`}>继续或恢复进度</Link>}
               </div>
             </>
           )}
-          <OverallView score={item.overallScore} feedback={item.overallFeedback} />
-          {(item.answers || []).map((answer, index) => (
-            <article className="campus-turn" key={answer.questionId || index}>
-              <h2>第 {index + 1} 题</h2>
-              <p><strong>问题：</strong>{answer.question}</p>
-              <p><strong>你的回答：</strong>{answer.transcript || '没有保存回答文本。'}</p>
-              <FeedbackView analysis={answer.analysis} />
-            </article>
-          ))}
+          {item.status === 'completed' && (item.purpose === 'discovery' ? <DiscoveryReport item={item} /> : <RoomReport item={item} />)}
+          {item.status !== 'completed' && <details><summary>已保存的回答</summary>{(item.answers || []).map((answer, index) => <article className="campus-turn" key={answer.questionId || index}><h2>{answer.question}</h2><p className="campus-preserve-text">{answer.transcript}</p></article>)}</details>}
         </>
       )}
     </section>

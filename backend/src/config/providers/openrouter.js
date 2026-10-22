@@ -55,15 +55,17 @@ export class OpenRouterAdapter {
     this.providerName = 'openrouter';
   }
 
-  async generateContent(prompt) {
+  async generateContent(prompt, options = {}) {
     try {
       aiCallsCounter.inc({ provider: this.providerName });
       const completion = await withRetry(() => 
         this.client.chat.completions.create({
           model: this.modelName,
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.7,
-        })
+          temperature: options.temperature ?? 0.7,
+          ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
+        }, { ...(options.signal ? { signal: options.signal } : {}), ...(options.timeout ? { timeout: options.timeout } : {}), ...(options.maxRetries !== undefined ? { maxRetries: options.maxRetries } : {}) }),
+        options.maxRetries === 0 ? 1 : 3
       );
       
       const u = completion.usage;
