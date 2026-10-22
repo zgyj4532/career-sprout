@@ -85,6 +85,28 @@
 
 电脑上的内页使用左侧导航。窄屏改成底部四宫格。面试间不套这层导航。
 
+### On-demand loading and release caching
+
+Non-home campus pages use module-level `React.lazy` imports; Home, navigation, authentication/session providers and the unsaved-work guard remain eager. Vite/Rollup extracts shared dependencies automatically: no manual vendor bucket, configuration change, raised 500kB warning threshold or blanket route prefetch. The slogan remains readable immediately; BlurText/Motion loads only after an animation-enabled click, with plain text retained while loading or after failure and reduced-motion preferences respected.
+
+Pending route chunks show “第一次打开需要时间，请耐心等待” horizontally and vertically centered in the main content area, using the homepage font and colors. This is a `role="status"` pane, not a modal: navigation remains usable and focus is not moved. It disappears on completion without a minimum delay. Failure offers home navigation and explicit refresh with an unsaved-content warning; there is no automatic reload or fake retry of a cached rejected import. The router and dirty-work provider remain stable, and same-path query changes do not remount an editor.
+
+Production comparison for the same local campus configuration (bytes, not server memory):
+
+| Measurement | Before | After |
+|---|---:|---:|
+| Homepage initial JS / entry static dependency closure, minified | 625,144 | 384,770 |
+| Same closure, calculated gzip | 197,388 | 120,233 |
+| Largest emitted JS chunk, minified | 625,144 | 384,770 |
+| All emitted JS chunks combined, minified | 625,144 | 630,595 |
+| Cold homepage JS requests in production preview | 1 | 1 |
+
+Initial JS fell **38.45%** (calculated gzip **39.09%**), while total emitted JS grew by **5,451 bytes**. This is deferred loading, not removal of product features; calculated gzip is not a claim about preview-server compression. All resulting JS chunks are below the original 500kB threshold. Build graphs are retained in [baseline.json](.trellis/tasks/10-21-campus-bundle-loading/baseline.json) and [optimized.json](.trellis/tasks/10-21-campus-bundle-loading/optimized.json).
+
+The integrated check passed 166 campus tests across 28 files, scoped lint and the production build (548 transformed modules). Actual production-preview requests showed only the visited route and its dependencies loading; revisiting Resume kept its chunk request count at one. Controlled delayed-chunk checks showed the exact centered status at desktop and 390px widths, with `rgb(28, 25, 21)` text and no narrow-screen horizontal overflow. An aborted teacher chunk exposed recovery and allowed returning home. API 503 responses in this loading check were deliberate; it does not establish backend/model correctness, formal-account acceptance, physical-phone behavior or server RAM savings. Existing authentication and campus/full-app isolation are unchanged.
+
+For a future deployment, serve HTML with `Cache-Control: no-cache` so it revalidates, and content-hashed JS/CSS with long-lived immutable caching. Retain previous releases' hashed assets during rollout and rollback so already-open tabs can still fetch their deferred chunks; do not delete old assets immediately or solve stale chunks with an automatic page reload. This is deployment guidance, not a server configuration or deployment performed by this change.
+
 ## 本地启动
 
 在已有 WSL 的仓库根目录：

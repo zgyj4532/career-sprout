@@ -1,0 +1,60 @@
+{
+  "note": "renderedLength is pre-final-minification attribution, not compressed-byte attribution",
+  "chunks": [
+    {
+      "file": "assets/index-CmnTf3ko.js",
+      "entry": true,
+      "bytes": 625144,
+      "gzip": 197388,
+      "imports": [],
+      "dynamicImports": [],
+      "modules": 359
+    }
+  ],
+  "groups": [
+    [
+      "react-dom",
+      561393
+    ],
+    [
+      "motion-dom",
+      290093
+    ],
+    [
+      "application",
+      248820
+    ],
+    [
+      "react-router",
+      227370
+    ],
+    [
+      "@clerk/clerk-react",
+      99420
+    ],
+    [
+      "framer-motion",
+      89277
+    ],
+    [
+      "@clerk/shared",
+      35202
+    ],
+    [
+      "react",
+      20311
+    ],
+    [
+      "scheduler",
+      11420
+    ],
+    [
+      "motion-utils",
+      7110
+    ],
+    [
+      "dequal",
+      1902
+    ]
+  ]
+}

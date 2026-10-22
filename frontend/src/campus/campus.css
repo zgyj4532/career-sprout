@@ -1365,6 +1365,39 @@
 .campus-practice .campus-room-bar a { color: var(--accent); display: inline-flex; align-items: center; min-height: 44px; }
 .campus-practice .campus-room-main { padding-top: 24px; }
 
+/* Route chunks wait inside the available content area, never over navigation. */
+.campus:has(.campus-route-state) { min-height: 100dvh; }
+.campus-practice:has(.campus-route-state) { display: flex; flex-direction: column; }
+.campus .campus-main:has(> .campus-route-state),
+.campus .campus-room-main:has(> .campus-route-state) {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+}
+.campus-route-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  padding: 24px;
+  color: var(--ink);
+  background: var(--paper);
+  font: inherit;
+  line-height: 1.6;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.campus .campus-route-state p { margin: 0; color: inherit; }
+.campus-route-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+@media (max-width: 767px) {
+  .campus-workspace .campus-main:has(> .campus-route-state) {
+    padding-bottom: calc(24px + 64px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Imports keep the editable result primary; source disclosure stays optional. */
 .import-confirm { min-width: 0; }
 .import-confirm textarea { min-height: 120px; }

@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/10-21-campus-bundle-loading/research.md", "reason": "Measured baseline and official patterns"}
+{"file": ".trellis/tasks/10-21-campus-bundle-loading/design.md", "reason": "Route and interaction loading/failure boundaries"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Preserve dirty state and canonical saves"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Production browser evidence and serial checks"}
