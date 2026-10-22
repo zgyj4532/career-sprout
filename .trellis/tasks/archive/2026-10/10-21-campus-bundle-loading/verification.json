@@ -1,0 +1,46 @@
+{
+  "baselineJsBytes": 625144,
+  "optimizedInitialJsBytes": 384770,
+  "baselineGzip": 197388,
+  "optimizedInitialGzip": 120233,
+  "totalOptimizedJsBytes": 630595,
+  "largestChunkBytes": 384770,
+  "chunks": 20,
+  "tests": {
+    "files": 28,
+    "passed": 166
+  },
+  "lint": "passed",
+  "browser": {
+    "productionAssets": true,
+    "api": "intentionally503;loading-only proof",
+    "desktopWaitingCentered": true,
+    "mobileWidth": 390,
+    "mobileScrollWidth": 390,
+    "mobileWaitingCenterY": 424.5,
+    "textColor": "rgb(28, 25, 21)",
+    "cachedResumeRequestsBeforeAfter": [
+      1,
+      1
+    ],
+    "motionOnlyAfterClick": true,
+    "reducedMotionNoAnimationRequest": true,
+    "animationFailureKeepsToggle": true,
+    "chunkFailureRecoveryHome": true,
+    "deepLinks": [
+      "/resume",
+      "/jd",
+      "/profile",
+      "/interview",
+      "/discovery",
+      "/history",
+      "/history/:id",
+      "/interview/session/:id",
+      "/login",
+      "/register",
+      "/verify-email",
+      "/teacher",
+      "/missing"
+    ]
+  }
+}

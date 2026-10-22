@@ -1,0 +1,245 @@
+{
+  "chunks": [
+    {
+      "file": "assets/index-D51DOiIy.js",
+      "entry": true,
+      "bytes": 384770,
+      "gzip": 120233,
+      "imports": [],
+      "dynamicImports": [
+        "assets/BlurText-D38MmL7q.js",
+        "assets/ResumePage-CLZw_ZoF.js",
+        "assets/JobsPage-CCyqC-Rb.js",
+        "assets/ProfilePage-B6MlNshv.js",
+        "assets/InterviewPage-BA0stOQ8.js",
+        "assets/DiscoveryPage-DB9GnC3i.js",
+        "assets/InterviewSessionPage-C3MHpuTc.js",
+        "assets/HistoryPage-Pyp34ehB.js",
+        "assets/HistoryPage-Pyp34ehB.js",
+        "assets/AuthPage-BKWOQO5y.js",
+        "assets/TeacherPage-vQ4dofC2.js",
+        "assets/ClosedPage-Ow00ApAT.js"
+      ]
+    },
+    {
+      "file": "assets/ResumePage-CLZw_ZoF.js",
+      "entry": false,
+      "bytes": 14930,
+      "gzip": 5780,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/material-CCuQ_IIF.js",
+        "assets/VoiceInput-S_OEDvL2.js",
+        "assets/useUnsavedWork-BOaPVASy.js",
+        "assets/JobSelect-CTlz9beP.js",
+        "assets/ImportPanel-C3WUIaCO.js",
+        "assets/saveOperation-CYRN7bCl.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/JobsPage-CCyqC-Rb.js",
+      "entry": false,
+      "bytes": 19368,
+      "gzip": 7085,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/material-CCuQ_IIF.js",
+        "assets/interviewPrep-Bw5woWfR.js",
+        "assets/saveOperation-CYRN7bCl.js",
+        "assets/useUnsavedWork-BOaPVASy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/saveOperation-CYRN7bCl.js",
+      "entry": false,
+      "bytes": 793,
+      "gzip": 471,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/ProfilePage-B6MlNshv.js",
+      "entry": false,
+      "bytes": 18140,
+      "gzip": 6636,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/material-CCuQ_IIF.js",
+        "assets/ImportPanel-C3WUIaCO.js",
+        "assets/useUnsavedWork-BOaPVASy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/ImportPanel-C3WUIaCO.js",
+      "entry": false,
+      "bytes": 15759,
+      "gzip": 6262,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/useUnsavedWork-BOaPVASy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/InterviewPage-BA0stOQ8.js",
+      "entry": false,
+      "bytes": 8182,
+      "gzip": 3777,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/material-CCuQ_IIF.js",
+        "assets/JobSelect-CTlz9beP.js",
+        "assets/interviewPrep-Bw5woWfR.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/interviewPrep-Bw5woWfR.js",
+      "entry": false,
+      "bytes": 898,
+      "gzip": 482,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/DiscoveryPage-DB9GnC3i.js",
+      "entry": false,
+      "bytes": 1370,
+      "gzip": 970,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/InterviewSessionPage-C3MHpuTc.js",
+      "entry": false,
+      "bytes": 7954,
+      "gzip": 3449,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/VoiceInput-S_OEDvL2.js",
+        "assets/DiscoveryReport-DU3EXST1.js",
+        "assets/useUnsavedWork-BOaPVASy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/VoiceInput-S_OEDvL2.js",
+      "entry": false,
+      "bytes": 5684,
+      "gzip": 2627,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/HistoryPage-Pyp34ehB.js",
+      "entry": false,
+      "bytes": 5795,
+      "gzip": 2305,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/DiscoveryReport-DU3EXST1.js",
+        "assets/useUnsavedWork-BOaPVASy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/DiscoveryReport-DU3EXST1.js",
+      "entry": false,
+      "bytes": 11540,
+      "gzip": 4280,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/useUnsavedWork-BOaPVASy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/useUnsavedWork-BOaPVASy.js",
+      "entry": false,
+      "bytes": 1067,
+      "gzip": 625,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/AuthPage-BKWOQO5y.js",
+      "entry": false,
+      "bytes": 2861,
+      "gzip": 1507,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/TeacherPage-vQ4dofC2.js",
+      "entry": false,
+      "bytes": 4143,
+      "gzip": 2230,
+      "imports": [
+        "assets/index-D51DOiIy.js",
+        "assets/material-CCuQ_IIF.js",
+        "assets/JobSelect-CTlz9beP.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/JobSelect-CTlz9beP.js",
+      "entry": false,
+      "bytes": 1284,
+      "gzip": 849,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/material-CCuQ_IIF.js",
+      "entry": false,
+      "bytes": 1830,
+      "gzip": 1151,
+      "imports": [],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/ClosedPage-Ow00ApAT.js",
+      "entry": false,
+      "bytes": 409,
+      "gzip": 364,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    },
+    {
+      "file": "assets/BlurText-D38MmL7q.js",
+      "entry": false,
+      "bytes": 123818,
+      "gzip": 40546,
+      "imports": [
+        "assets/index-D51DOiIy.js"
+      ],
+      "dynamicImports": []
+    }
+  ],
+  "initialFiles": [
+    "assets/index-D51DOiIy.js"
+  ],
+  "initialBytes": 384770,
+  "initialGzip": 120233,
+  "totalBytes": 630595,
+  "maxChunkBytes": 384770
+}

@@ -1,5 +1,13 @@
 # 职芽 CareerSprout — Unreleased
 
+## 2026-10-22 Campus on-demand loading
+
+- Lazy-load non-home routes and click-triggered slogan animation while keeping Home, navigation, session/authentication and dirty-work ownership eager and stable. Preserve deep links, navigation blockers, reduced-motion behavior and plain-text animation fallback.
+- Show “第一次打开需要时间，请耐心等待” centered in main content with homepage typography/colors and accessible status semantics. Loading never blocks navigation or steals focus; failures offer home and explicit refresh with an unsaved-content warning, without automatic reload or cached-promise retries.
+- With automatic Rollup splitting and the unchanged 500kB threshold, homepage initial JS/static closure fell from 625,144 to 384,770 minified bytes (38.45%); calculated gzip fell from 197,388 to 120,233 bytes (39.09%). Largest JS is 384,770 bytes; all emitted JS totals 630,595 bytes, up 5,451 bytes. No manual chunks or build configuration changes.
+- Integrated verification passed 166 campus tests in 28 files, scoped lint and the production build. Actual production-preview cold/warm requests, controlled slow chunks at desktop/390px and an aborted teacher chunk covered loading and home recovery. Deliberate API 503 responses isolate this check from backend/model correctness; authentication is unchanged, and no deployment, physical-phone or server RAM improvement is claimed.
+- Document HTML revalidation, immutable hashed-asset caching and retention of old release assets for deferred imports and rollback. Measurements and release guidance are in README's on-demand loading section.
+
 ## 2026-10-21 新手交流、页面减负与保存恢复
 
 - 首页改为继续已有进度或导入简历，新增原话入口“没简历也可以给我讲讲你感兴趣的事”；去除重复步骤/大入口，次要工具按需展开且保留编辑状态。

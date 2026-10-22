@@ -1,22 +1,24 @@
-import { useState } from 'react'
+import { lazy, useState } from 'react'
 import { NavLink, Route, Routes, createBrowserRouter, RouterProvider, useLocation, Link } from 'react-router-dom'
 import './campus.css'
 import Particles from './bits/Particles'
 import { CORE_NAV } from './nav'
 import HomePage from './pages/HomePage'
+import RouteLoadingBoundary from './components/RouteLoadingBoundary'
 import { CampusSessionProvider, SessionNavigation } from './auth'
 import UnsavedWorkProvider from './components/UnsavedWorkProvider'
 
-import ResumePage from './pages/ResumePage'
-import JobsPage from './pages/JobsPage'
-import ProfilePage from './pages/ProfilePage'
-import InterviewPage from './pages/InterviewPage'
-import DiscoveryPage from './pages/DiscoveryPage'
-import InterviewSessionPage from './pages/InterviewSessionPage'
-import AuthPage from './pages/AuthPage'
-import TeacherPage from './pages/TeacherPage'
-import ClosedPage from './pages/ClosedPage'
-import { HistoryPage, HistoryDetailPage } from './pages/HistoryPage'
+const ResumePage = lazy(() => import('./pages/ResumePage'))
+const JobsPage = lazy(() => import('./pages/JobsPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const InterviewPage = lazy(() => import('./pages/InterviewPage'))
+const DiscoveryPage = lazy(() => import('./pages/DiscoveryPage'))
+const InterviewSessionPage = lazy(() => import('./pages/InterviewSessionPage'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage').then(module => ({ default: module.HistoryPage })))
+const HistoryDetailPage = lazy(() => import('./pages/HistoryPage').then(module => ({ default: module.HistoryDetailPage })))
+const AuthPage = lazy(() => import('./pages/AuthPage'))
+const TeacherPage = lazy(() => import('./pages/TeacherPage'))
+const ClosedPage = lazy(() => import('./pages/ClosedPage'))
 
 function devNote() {
   const campus = import.meta.env.VITE_APP_PROFILE === 'campus-local'
@@ -72,9 +74,11 @@ function CampusShell() {
           <Link to="/interview">退出练习</Link>
         </header>
         <main className="campus-room-main">
+          <RouteLoadingBoundary>
             <Routes>
               <Route path="/interview/session/:id" element={<InterviewSessionPage />} />
             </Routes>
+          </RouteLoadingBoundary>
         </main>
       </div>
     )
@@ -132,7 +136,9 @@ function CampusShell() {
           <SessionNavigation />
         </header>
         <main className="campus-main">
+          <RouteLoadingBoundary>
             <WorkspaceRoutes />
+          </RouteLoadingBoundary>
         </main>
       </div>
     </div>
