@@ -2,7 +2,7 @@
   "id": "effortless-career-experience",
   "name": "effortless-career-experience",
   "title": "低操作成本的简历与面试体验改造",
-  "description": "轻量文案、岗位空态及报告视觉修改已完成；导入/图片识别等复杂能力待讨论，完整需求尚未完成",
+  "description": "轻量文案与报告视觉已完成；导入、岗位截图、档案润色与简历管理由10-20任务续做。默认最近简历、录音单编辑区与缺失评分聚合仍按原审批留待讨论。",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -21,6 +21,6 @@
   "children": [],
   "parent": null,
   "relatedFiles": [],
-  "notes": "2026-10-19：PR https://github.com/zgyj4532/career-sprout/pull/2 已推送到 zgyj4532/career-sprout。提交 c55f1930、85b14eaa、68de1f67。未完成需求为 Issue https://github.com/zgyj4532/career-sprout/issues/1 ，不自动关闭。完整任务保持 in_progress。",
+  "notes": "2026-10-19 PR #2及提交记录保留。2026-10-20 用户要求续做现有任务：前四项由10-20-resume-import-polish-jobs承接并记录实际验证；Issue #1后三项仍不属于该已批准方案，不自动关闭Issue或归档。未在此次续做中提交推送。",
   "meta": { "issue_url": "https://github.com/zgyj4532/career-sprout/issues/1", "publication_scope": "基础改造与轻量修正同一PR、独立提交；排除.omp与旧任务日志" }
 }

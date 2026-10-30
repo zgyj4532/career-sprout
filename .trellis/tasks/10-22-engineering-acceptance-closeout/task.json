@@ -1,0 +1,32 @@
+{
+  "id": "engineering-acceptance-closeout",
+  "name": "engineering-acceptance-closeout",
+  "title": "工程验收收尾与项目文档整理",
+  "description": "完善校园验收与诊断，补最新视口证据，恢复Clerk正式认证方向，更新旧报告并参考上游精简README；不删除停用模块。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-22",
+  "completedAt": null,
+  "branch": "feat/career-sprout-experience-polish",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "已完成批准的本地工程收尾：统一验收退出0、隔离API重启持久化及SIGTERM清理通过、最新360/768页面证据、Clerk方向同步、旧报告更新与README精简。停用模块未删除。正式Clerk账号、新手和物理手机验收仍外部阻塞；无提交推送归档。证据research/verification.md。",
+  "meta": {
+    "planning_gate": "approved_for_implementation",
+    "authentication_decision": "retain_existing_clerk",
+    "dormant_modules": "keep_until_separately_approved_post_acceptance_cleanup",
+    "delivery_status": "engineering_verified_external_acceptance_pending",
+    "verification": "research/verification.md"
+  }
+}

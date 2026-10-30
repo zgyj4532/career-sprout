@@ -21,8 +21,10 @@ the rest conversationally.
 
 ## Status (update the checkboxes as you complete each item)
 
-- [ ] Fill frontend guidelines
-- [ ] Add code examples
+- [x] Fill frontend guidelines — campus entry, components, hooks, state, runtime validation and verification conventions populated from current code on 2026-10-20.
+- [x] Add code examples — concrete JSX, media cleanup, stale-response and HTTP-envelope examples reference existing modules.
+
+The content is populated; developer review/archive remains separate. No task was created or activated for this continuation.
 
 ---
 

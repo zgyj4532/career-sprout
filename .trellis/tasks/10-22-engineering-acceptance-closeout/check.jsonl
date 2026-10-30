@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/10-22-engineering-acceptance-closeout/research.md", "reason": "Evidence and current scope"}
+{"file": ".trellis/tasks/10-22-engineering-acceptance-closeout/design.md", "reason": "Runtime/ownership and documentation contracts"}
+{"file": ".trellis/spec/project/campus-phase1/wsl-local.md", "reason": "Local runtime and infrastructure safety"}
+{"file": ".trellis/spec/project/campus-phase1/verification.md", "reason": "Existing verification boundaries"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Actual UI proof and serial checks"}

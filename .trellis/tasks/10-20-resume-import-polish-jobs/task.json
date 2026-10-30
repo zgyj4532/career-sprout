@@ -21,7 +21,7 @@
   "children": [],
   "parent": null,
   "relatedFiles": [],
-  "notes": "2026-10-20 续做：导入持久化、原件恢复、截图岗位与面试准备单、简历版本/删除及旧流程缺陷已接入。真实浏览器/API已验证保存重试与跨页恢复；样本质量和最终验证见research记录。2026-10-21 用户决定改用新服务器，当前备案阻塞部署；3–5名新手学生试用和物理手机验收标记为外部阻塞，不视为通过。正式认证按部署文档的Evren/Resend方向另行验收，不归档、不自动提交推送。",
+  "notes": "2026-10-20 续做：导入持久化、原件恢复、截图岗位与面试准备单、简历版本/删除及旧流程缺陷已接入。真实浏览器/API已验证保存重试与跨页恢复；样本质量和最终验证见research记录。2026-10-21 用户决定改用新服务器，当前备案阻塞部署；3–5名新手学生试用和物理手机验收标记为外部阻塞，不视为通过。当时计划Evren/Resend；现由用户明确决定继续Clerk，旧迁移方向已被取代，正式账号仍需独立验收。参见10-22-engineering-acceptance-closeout。不归档、不自动提交推送。",
   "meta": {
     "delivery_status": "local_verified_human_acceptance_blocked",
     "external_acceptance": ["3_to_5_novice_students", "formal_auth_accounts", "physical_mobile"],

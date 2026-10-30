@@ -97,3 +97,17 @@ lint_output.txt
 
 # Local phase plan kit. Keep it in the working tree, do not back it up.
 phase1-kit/
+
+# Local tools, private samples, and generated evidence
+/.omp/
+/data/Resume/
+/docs/evidence/phase1/runs/
+/docs/evidence/phase1/verify-phase1.json
+/docs/evidence/deployment-memory-*.json
+/docs/evidence/server-shutdown-*.json
+/.trellis/tasks/10-18-*/research/
+/.trellis/tasks/10-20-*/research/
+/.trellis/tasks/10-21-*/research/
+/.trellis/tasks/10-22-*/research/
+/.trellis/tasks/10-22-*/research.md
+/.trellis/tasks/10-26-*/research/

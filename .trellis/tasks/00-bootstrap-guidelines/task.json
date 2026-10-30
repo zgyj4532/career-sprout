@@ -23,6 +23,6 @@
   "relatedFiles": [
     ".trellis/spec/frontend/"
   ],
-  "notes": "First-time setup task created by trellis init (frontend project)",
+  "notes": "2026-10-20: six frontend guideline files and index populated from current campus implementation, with concrete examples. Content complete; developer review/archive pending. No new task or session pointer created.",
   "meta": {}
 }
