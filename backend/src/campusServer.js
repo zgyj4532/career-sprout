@@ -24,6 +24,7 @@ import campusAuthRoutes, { listTeachers } from './campus/auth.js';
 import campusGrowthRoutes from './campus/growth.js';
 import campusTargetRoutes from './campus/targets.js';
 import campusSharingRoutes from './campus/sharing.js';
+import campusClassRoutes from './campus/classes.js';
 import campusImportRoutes from './campus/imports.js';
 import campusJobImageRoutes from './campus/jobImages.js';
 import { closeCacheConnection } from './middleware/cacheLayer.js';
@@ -67,7 +68,7 @@ export function createCampusApp() {
       if (!origin || origins.has(origin)) return callback(null, true);
       return callback(null, false);
     },
-    exposedHeaders: ['X-Request-ID', 'Content-Disposition'],
+    exposedHeaders: ['X-Request-ID', 'Content-Disposition', 'X-Export-Manifest'],
   }));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: false, limit: '2mb' }));
@@ -114,7 +115,7 @@ export function createCampusApp() {
   for (const mount of ['/api/campus', '/api/resumes', '/api/interview', '/api/enhance', '/api/user-profiles']) app.use(mount, diagnosticMount(mount));
   app.use('/api/campus', verifyToken);
   app.get('/api/campus/teachers', listTeachers);
-  app.use('/api/campus', campusJobImageRoutes, campusGrowthRoutes, campusTargetRoutes, campusSharingRoutes, campusImportRoutes);
+  app.use('/api/campus', campusJobImageRoutes, campusGrowthRoutes, campusTargetRoutes, campusSharingRoutes, campusClassRoutes, campusImportRoutes);
   app.use('/api/resumes', (req, res, next) => {
     if (req.path.startsWith('/import/')) {
       return res.status(404).json({

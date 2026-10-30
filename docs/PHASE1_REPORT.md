@@ -1,5 +1,20 @@
 # 第一阶段报告
 
+## 当前汇总 — 2026-10-23
+
+本节优先于下方2026-10-15历史状态；不改写旧命令、退出码和当时缺失配置的事实。当前路径为 `/mnt/e/github/career-sprout`，启动与验收命令见 [LOCAL_WSL](LOCAL_WSL.md)。本轮工程收尾任务为 [10-22-engineering-acceptance-closeout](../.trellis/tasks/10-22-engineering-acceptance-closeout/prd.md)；此文档更新本身没有运行新验证，不把旧证据记为本轮 PASS。
+
+- 本轮主验收执行者通过 `gh pr list` 确认：[PR #2](https://github.com/zgyj4532/career-sprout/pull/2) 于 `2026-10-19T15:45:14Z` 合并，SHA `45482edd6b5cc87df7bc1be8cb86f7f08d44237f`；[PR #3](https://github.com/zgyj4532/career-sprout/pull/3) 于 `2026-10-22T05:12:04Z` 合并，SHA `9f2866883530faf858e081416a71897e3f496c21`；[PR #4](https://github.com/zgyj4532/career-sprout/pull/4) 于 `2026-10-22T05:12:22Z` 合并，SHA `472b78fab4ec9aa95cf7ddb2e12dcaaeece1addc`。导入/截图范围关联 [Issue #1](https://github.com/zgyj4532/career-sprout/issues/1)；合并不等于全部产品验收通过。
+- 2026-10-20导入证据见 [verification.md](../.trellis/tasks/10-20-resume-import-polish-jobs/research/verification.md)；2026-10-21新手流程、真实模型/API与390/1440模拟视口证据见 [verification.md](../.trellis/tasks/10-21-novice-usability-information-reduction/research/verification.md)。已有模型/ASR结果不再按最初“缺密钥”状态描述，也不证明今天的服务可用性。
+- 当前正式认证继续现有 **Clerk**，取代 Evren/Resend 迁移方案。真实凭据/双账号会话不足时仍 `BLOCKED_EXTERNAL`；隔离身份不是正式注册验收。
+- 新服务器备案/部署仍阻塞3–5名新手与物理手机验收。用户于2026-10-20确认此前周日的真人录音/扬声器测试，保留原范围；不推断每项清单全部通过。
+- 2026-10-23实际浏览器：当前 development 校园入口、隔离合成数据库下，首页/简历/面试/反馈的360与768模拟视口均未见横向溢出。截图与 [browser-2026-10-23.json](../.trellis/tasks/10-22-engineering-acceptance-closeout/research/browser-2026-10-23.json) 保留在本轮任务 `research/`。真实保存最初遇基础设施不可用，页面可见的“检查保存结果”恢复后 POST 返回201，仅创建一份简历且文本保留。反馈由数据库预置合成数据，仅证明布局，不是新模型调用或正式账号/真机验收。
+- 环境诊断补充：主验收执行者观察到本机 WSL 在没有持续存活的 WSL 进程时，会在有限命令调用之间停止发行版服务/容器；上述首轮基础设施不可用属于宿主生命周期，不记为应用缺陷。保留自有 WSL 进程并重启本项目基础服务后恢复健康。该临时保活不是产品部署配置，结束时应清理自有保活并恢复初始基础服务停止状态；此处不提前声称清理完成。
+- 主验收执行者最终运行 `npm run verify:phase1` 退出0，9个本地必需门均 PASS：脚本测试20项、后端校园116项、共享148项、前端166项（28文件），校园构建通过；限定范围 lint 为0错误，保留后端11项、前端20项警告。隔离冒烟的后端重启/持久化及全部自有资源清理 PASS；另一次实际 SIGTERM 冒烟按预期退出143，清理均 PASS。完整分项见 [本轮 verification.md](../.trellis/tasks/10-22-engineering-acceptance-closeout/research/verification.md) 与 [最终运行 JSON](evidence/phase1/runs/2026-10-23T16-14-46-510Z-ee3fc51f/verify-phase1.json)。这是本地工程通过，`fullAcceptance=false`；不代表全量上游检查、真实 Clerk、供应商或真人/真机验收全部通过。
+- 停用源码维持 `DISABLED` / `KEEP_PENDING_AUDIT`。整体测试稳定且用户另行批准前不删除模块、不卸依赖、不自动归档阻塞任务。
+
+## 历史记录 — 2026-10-15
+
 结论：本地基线可用，真实外部功能验收未完成。当前只适合本机开发，不是已完成的课程产品。
 
 - 分支：`feat/campus-phase1-wsl`

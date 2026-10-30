@@ -18,9 +18,10 @@ function TargetEditor({ target, onChanged }) {
       onChanged(updated)
     } catch (err) { setError(err) } finally { setBusy(false) }
   }
-  return <article className="campus-panel"><h3>{target.company || '企业定向版本'} · {target.title || target.jobTitle || '所选岗位'}</h3><p>版本 {target.revision} · {stale ? '依据已变化，此版本不能确认或导出' : target.approved && !dirty ? '已确认，可在授权范围内导出' : '尚未确认，不能供教师导出'}</p>
+  return <article className="campus-panel"><h3>{target.company || '企业定向版本'} · {target.title || target.jobTitle || '所选岗位'}</h3><p>版本 {target.revision} · {stale ? '依据已变化，此版本不能确认或导出' : target.classGeneratedBy && target.classGeneratedRevision === target.revision && !dirty ? '由班级教师生成；班级授权有效时可供该教师导出' : target.approved && !dirty ? '已确认，可在独立授权范围内导出' : '尚未确认，不能按独立授权导出'}</p>
     <RequestError error={error} />
     {stale && <p className="campus-note">原始简历或岗位要求已变化。请先复制要保留的文字，再在上方选择最新的原始简历和对应岗位，重新生成定向版本并核对事实。旧版本仅供对照，不能重新确认。</p>}
+    {target.classGeneratedBy && <p>修改并保存会使原来的班级生成版本失效，教师需要重新生成；原始简历不会被覆盖。独立授权仍按原有确认规则处理。</p>}
     {dirty && <p role="status">定向稿有未保存修改。</p>}
     <details open={dirty}><summary>查看或编辑此版本</summary>
     <label>定向简历正文<textarea disabled={busy} readOnly={stale} value={draft} maxLength={20000} onChange={(event) => setDraft(event.target.value)} /></label>

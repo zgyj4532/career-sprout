@@ -29,6 +29,7 @@ export default function ResumePage() {
   const [text, setText] = useState('')
   const [savedText, setSavedText] = useState(BLANK_DRAFT)
   const [suggestion, setSuggestion] = useState(null)
+  const [compression, setCompression] = useState(null)
   const [error, setError] = useState(null)
   const [note, setNote] = useState('')
   const [saving, setBusy] = useState(false)
@@ -61,10 +62,10 @@ export default function ResumePage() {
     } catch (err) { setError(err) }
   }
   useEffect(() => { initialize(); return () => { revision.current += 1; polishRequest.current?.abort() } }, [])
-  function editText(value) { revision.current += 1; setText(value); setSuggestion(null) }
+  function editText(value) { revision.current += 1; setText(value); setSuggestion(null); setCompression(null) }
   async function choose(id) {
     if (dirty && !window.confirm('切换会放弃当前未保存的编辑，是否继续？')) return
-    revision.current += 1; setSuggestion(null); setBusy(true); setError(null)
+    revision.current += 1; setSuggestion(null); setCompression(null); setBusy(true); setError(null)
     try {
       const data = (await campusFetch(`/api/resumes/${id}`)).data
       setCurrentId(data.id || id); setTitle(data.title || ''); setJobRole(data.jobRole || ''); setText(data.originalText || '')
@@ -135,18 +136,27 @@ export default function ResumePage() {
     setBusy(true); setError(null)
     try {
       await campusFetch(`/api/resumes/${resume.id}`, { method: 'DELETE' })
-      if (currentId === resume.id) { revision.current += 1; setCurrentId(''); setTitle(''); setJobRole(''); setText(''); setSavedText(BLANK_DRAFT); setSuggestion(null); setServerRevision(null); setPolishUnsaved(false); setSavedContinue(null) }
+      if (currentId === resume.id) { revision.current += 1; setCurrentId(''); setTitle(''); setJobRole(''); setText(''); setSavedText(BLANK_DRAFT); setSuggestion(null); setCompression(null); setServerRevision(null); setPolishUnsaved(false); setSavedContinue(null) }
       await loadList()
     } catch (err) { setError(err) } finally { setBusy(false) }
   }
   async function download() {
-    setBusy(true); setError(null)
-    try { downloadBlob(await campusFetch(`/api/resumes/${currentId}/download?version=original&paperSize=A4`), `${title || '职芽简历'}.pdf`); setNote('PDF 已开始下载。请打开检查中文与排版；超出一页半会被拒绝，不会截断内容。'); logClientEvent('resume.export.completed') } catch (err) { setError(err) } finally { setBusy(false) }
+    setBusy(true); setError(null); setCompression(null); setNote('正在生成并检查 PDF；过长时会自动尝试按原文段落压缩。')
+    try {
+      const { data } = await campusFetch(`/api/resumes/${currentId}/download?version=original&paperSize=A4`, { headers: { Accept: 'application/json' } })
+      const binary = atob(data.pdf)
+      const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+      downloadBlob(new Blob([bytes], { type: 'application/pdf' }), `${title || '职芽简历'}.pdf`)
+      setCompression(data.compression)
+      setNote(data.compression ? '已下载压缩版 PDF，原简历未更改。请核对下方原文、压缩稿和省略内容；可将压缩稿放入编辑器修改。' : 'PDF 已开始下载，请打开检查中文与排版。')
+      logClientEvent('resume.export.completed')
+    } catch (err) { setNote('未完成导出，已保存的原文未更改。'); setError(err) } finally { setBusy(false) }
   }
   return <section className="resume-page campus-form"><header className="resume-page-header"><h1 className="resume-page-title">把经历写成简历</h1><p className="resume-page-desc">做过什么？你负责哪部分？最后有什么结果？先用自己的话说清楚，不必会写 Markdown。</p></header>
     <RequestError error={error} onRetry={!material || jobsTotal === null ? initialize : undefined} />{note && <p className="campus-note" role="status">{note}</p>}
     {saveUnknown && <button type="button" className="primary" disabled={saving} onClick={() => save()}>检查保存结果并继续</button>}
     <ImportPanel initiallyOpen={search.get('import') === '1'} initialDraftId={search.get('importId') || ''} disabled={busy || dirty || voiceActive || polishing} onMutationChange={setImportBusy} onSaved={async () => { await initialize(); if (currentId) await choose(currentId) }} />
+    {compression && <section className="campus-panel campus-form"><h2>压缩稿与原文对照</h2><p>压缩稿未保存到原简历；请核对省略内容是否影响事实和上下文。</p><div className="campus-grid"><div><h3>原文</h3><p className="campus-preserve-text">{compression.original}</p></div><div><h3>压缩稿</h3><p className="campus-preserve-text">{compression.draft}</p></div></div><h3>修改对照</h3><ul>{compression.changes.map((change, index) => <li key={index} className="campus-preserve-text">{change}</li>)}</ul><button type="button" disabled={busy || dirty} onClick={() => { const draft = compression.draft; setCurrentId(''); setTitle(`${title.slice(0, 95)} 压缩稿`); setServerRevision(null); setSavedContinue(null); setSavedText(BLANK_DRAFT); editText(draft); setNote('压缩稿已作为新简历草稿放入编辑器，尚未保存；原简历不会被覆盖。') }}>作为新简历修改压缩稿</button></section>}
     <div className="resume-workspace"><div className="campus-form"><form className="campus-card resume-editor-card campus-form" onSubmit={(event) => save(event, true)}>
       <fieldset disabled={busy} className="campus-form campus-fieldset"><div className="resume-meta-row"><label>简历标题<input required maxLength={100} readOnly={Boolean(currentId)} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="给这份简历起个名字" /></label>{currentId && <button type="button" onClick={() => rename({ id: currentId, title, revision: serverRevision })}>修改当前简历名称</button>}<label>想尝试的岗位（可留空）<input maxLength={200} value={jobRole} onChange={(event) => { revision.current += 1; setSuggestion(null); setJobRole(event.target.value) }} placeholder="还没确定方向也可以保存简历" /></label></div>
       <details className="campus-tool"><summary>补充材料或选择目标岗位</summary><JobSelect jobs={jobs} setJobs={setJobs} total={jobsTotal} loadError={error} value={jobId} disabled={busy} onChange={(id) => { revision.current += 1; setSuggestion(null); setJobId(id); const job = jobs.find((row) => row.id === id); if (job) setJobRole(job.title) }} />
@@ -154,10 +164,10 @@ export default function ResumePage() {
       <label>真实经历与简历正文<textarea className="resume-textarea" maxLength={20000} value={text} onChange={(event) => editText(event.target.value)} placeholder="课程、社团、项目或工作都可以。只写实际发生的事。" /></label>
       <div className="campus-actions"><button type="button" disabled={!text.trim() || polishing || voiceActive} onClick={polish}>{polishing ? '正在润色…' : 'AI 润色建议'}</button>{polishing && <button type="button" onClick={() => { revision.current += 1; polishRequest.current?.abort(); setPolishing(false) }}>取消本次润色</button>}{polishUnsaved && <span role="status">尚未保存</span>}</div>
       {suggestion && <section className="campus-panel"><h2>核对后再采纳</h2><div className="campus-grid"><div><h3>本次原文</h3><p className="campus-preserve-text">{suggestion.source}</p></div><div><h3>AI 建议（尚未保存）</h3><p className="campus-preserve-text">{suggestion.draft}</p></div></div><h3>修改说明</h3><ul>{suggestion.changes.map((change) => <li key={change}>{change}</li>)}</ul><h3>请你补充的事实</h3><ul>{suggestion.questions.map((question) => <li key={question}>{question}</li>)}</ul><div className="campus-actions"><button type="button" onClick={() => { if (revision.current === suggestion.version) { setText(suggestion.draft); setSuggestion(null); setPolishUnsaved(true) } }}>确认事实并采纳建议</button><button type="button" onClick={() => setSuggestion(null)}>取消，保留原文</button></div></section>}
-      <div className="resume-actions-bar"><button className="btn-primary" type="submit" disabled={!text.trim() || polishing || voiceActive}>{savedContinue && !dirty ? '继续准备面试' : '保存并继续'}</button><button type="button" disabled={!text.trim() || polishing || voiceActive} onClick={(event) => { if (event.currentTarget.form.reportValidity()) save(event) }}>保存简历</button><button type="button" disabled={!currentId || dirty || polishing || voiceActive} onClick={download}>下载确认版 PDF</button></div><p role="status">{dirty ? '编辑尚未保存，PDF 和定向版本使用服务器已保存内容。' : currentId ? `当前内容已保存 · 版本 ${serverRevision}` : '空白草稿，从一件真实经历开始。'} A4 通常一页，最多第二页上半页；过长请主动精简。</p>
+      <div className="resume-actions-bar"><button className="btn-primary" type="submit" disabled={!text.trim() || polishing || voiceActive}>{savedContinue && !dirty ? '继续准备面试' : '保存并继续'}</button><button type="button" disabled={!text.trim() || polishing || voiceActive} onClick={(event) => { if (event.currentTarget.form.reportValidity()) save(event) }}>保存简历</button><button type="button" disabled={!currentId || dirty || polishing || voiceActive} onClick={download}>下载确认版 PDF</button></div><p role="status">{dirty ? '编辑尚未保存，PDF 和定向版本使用服务器已保存内容。' : currentId ? `当前内容已保存 · 版本 ${serverRevision}` : '空白草稿，从一件真实经历开始。'} A4 最多第二页上半页；超长时自动尝试压缩并重新检查。</p>
     </fieldset></form>
     {voiceActive && <p role="status">语音输入正在处理中，请展开语音工具完成或取消；文字仍保留。</p>}<details className="campus-tool" open={voiceActive}><summary>用声音补充经历</summary><VoiceReview disabled={busy || polishing} onActiveChange={setVoiceActive} onReview={(review) => editText([text, review].filter(Boolean).join('\n\n'))} /></details>
-    </div><aside className="campus-card resume-sidebar"><h2 className="resume-sidebar-title">已保存的简历</h2><button type="button" disabled={busy || voiceActive || polishing} onClick={() => { if (dirty && !window.confirm('放弃当前未保存编辑并新建？')) return; revision.current += 1; setCurrentId(''); setTitle(''); setJobRole(''); setText(''); setSavedText(BLANK_DRAFT); setSuggestion(null); setServerRevision(null); setPolishUnsaved(false); setSavedContinue(null) }}>新建空白简历</button><ul className="resume-saved-list">{resumes.map((resume) => <li key={resume.id}><button type="button" className={`resume-saved-item${currentId === resume.id ? ' is-active' : ''}`} disabled={busy || voiceActive || polishing} onClick={() => choose(resume.id)}>{resume.title}</button><details><summary>管理</summary><button type="button" disabled={busy || voiceActive || polishing} onClick={() => rename(resume)}>改名</button><button type="button" disabled={busy || voiceActive || polishing} onClick={() => remove(resume)}>删除</button></details></li>)}</ul>{!resumes.length && <p>还没有简历，不会预填虚构经历。</p>}</aside></div>
+    </div><aside className="campus-card resume-sidebar"><h2 className="resume-sidebar-title">已保存的简历</h2><button type="button" disabled={busy || voiceActive || polishing} onClick={() => { if (dirty && !window.confirm('放弃当前未保存编辑并新建？')) return; revision.current += 1; setCurrentId(''); setTitle(''); setJobRole(''); setText(''); setSavedText(BLANK_DRAFT); setSuggestion(null); setCompression(null); setServerRevision(null); setPolishUnsaved(false); setSavedContinue(null) }}>新建空白简历</button><ul className="resume-saved-list">{resumes.map((resume) => <li key={resume.id}><button type="button" className={`resume-saved-item${currentId === resume.id ? ' is-active' : ''}`} disabled={busy || voiceActive || polishing} onClick={() => choose(resume.id)}>{resume.title}</button><details><summary>管理</summary><button type="button" disabled={busy || voiceActive || polishing} onClick={() => rename(resume)}>改名</button><button type="button" disabled={busy || voiceActive || polishing} onClick={() => remove(resume)}>删除</button></details></li>)}</ul>{!resumes.length && <p>还没有简历，不会预填虚构经历。</p>}</aside></div>
     <TargetResumes resumeId={currentId} jobId={jobId} disabled={busy || dirty || polishing || voiceActive} />
   </section>
 }

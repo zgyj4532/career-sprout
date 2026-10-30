@@ -4,6 +4,7 @@ import http from 'node:http';
 import express from 'express';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import { withAccountWrite } from '../accountWrites.js';
 
 const keys = ['APP_PROFILE', 'NODE_ENV', 'DEV_BYPASS_AUTH', 'DEV_USER_UID', 'REDIS_URL', 'CLERK_SECRET_KEY'];
 const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
@@ -81,7 +82,9 @@ test('HTTP title/body CAS prevents stale overwrite and only content changes inva
   assert.equal(migrated.body.data.contentRevision, 2);
 });
 
-test('deletion closes admission, cleans every association, preserves interviews and retries without resume', async () => {
+// Enter account admission first, as the HTTP handler does; invocation before
+// async account checks is not yet an admitted resume deletion.
+test('deletion closes admission, cleans every association, preserves interviews and retries without resume', async () => withAccountWrite(owner, async () => {
   const resume = await source();
   await Share.create({ resumeId: resume._id, ownerId: owner, shareToken: 'b'.repeat(48), isActive: true });
   await Comment.create({ resumeId: resume._id, shareToken: 'b'.repeat(48), section: 'summary', text: 'Review', authorEmail: 'fixture@example.test' });
@@ -123,7 +126,7 @@ test('deletion closes admission, cleans every association, preserves interviews 
   await Resume.updateOne({ _id: changed._id }, { $inc: { revision: 1 } });
   await assert.rejects(lifecycle.deleteResumeOwned(changed.id, owner, { expectedRevision: 1 }), { code: 'RESTORE_CONFLICT' });
   assert.equal((await Resume.findById(changed.id)).deleting, false);
-});
+}));
 
 test('cleanup persists tombstone before interruption and can recover real partial database writes', async () => {
   const resume = await source();

@@ -138,3 +138,20 @@ it('keeps a recovered save acknowledged when the subsequent list refresh fails',
   await waitFor(() => expect(navigate).toHaveBeenCalledWith('/interview?resumeId=saved&resumeRevision=4'))
   expect(campusFetch.mock.calls.filter(([, options]) => options?.method === 'PUT')).toHaveLength(1)
 })
+
+it('shows the compression comparison and opens a new unsaved resume without replacing the source', async () => {
+  campusFetch.mockImplementation((path) => Promise.resolve({ data: path === '/api/resumes' ? [stored] : path.includes('/download?') ? {
+    pdf: 'JVBERg==', compression: { original: stored.originalText, draft: '保留的真实经历', changes: ['省略一段'] },
+  } : stored }))
+  open()
+  fireEvent.click(await screen.findByRole('button', { name: stored.title }))
+  await waitFor(() => expect(screen.getByLabelText('真实经历与简历正文')).toHaveValue(stored.originalText))
+  fireEvent.click(screen.getByRole('button', { name: '下载确认版 PDF' }))
+  await screen.findByText('省略一段')
+  expect(screen.getByText(stored.originalText)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: '作为新简历修改压缩稿' }))
+  expect(screen.getByLabelText('真实经历与简历正文')).toHaveValue('保留的真实经历')
+  expect(screen.getByLabelText('简历标题')).not.toHaveAttribute('readonly')
+  expect(screen.getByRole('button', { name: '下载确认版 PDF' })).toBeDisabled()
+  expect(campusFetch.mock.calls.some(([, options]) => options?.method === 'PUT')).toBe(false)
+})
