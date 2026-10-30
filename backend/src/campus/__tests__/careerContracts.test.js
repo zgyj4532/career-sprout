@@ -85,3 +85,11 @@ test('PDF compression only retains ordered original paragraphs and reports omiss
     assert.throws(() => selectedResumeParagraphs(source, selected), { code: 'PDF_COMPRESSION_UNGROUNDED' });
   }
 });
+
+test('PDF compression drops empty sections and keeps headers for retained content', () => {
+  const source = '姓名\n\n## 工作经历\n\n### 教学\n\n负责教学。\n\n### 项目\n\n参与项目。\n\n## 技能\n\n熟悉写作。';
+  const result = selectedResumeParagraphs(source, [0, 1, 2, 3, 6, 7]);
+  assert.equal(result.draft, '姓名\n\n## 工作经历\n\n### 教学\n\n负责教学。\n\n## 技能\n\n熟悉写作。');
+  assert.throws(() => selectedResumeParagraphs(source, [0, 1, 2, 3, 4, 6, 7]), { code: 'PDF_COMPRESSION_UNGROUNDED' });
+  assert.throws(() => selectedResumeParagraphs(source, [0, 1, 2, 3, 5, 6, 7]), { code: 'PDF_COMPRESSION_UNGROUNDED' });
+});
