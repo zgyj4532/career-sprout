@@ -42,6 +42,24 @@ const grantSchema = new mongoose.Schema({
 });
 grantSchema.index({ studentId: 1, teacherId: 1 }, { unique: true });
 grantSchema.index({ teacherId: 1, studentId: 1 });
+const classSchema = new mongoose.Schema({
+  teacherId: { type: String, required: true, index: true }, teacherName: { type: String, required: true },
+  name: { type: String, required: true }, inviteHash: { type: String, required: true, unique: true },
+  inviteExpiresAt: { type: Date, required: true }, inviteRevoked: { type: Boolean, default: false },
+}, { timestamps: true });
+const membershipSchema = new mongoose.Schema({
+  classId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+  teacherId: { type: String, required: true, index: true }, studentId: { type: String, required: true, index: true },
+  active: { type: Boolean, default: true }, consentVersion: { type: String, required: true },
+  joinedAt: { type: Date, default: Date.now }, leftAt: { type: Date, default: null },
+}, { timestamps: true });
+membershipSchema.index({ classId: 1, studentId: 1 }, { unique: true });
+membershipSchema.index({ teacherId: 1, studentId: 1, active: 1 });
+const guidanceSchema = new mongoose.Schema({
+  classId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+  teacherId: { type: String, required: true }, studentId: { type: String, required: true, index: true },
+  text: { type: String, required: true, maxlength: 4000 }, feedback: { type: String, default: '', maxlength: 4000 },
+}, { timestamps: true });
 const targetSchema = new mongoose.Schema({
   studentId: { type: String, required: true, index: true },
   sourceResumeId: { type: mongoose.Schema.Types.ObjectId, required: true },
@@ -50,6 +68,7 @@ const targetSchema = new mongoose.Schema({
   jobRevision: { type: Date, default: null },
   title: String, company: String, draft: { type: String, required: true },
   revision: { type: Number, default: 1 }, approvedRevision: { type: Number, default: null },
+  classGeneratedBy: { type: String, default: null }, classGeneratedRevision: { type: Number, default: null },
   changes: [String], questions: [String],
 }, { timestamps: true });
 const tombstoneSchema = new mongoose.Schema({
@@ -131,6 +150,9 @@ const accountWriteStateSchema = new mongoose.Schema({ _id: String, epoch: { type
 export const CampusStudent = mongoose.model('CampusStudent', studentSchema);
 export const CampusJob = mongoose.model('CampusJob', jobSchema);
 export const CampusGrant = mongoose.model('CampusGrant', grantSchema);
+export const CampusClass = mongoose.model('CampusClass', classSchema);
+export const CampusMembership = mongoose.model('CampusMembership', membershipSchema);
+export const CampusGuidance = mongoose.model('CampusGuidance', guidanceSchema);
 export const CampusTarget = mongoose.model('CampusTarget', targetSchema);
 export const CampusResumeTombstone = mongoose.model('CampusResumeTombstone', tombstoneSchema);
 export const CampusImportDraft = mongoose.model('CampusImportDraft', importDraftSchema);

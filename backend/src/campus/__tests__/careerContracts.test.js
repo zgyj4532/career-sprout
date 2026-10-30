@@ -6,6 +6,7 @@ import { sanitizeResumeHtml, assertPdfLayout } from '../../services/pdfGenerator
 import { safeMetadata } from '../../utils/diagnostics.js';
 import { requireTeacher } from '../../middleware/auth.js';
 import { assertPolishGrounding } from '../ai.js';
+import { selectedResumeParagraphs } from '../../services/resumePdfExport.js';
 
 test('time coverage requires the complete interval and days, absence remains unknown', () => {
   const required = { startDate: '2026-10-01', endDate: '2026-12-31', daysPerWeek: 3 };
@@ -73,4 +74,22 @@ test('observed synthetic polish omission is rejected while the qualified suggest
   const source = '参与校园资料整理项目，使用Excel整理30条课程记录，没有担任负责人。';
   assert.throws(() => assertPolishGrounding(source, '## 项目经历\n\n### 校园资料整理项目\n- 参与校园资料整理，使用 Excel 整理 30 条课程记录。'), { code: 'AI_UNGROUNDED' });
   assert.doesNotThrow(() => assertPolishGrounding(source, '- 参与校园资料整理项目，使用Excel整理30条课程记录，没有担任负责人。'));
+});
+
+test('PDF compression only retains ordered original paragraphs and reports omissions', () => {
+  const source = '张同学\n\n## 项目\n\n参与整理资料，没有担任负责人。\n\n整理课程记录。';
+  const result = selectedResumeParagraphs(source, [0, 1, 2]);
+  assert.equal(result.draft, '张同学\n\n## 项目\n\n参与整理资料，没有担任负责人。');
+  assert.deepEqual(result.changes, ['省略第 4 段：整理课程记录。']);
+  for (const selected of [[0, 2], [0, 1, 3], [0, 2, 1], [0, 1, 1], [1, 2], [0, 1, 2, 3], [0, 1, 9]]) {
+    assert.throws(() => selectedResumeParagraphs(source, selected), { code: 'PDF_COMPRESSION_UNGROUNDED' });
+  }
+});
+
+test('PDF compression drops empty sections and keeps headers for retained content', () => {
+  const source = '姓名\n\n## 工作经历\n\n### 教学\n\n负责教学。\n\n### 项目\n\n参与项目。\n\n## 技能\n\n熟悉写作。';
+  const result = selectedResumeParagraphs(source, [0, 1, 2, 3, 6, 7]);
+  assert.equal(result.draft, '姓名\n\n## 工作经历\n\n### 教学\n\n负责教学。\n\n## 技能\n\n熟悉写作。');
+  assert.throws(() => selectedResumeParagraphs(source, [0, 1, 2, 3, 4, 6, 7]), { code: 'PDF_COMPRESSION_UNGROUNDED' });
+  assert.throws(() => selectedResumeParagraphs(source, [0, 1, 2, 3, 5, 6, 7]), { code: 'PDF_COMPRESSION_UNGROUNDED' });
 });

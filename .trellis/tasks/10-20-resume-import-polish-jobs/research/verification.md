@@ -83,3 +83,7 @@ Dedicated synthetic database `career_sprout_audit_20261020`, UID `career-sprout-
 - Human microphone/speaker quality: user confirmed on 2026-10-20 that this was tested on the preceding Sunday. Accepted as user-reported human verification, not a new assistant-run test. This continuation did not replace capture/playback; deployment HTTPS/device changes may need a focused smoke check.
 - Resend delivery/public deployment: intentionally not enabled by this scope.
 - Repository not automatically committed/pushed/archived.
+
+## Current decision addendum — 2026-10-23
+
+The approved engineering closeout retains existing Clerk, superseding the earlier Evren/Resend direction above. Historical missing-credential observations and test results are unchanged. Real Clerk accounts/email verification/teacher authorization remain externally blocked until actual configuration and sessions are available; no new verification was performed by this documentation update. Novice and physical-device gates remain blocked on the new-host filing/deployment. See `docs/MANUAL_ACCEPTANCE.md`; do not archive this task on the basis of synthetic evidence.

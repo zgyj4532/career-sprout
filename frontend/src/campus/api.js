@@ -88,6 +88,10 @@ const RECOVERY_MESSAGES = {
   REVISION_CONFLICT: '简历已在其他页面更新。正文没有写回标题，请刷新后再保存。',
   RESUME_DELETING: '这份简历正在删除，不能新建关联内容。',
   RESUME_TOO_LONG: '简历超过一页半 A4 的可打印篇幅，请精简后保存并重新导出；内容未被截断。',
+  PDF_COMPRESSION_UNAVAILABLE: 'AI 压缩暂时不可用或结果无法核实，原文未更改；请重试或手动精简。',
+  PDF_COMPRESSION_UNGROUNDED: '压缩结果无法可靠核实，原文未更改；请手动精简后重试。',
+  PDF_COMPRESSION_TIMEOUT: 'AI 压缩超时，原文未更改；请稍后重试。',
+  PDF_COMPRESSION_UNSPLITTABLE: '无法安全按完整段落压缩，原文未更改；请手动分段精简。',
   EXPORT_BUSY: '已有批量导出正在进行，请稍后重试下载。',
 }
 
@@ -107,7 +111,7 @@ export async function campusFetch(path, options = {}) {
   const abort = () => controller.abort()
   if (options.signal?.aborted) controller.abort()
   else options.signal?.addEventListener('abort', abort, { once: true })
-  const timeout = setTimeout(() => { timedOut = true; controller.abort() }, path.endsWith('/export') ? 300000 : 120000)
+  const timeout = setTimeout(() => { timedOut = true; controller.abort() }, /\/(?:export|download)$/.test(path) ? 300000 : 120000)
   try {
     if (window.Clerk?.session) {
       const token = await window.Clerk.session.getToken()
@@ -118,7 +122,13 @@ export async function campusFetch(path, options = {}) {
     responseId = safeCode(response.headers.get('X-Request-ID')) || requestId
     const contentType = response.headers.get('content-type') || ''
     if (response.ok && (options.responseType === 'blob' || /application\/(pdf|zip|x-zip-compressed|octet-stream|vnd\.openxmlformats-officedocument)/i.test(contentType) || /^image\//i.test(contentType))) {
-      return await response.blob()
+      const blob = await response.blob()
+      if (options.includeExportManifest) {
+        let manifest
+        try { manifest = JSON.parse(atob(response.headers.get('X-Export-Manifest') || '')) } catch { manifest = null }
+        return { blob, manifest }
+      }
+      return blob
     }
     if (response.status === 204) return null
     let payload

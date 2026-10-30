@@ -1,0 +1,34 @@
+{
+  "id": "student-career-experience",
+  "name": "student-career-experience",
+  "title": "面向低年级学生的职业成长体验与架构优化",
+  "description": "以核心产品 DOCX 为首要需求，完善引导、语音面试、口述简历、Resend 认证预留、诊断日志与品牌迁移。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-18",
+  "completedAt": null,
+  "branch": "feat/campus-phase1-wsl",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "10-18-identity-diagnostics",
+    "10-18-guided-growth",
+    "10-18-voice-resume",
+    "10-18-teacher-matching",
+    "10-18-career-sprout-brand"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "delivery_status": "new_directory_verified_formal_accounts_and_human_acceptance_pending"
+  }
+}

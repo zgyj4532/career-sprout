@@ -54,3 +54,7 @@ Two supervised launch failures coincided with WSL uptime resetting to0min; cause
 ## Cleanup completed
 
 Owned browser and retained runtime stopped. Exact isolated database dropped after collection counts:3 interviews,1 profile/student/discovery confirmation/resume/version/job/preparation,3 save operations; original database and volumes untouched. Owned temporary import/log directories removed. Throwaway runtime/model-smoke/cleanup scripts removed; only safe synthetic evidence retained.
+
+## Current decision addendum — 2026-10-23
+
+The approved engineering closeout retains existing Clerk and supersedes the Evren/Resend direction in the dated external-acceptance section. No historical browser/model/API result is rewritten or promoted to a fresh pass. Formal two-account/email/teacher acceptance still requires real Clerk configuration and sessions; novice and physical-device acceptance still depends on the new-host filing/deployment. Current instructions: `docs/LOCAL_WSL.md` and `docs/MANUAL_ACCEPTANCE.md`. This addendum does not complete or archive the task.

@@ -27,3 +27,13 @@ Use existing `campus-*` classes and CSS variables; do not introduce a second des
 Discovery uses the owned interview session with `purpose: discovery`, separate durable answer/continue/completion requests, and no numeric assessment. Its editable profile candidates retain source excerpts and idea/in-progress/completed state. Confirmation reads canonical `frozen`, `expected`, and `steps`; unknown saves must reconcile before another write, partial candidates stay immutable, and only unresolved target conflicts ask for a choice.
 
 Formal reports consume `scoring` for `scoreVersion: available-v1`; never recompute a missing dimension as zero. History and legacy consumers preserve old totals with a legacy label and compare only equal scoring comparison keys. Advice precedes score details. An expired generation lease permits an explicit retry after a canonical read; an active generation exposes progress recovery, not another model request.
+
+## Authentication lifecycle
+
+- Scope: campus login/registration must not wait indefinitely for the external SDK or backend session status.
+- Signature: `useCampusSession()` exposes `status`, `error`, `loadingStage: 'clerk' | 'session' | null`, `refresh`, and `signOut`.
+- Contract: Clerk initialization is bounded to 20s, account-status/token acquisition and logout to 15s. Keep request identity guards; abort and settle owned waits on session changes/unmount. Backend requires `CLERK_SECRET_KEY` and `CLERK_PUBLISHABLE_KEY`; frontend uses the matching public `VITE_CLERK_PUBLISHABLE_KEY` only.
+- Errors: SDK failure/timeout -> safe `CampusApiError` and explicit reload retry; session timeout -> in-place retry; unknown logout outcome -> reconcile real status, never assume anonymous. Preserve unsaved-work warning on reload.
+- Cases: good = genuine session and backend identity; base = anonymous Clerk status with protected API 401; bad = stalled SDK/token promise or late old-user response.
+- Tests: fake-time bounds, late SDK recovery, aborted/stale response isolation, session changes, logout errors, root StrictMode cleanup; actual browser SDK failure and backend timeout recovery. Personal verification is separate from mocks.
+- Wrong: only aborting fetch while token acquisition is still pending, or treating a timeout as successful login. Correct: bound the complete operation and show an actionable error without granting identity.

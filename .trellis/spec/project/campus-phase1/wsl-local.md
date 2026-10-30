@@ -36,6 +36,9 @@ MongoDB/Redis 使用本项目独立命名卷与 Compose project name，带健康
 - `npm run infra:up` / `npm run infra:down`：按明确 -f 和 -p 操作本项目基础服务。
 - `npm run dev:local`：预检、启动或复用本项目基础服务、等待健康、同时启动前后端；Ctrl+C 清理本次子进程但不删数据；失败非零退出。
 - `npm run verify:phase1`：聚合实际 lint/build/tests/smoke 并保留每步退出码，不用 `|| true` 伪装通过。
+- 验收入口需先 `nvm use`：仅用Node24执行npm-cli不保证npm脚本里的裸 `node` 也是24。验证器拒绝版本不符，不以少跑步骤代替通过；所有已启动子步骤固定当前Node与同安装npm。
+- 默认检查校园范围，`--include-upstream`单列上游范围；报告区分工程通过与真实账号/供应商/设备验收。后端测试使用无`.env`的自有工作目录，避免测试删除环境字段后dotenv重新载入真实凭据。
+- 隔离冒烟使用随机数据库/UID、临时私密目录和自有后端端口；核对IPC进程身份与API用户后验证重启持久化。正常与中断均清理自有资源，绝不删除开发数据库或共享Redis数据。
 
 不要引入一套复杂部署平台，只用少量 shell/Node 脚本或小型进程管理依赖解决。
 

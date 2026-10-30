@@ -4,6 +4,7 @@ import { campusData, campusFetch } from '../api'
 import { EMPTY_STUDENT, EXPERIENCE_KINDS, SKILL_LEVELS, STUDY_STAGES } from '../material'
 import RequestError from '../components/RequestError'
 import SharingControls from '../components/SharingControls'
+import ClassMembership from '../components/ClassMembership'
 import SectionPolish from '../components/SectionPolish'
 import ImportPanel from '../components/ImportPanel'
 import useUnsavedWork from '../hooks/useUnsavedWork'
@@ -153,5 +154,6 @@ export default function ProfilePage() {
       <button type="button" disabled={!dirty} onClick={() => { if (window.confirm('放弃当前未保存的档案编辑？已导入的原件不会被丢弃。')) load() }}>放弃本次档案编辑</button>
     </fieldset></form>}
     <SharingControls />
+    <ClassMembership />
   </section>
 }

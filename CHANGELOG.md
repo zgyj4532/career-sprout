@@ -1,12 +1,27 @@
 # 职芽 CareerSprout — Unreleased
 
+## 2026-10-29 Class consent and teacher workspace
+
+- Added teacher-owned classes with expiring, replaceable invitations and a single explicit student confirmation for the disclosed class fields and job-targeted AI generation/export. Leaving a class removes that membership's authorization without removing separate grants or other memberships; already downloaded files cannot be recalled.
+- Added class-scoped student summaries, skill-gap counts, teacher guidance and student feedback; students retain guidance after leaving. Teacher job matching distinguishes time conflicts and unknowns, generates class-authorized drafts per student, reports failures and supports retry and mixed-result archive manifests.
+- Automatic class generation rejects output that cannot be mapped to complete saved source lines; legacy independent grants still require their existing student approval and time checks. Export rechecks authorization, source and job revisions, and packages any PDF compression review supplied by the PDF service.
+- This entry records implementation only: no tests, real-account acceptance, live-model acceptance, browser or PDF smoke were run for these changes. Public deployment remains blocked pending filing approval.
+
+## 2026-10-23 工程验收收尾
+
+- 正式认证继续现有 Clerk，取代此前 Evren/Resend 迁移方向；真实注册、邮箱验证、教师授权和双账号隔离仍需独立验收。
+- 精简 README，详细使用/验收与性能缓存说明分别保留在 MANUAL_ACCEPTANCE 和 LOCAL_WSL；旧阶段报告增加当前汇总，保留历史事实。
+- 当前开发校园入口的首页、简历、面试准备与反馈已检查360/768模拟视口，无横向溢出。合成隔离数据验证了保存失败后的原文保留与显式恢复；合成反馈只作布局证据，不算模型或真机验收。
+- 停用模块与依赖继续保留，整体测试稳定且另获批准前不删除。
+- `verify:phase1` 固定运行时与校园范围，分项持久化结果；doctor补实际端口归属、Compose、锁文件结构和ASR配置。最终统一命令退出0：20脚本、116校园后端、148共享、166前端测试及构建、隔离重启持久化通过；lint保留11/20条警告。实际SIGTERM中断验证自有后端、数据库与文件清理成功。正式账号、真人和真机验收不因此转为通过。
+
 ## 2026-10-22 Campus on-demand loading
 
 - Lazy-load non-home routes and click-triggered slogan animation while keeping Home, navigation, session/authentication and dirty-work ownership eager and stable. Preserve deep links, navigation blockers, reduced-motion behavior and plain-text animation fallback.
 - Show “第一次打开需要时间，请耐心等待” centered in main content with homepage typography/colors and accessible status semantics. Loading never blocks navigation or steals focus; failures offer home and explicit refresh with an unsaved-content warning, without automatic reload or cached-promise retries.
 - With automatic Rollup splitting and the unchanged 500kB threshold, homepage initial JS/static closure fell from 625,144 to 384,770 minified bytes (38.45%); calculated gzip fell from 197,388 to 120,233 bytes (39.09%). Largest JS is 384,770 bytes; all emitted JS totals 630,595 bytes, up 5,451 bytes. No manual chunks or build configuration changes.
 - Integrated verification passed 166 campus tests in 28 files, scoped lint and the production build. Actual production-preview cold/warm requests, controlled slow chunks at desktop/390px and an aborted teacher chunk covered loading and home recovery. Deliberate API 503 responses isolate this check from backend/model correctness; authentication is unchanged, and no deployment, physical-phone or server RAM improvement is claimed.
-- Document HTML revalidation, immutable hashed-asset caching and retention of old release assets for deferred imports and rollback. Measurements and release guidance are in README's on-demand loading section.
+- Document HTML revalidation, immutable hashed-asset caching and retention of old release assets for deferred imports and rollback. Measurements and release guidance are preserved in docs/LOCAL_WSL.md following the README simplification.
 
 ## 2026-10-21 新手交流、页面减负与保存恢复
 
@@ -16,6 +31,12 @@
 - 简历/岗位按确认版本保存并继续，未知结果恢复原操作、跳转失败不重复创建。档案分步保存可恢复，冲突保留本地编辑；浏览器历史导航纳入未保存保护。
 - 隔离合成账号的真实模型/API/浏览器已走通交流、资料确认、两题正式面试和简历/私有岗位继续流程；证据见当前任务 `research/browser-model-smoke.json`。1440px/390px 为模拟视口，没有完整实施前基线；不声明所有人工/设备验收通过。
 - 新服务器备案/部署仍阻塞新手试用与物理手机验收。正式认证沿已选 Evren/Resend 方案另行集成验收，不把当前 Clerk 路径增加为上线前提。
+
+## 2026-10-20 服务器评估与配置准备
+
+- 只读检查 evren_test 容量与既有Resend SMTP接入，记录项目进程树/PSS实际负载峰值；当前容量与生产认证安全门未通过，不部署或开放注册。
+- 新增根目录 `configure-server.bat` 和PowerShell配置工具：隐藏密钥输入、私密ACL、dotenv校验、显式SSH上传及默认拒绝覆盖，不执行配置内容或重启服务。
+- 修正真人录音/扬声器状态为用户确认此前周日已测；不将物理手机或新域名HTTPS验证推断为完成。
 
 ## 2026-10-20 导入恢复与低操作成本修复
 

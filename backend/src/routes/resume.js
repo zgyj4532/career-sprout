@@ -407,17 +407,25 @@ router.get('/:resumeId/download', verifyToken, validate(downloadResumeQuerySchem
     throw new ApiError(400, 'No content available for download');
   }
 
-  const { generatePDF } = await import('../services/pdfGenerator.js');
+  const { generateResumePDF } = await import('../services/resumePdfExport.js');
 
   const controller = new AbortController();
   const cancel = () => { if (!res.writableEnded) controller.abort(); };
   res.once('close', cancel);
   try {
-    const pdfBuffer = await generatePDF(textContent, {
+    const { bytes: pdfBuffer, compression } = await generateResumePDF(textContent, {
       format: paperSize === 'Letter' ? 'Letter' : 'A4',
       title: resume.title || 'Resume', signal: controller.signal, requestId: req.requestId,
     });
+    const current = await Resume.findOne({ _id: resumeId, userId, deleting: { $ne: true } }).select('revision originalText enhancedText').lean();
+    if (!current || current.revision !== resume.revision || current.originalText !== resume.originalText || current.enhancedText !== resume.enhancedText) {
+      throw campusError(409, 'REVISION_CONFLICT', '导出期间简历已更新，请重新导出。');
+    }
     if (controller.signal.aborted) return;
+    res.setHeader('Cache-Control', 'private, no-store');
+    if (req.get('Accept') === 'application/json') {
+      return res.json({ success: true, data: { pdf: pdfBuffer.toString('base64'), compression } });
+    }
     const filename = `${resume.title || 'resume'}_${version}.pdf`.replace(/[^a-zA-Z0-9_.-]/g, '_');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

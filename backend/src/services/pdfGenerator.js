@@ -78,12 +78,15 @@ async function render(input, options, markdown = false) {
     enterStage('fonts');
     await page.evaluate(() => globalThis.document.fonts.ready);
     enterStage('print');
-    const bytes = Buffer.from(await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true, margin: { top: '15mm', bottom: '15mm', left: '15mm', right: '15mm' }, timeout: 30000 }));
+    const printed = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true, margin: { top: '15mm', bottom: '15mm', left: '15mm', right: '15mm' }, timeout: 30000 });
+    // The bundled PDF.js mishandles Buffer and views into larger backing buffers.
+    const data = !Buffer.isBuffer(printed) && printed.byteOffset === 0 && printed.byteLength === printed.buffer.byteLength ? printed : Uint8Array.from(printed);
+    const bytes = Buffer.from(data.buffer);
     if (bytes.length > 5 * 1024 * 1024) throw campusError(422, 'PDF_TOO_LARGE', '生成文件过大，请精简后重试。');
     // Inspect actual printed text positions, not screen height: pagination can add whitespace.
     const pages = [];
     enterStage('parse');
-    await pdfParse(bytes, { pagerender: async (pdfPage) => {
+    await pdfParse(data, { pagerender: async (pdfPage) => {
       const content = await pdfPage.getTextContent();
       pages[pdfPage.pageNumber - 1] = content.items.map((item) => ({ text: item.str || '', bottom: item.transform?.[5] ?? 0 }));
       return content.items.map((item) => item.str).join(' ');

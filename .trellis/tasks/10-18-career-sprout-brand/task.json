@@ -1,0 +1,28 @@
+{
+  "id": "career-sprout-brand",
+  "name": "career-sprout-brand",
+  "title": "职芽品牌与仓库目录迁移",
+  "description": "统一职芽 CareerSprout 名称与口号，安全迁移用户 GitHub 仓库和本地目录，保留历史与数据。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-18",
+  "completedAt": null,
+  "branch": "feat/campus-phase1-wsl",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "10-18-student-career-experience",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "local_rename_status": "verified_new_path_startup_2026_10_20"
+  }
+}
