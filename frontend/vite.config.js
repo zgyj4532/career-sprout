@@ -12,8 +12,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig(({ mode }) => {
   const env = { ...loadEnv(mode, __dirname, 'VITE_'), ...process.env }
   const campusLocal = env.VITE_APP_PROFILE === 'campus-local'
+  const base = campusLocal ? (env.VITE_BASE_PATH || '/') : (env.VITE_CDN_URL || '/')
   return {
-  base: env.VITE_CDN_URL || '/',
+  base,
   test: {
     environment: 'jsdom',
     setupFiles: './src/test/setup.jsx',

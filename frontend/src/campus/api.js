@@ -1,10 +1,14 @@
 import { safeValidationDetails } from './validation'
 
+const API_BASE = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '')
+export function apiPath(path, baseUrl = API_BASE) {
+  return path.startsWith('/api/') ? `${baseUrl}${path}` : path
+}
+
 const events = []
 const MAX_EVENTS = 200
 const safeCode = (value) => typeof value === 'string' && /^[A-Za-z0-9_.:-]{1,100}$/.test(value) ? value : undefined
 const routes = /^\/api\/(?:campus(?:\/(?:auth|me|jobs|teachers|teacher|resumes|imports))?|resumes|interview|user-profiles)(?:\/|$)/
-
 function routeTemplate(path) {
   const pathname = path.split('?')[0]
   if (!routes.test(pathname)) return '/api/other'
@@ -117,7 +121,7 @@ export async function campusFetch(path, options = {}) {
       const token = await window.Clerk.session.getToken()
       if (token) headers.set('Authorization', `Bearer ${token}`)
     }
-    const response = await fetch(path, { ...options, signal: controller.signal, headers })
+    const response = await fetch(apiPath(path), { ...options, signal: controller.signal, headers })
     status = response.status
     responseId = safeCode(response.headers.get('X-Request-ID')) || requestId
     const contentType = response.headers.get('content-type') || ''

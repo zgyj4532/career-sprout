@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import ResumePage from '../ResumePage'
@@ -148,7 +148,7 @@ it('shows the compression comparison and opens a new unsaved resume without repl
   await waitFor(() => expect(screen.getByLabelText('真实经历与简历正文')).toHaveValue(stored.originalText))
   fireEvent.click(screen.getByRole('button', { name: '下载确认版 PDF' }))
   await screen.findByText('省略一段')
-  expect(screen.getByText(stored.originalText)).toBeInTheDocument()
+  expect(within(screen.getByRole('heading', { name: '压缩稿与原文对照' }).parentElement).getByText(stored.originalText)).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: '作为新简历修改压缩稿' }))
   expect(screen.getByLabelText('真实经历与简历正文')).toHaveValue('保留的真实经历')
   expect(screen.getByLabelText('简历标题')).not.toHaveAttribute('readonly')

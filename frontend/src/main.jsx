@@ -43,7 +43,7 @@ function Root({ Page }) {
   )
   if (localBypass || !PUBLISHABLE_KEY) return app
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/" localization={campusLocal ? clerkLocalization : undefined}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl={import.meta.env.BASE_URL} localization={campusLocal ? clerkLocalization : undefined}>
       {app}
     </ClerkProvider>
   )

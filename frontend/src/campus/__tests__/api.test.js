@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { campusFetch, downloadDiagnostics, logClientEvent } from '../api'
+import { apiPath, campusFetch, downloadDiagnostics, logClientEvent } from '../api'
 
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks() })
 describe('campus HTTP boundary', () => {
+  it('keeps local-root API paths and prefixes APIs for a path-mounted production app', () => {
+    expect(apiPath('/api/health', '')).toBe('/api/health')
+    expect(apiPath('/api/health', '/career-sprout')).toBe('/career-sprout/api/health')
+    expect(apiPath('/api/campus/me', '/career-sprout')).toBe('/career-sprout/api/campus/me')
+  })
   it.each([
     ['ASR_SILENCE', 422, /语音|麦克风/],
     ['ASR_EMPTY_AUDIO', 422, /录音为空/],

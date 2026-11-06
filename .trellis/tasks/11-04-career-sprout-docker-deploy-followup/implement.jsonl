@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/project/campus-phase1/verification.md", "reason": "Preserve auth, cross-account isolation, production guardrails, and evidence gates while resolving the backend regressions."}
+{"file": ".trellis/spec/project/campus-phase1/wsl-local.md", "reason": "Retain campus-only runtime boundaries and local WSL development identity behavior."}

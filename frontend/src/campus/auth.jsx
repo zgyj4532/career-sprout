@@ -112,7 +112,7 @@ function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessi
 function ClerkSession({ children }) {
   const { isLoaded, sessionId } = useAuth()
   const clerk = useClerk()
-  return <SessionState clerkLoaded={isLoaded} clerkFailed={clerk.status === 'error'} sessionId={sessionId} signOut={() => clerk.signOut({ redirectUrl: '/login' })}>{children}</SessionState>
+  return <SessionState clerkLoaded={isLoaded} clerkFailed={clerk.status === 'error'} sessionId={sessionId} signOut={() => clerk.signOut({ redirectUrl: `${import.meta.env.BASE_URL}login` })}>{children}</SessionState>
 }
 export function CampusSessionProvider({ children }) {
   return import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ? <ClerkSession>{children}</ClerkSession> : <SessionState>{children}</SessionState>

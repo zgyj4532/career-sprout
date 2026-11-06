@@ -76,6 +76,13 @@ __pycache__/
 *.pyc
 
 # Local deployment state
+deploy/career-sprout/career-sprout.env
+deploy/career-sprout/mongo_root_password
+deploy/career-sprout/mongo_app_password
+deploy/career-sprout/redis_password
+deploy/career-sprout/redis_backup_password
+deploy/career-sprout/redis_users.acl
+deploy/career-sprout/*.tar
 .netlify/
 .vercel/
 .wrangler/

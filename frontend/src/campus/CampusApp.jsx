@@ -146,6 +146,6 @@ function CampusShell() {
 }
 
 export default function CampusApp() {
-  const [router] = useState(() => createBrowserRouter([{ path: '*', element: <CampusSessionProvider><UnsavedWorkProvider><CampusShell /></UnsavedWorkProvider></CampusSessionProvider> }]))
+  const [router] = useState(() => createBrowserRouter([{ path: '*', element: <CampusSessionProvider><UnsavedWorkProvider><CampusShell /></UnsavedWorkProvider></CampusSessionProvider> }], { basename: import.meta.env.BASE_URL }))
   return <RouterProvider router={router} />
 }

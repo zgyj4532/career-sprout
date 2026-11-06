@@ -32,6 +32,18 @@ async function call(server, method, pathname, body) {
   return { status: response.status, json };
 }
 
+function configureLocalDevelopmentAuth(enabled) {
+  Object.assign(process.env, {
+    APP_PROFILE: 'campus-local',
+    NODE_ENV: 'development',
+    HOST: '127.0.0.1',
+    DEV_BYPASS_AUTH: String(enabled),
+    DEV_USER_UID: LOCAL_B,
+    FRONTEND_URL: 'http://127.0.0.1:5173',
+  });
+  process.env.CLERK_SECRET_KEY = '';
+}
+
 describe('campus private resource isolation', () => {
   let memory;
   let server;
@@ -48,7 +60,7 @@ describe('campus private resource isolation', () => {
     process.env.DEV_BYPASS_AUTH = 'false';
     process.env.DEV_USER_UID = LOCAL_B;
     process.env.FRONTEND_URL = 'http://127.0.0.1:5173';
-    delete process.env.CLERK_SECRET_KEY;
+    process.env.CLERK_SECRET_KEY = '';
     const { createCampusApp } = await import('../../campusServer.js');
     const { connectDB } = await import('../../config/database.js');
     await connectDB();
@@ -84,8 +96,7 @@ describe('campus private resource isolation', () => {
   });
 
   test('unauthenticated requests cannot read private resume, history, or profile', async () => {
-    process.env.DEV_BYPASS_AUTH = 'false';
-    delete process.env.CLERK_SECRET_KEY;
+    configureLocalDevelopmentAuth(false);
     for (const pathname of [
       '/api/resumes',
       `/api/resumes/${resumeId}`,
@@ -100,7 +111,7 @@ describe('campus private resource isolation', () => {
   });
 
   test('local user B cannot list, read, update, delete, export, or view history owned by A', async () => {
-    process.env.DEV_BYPASS_AUTH = 'true';
+    configureLocalDevelopmentAuth(true);
     const list = await call(server, 'GET', '/api/resumes');
     assert.equal(list.status, 200, JSON.stringify(list.json));
     const rows = list.json?.data?.data || list.json?.data || [];
@@ -138,10 +149,10 @@ describe('campus private resource isolation', () => {
   });
 
   test('canonical profile persists a selected study stage and explicit clear', async () => {
-    process.env.DEV_BYPASS_AUTH = 'true';
-    delete process.env.CLERK_SECRET_KEY;
+    configureLocalDevelopmentAuth(true);
     const selected = await call(server, 'PUT', '/api/user-profiles/me', { studyStage: '大三' });
     assert.equal(selected.status, 200, JSON.stringify(selected.json));
+    assert.equal(process.env.CLERK_SECRET_KEY, '', 'lazy dotenv loads must not restore Clerk credentials in the local-auth fixture');
     assert.equal(selected.json.profile.studyStage, '大三');
     const cleared = await call(server, 'PUT', '/api/user-profiles/me', { studyStage: '' });
     assert.equal(cleared.status, 200, JSON.stringify(cleared.json));
@@ -152,7 +163,7 @@ describe('campus private resource isolation', () => {
   });
 
   test('zero-material discovery start and no-answer completion are durable and unscored', async () => {
-    process.env.DEV_BYPASS_AUTH = 'true';
+    configureLocalDevelopmentAuth(true);
     const started = await call(server, 'POST', '/api/interview/discovery/start', { questionCount: 2, language: 'zh' });
     assert.equal(started.status, 200, JSON.stringify(started.json));
     const id = started.json.data.interviewId;
@@ -171,6 +182,7 @@ describe('campus private resource isolation', () => {
   });
 
   test('expired generation permits owner deletion without calling the unavailable model', async () => {
+    configureLocalDevelopmentAuth(true);
     const { default: Interview } = await import('../../models/Interview.model.js');
     const session = await Interview.create({ userId: LOCAL_B, purpose: 'discovery', jobRole: '交流', industry: '交流', experienceLevel: 'unknown', generation: { status: 'pending', kind: 'complete', token: 'stale', leaseUntil: new Date(0) } });
     const deleted = await call(server, 'DELETE', `/api/interview/${session.id}`);
@@ -182,7 +194,7 @@ describe('campus private resource isolation', () => {
     process.env.DEV_BYPASS_AUTH = 'true';
     process.env.CLERK_SECRET_KEY = 'sk_test_not_a_real_session';
     const result = await call(server, 'GET', '/api/resumes');
-    delete process.env.CLERK_SECRET_KEY;
+    process.env.CLERK_SECRET_KEY = '';
     assert.notEqual(result.status, 200, `invalid Clerk credential must not open local data: ${JSON.stringify(result.json)}`);
     assert.equal(result.json?.data, undefined);
   });

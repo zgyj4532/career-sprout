@@ -1,0 +1,2 @@
+{"file":".trellis/spec/project/campus-phase1/verification.md","reason":"Check that release claims distinguish verified local behavior from external auth, DNS, certificate, and server evidence; preserve user-authorized NOT_RUN session tests."}
+{"file":".trellis/spec/project/campus-phase1/wsl-local.md","reason":"Check build verification preserves the existing Node/npm/.npmrc and local secret handling contracts."}

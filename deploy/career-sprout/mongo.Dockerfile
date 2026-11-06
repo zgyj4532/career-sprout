@@ -1,0 +1,5 @@
+ARG MONGO_BASE=mongo:8.0
+FROM ${MONGO_BASE}
+
+ARG SOURCE_REVISION
+LABEL org.opencontainers.image.revision=${SOURCE_REVISION}

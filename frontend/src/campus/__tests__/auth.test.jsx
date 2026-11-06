@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MemoryRouter } from 'react-router-dom'
 import { CampusSessionProvider, useCampusSession } from '../auth'
 import { CampusApiError, campusData } from '../api'
 import RequestError from '../components/RequestError'
@@ -8,8 +9,11 @@ const clerkState = vi.hoisted(() => ({ isLoaded: false, sessionId: null, status:
 vi.mock('@clerk/clerk-react', () => ({
   useAuth: () => ({ isLoaded: clerkState.isLoaded, sessionId: clerkState.sessionId }),
   useClerk: () => ({ status: clerkState.status, signOut: clerkState.signOut }),
+  SignIn: () => <div role="region" aria-label="Clerk sign-in form" />,
+  SignUp: () => <div role="region" aria-label="Clerk sign-up form" />,
 }))
 vi.mock('../api', async (importOriginal) => ({ ...(await importOriginal()), campusData: vi.fn() }))
+
 
 const anonymous = { mode: 'clerk', authenticated: false, user: null }
 const signedIn = { mode: 'clerk', authenticated: true, user: { id: 'test-user', emailVerified: true } }
@@ -188,7 +192,8 @@ describe('campus authentication lifecycle', () => {
     expect(result.current.status).toEqual(current)
   })
 
-  it('does not reuse a signed-in response after logout and refreshes even when the session id has not changed', async () => {
+  it('redirects Clerk sign-out to the app login route under the configured base path', async () => {
+    vi.stubEnv('BASE_URL', '/career-sprout/')
     ready('session-one')
     const oldResponse = deferred()
     campusData.mockReturnValueOnce(oldResponse.promise)
@@ -196,9 +201,24 @@ describe('campus authentication lifecycle', () => {
     const signal = campusData.mock.calls[0][1].signal
     await act(() => result.current.signOut())
     expect(signal.aborted).toBe(true)
-    expect(clerkState.signOut).toHaveBeenCalledWith({ redirectUrl: '/login' })
+    expect(clerkState.signOut).toHaveBeenCalledWith({ redirectUrl: '/career-sprout/login' })
     expect(result.current.status).toEqual(anonymous)
     await act(async () => { oldResponse.resolve(signedIn) })
+    expect(result.current.status).toEqual(anonymous)
+  })
+
+  it('refreshes account status after logout when Clerk keeps the same session ID', async () => {
+    ready('session-one')
+    campusData.mockResolvedValueOnce(signedIn).mockResolvedValueOnce(anonymous)
+    const { result } = renderHook(() => useCampusSession(), { wrapper: CampusSessionProvider })
+    await act(async () => {})
+    expect(result.current.status).toEqual(signedIn)
+
+    await act(() => result.current.signOut())
+
+    expect(clerkState.sessionId).toBe('session-one')
+    expect(campusData).toHaveBeenCalledTimes(2)
+    expect(campusData.mock.calls[1][0]).toBe('/auth/status')
     expect(result.current.status).toEqual(anonymous)
   })
 
@@ -311,5 +331,27 @@ describe('campus authentication lifecycle', () => {
     expect(result.current.status).toEqual(local)
     expect(result.current.error).toBeNull()
     expect(result.current.loadingStage).toBeNull()
+  })
+ 
+  it('shows Clerk sign-in and public sign-up forms when the signup flag is enabled', async () => {
+    vi.stubEnv('VITE_CLERK_SIGN_UP_ENABLED', 'true')
+    const { default: AuthPage } = await import('../pages/AuthPage')
+    ready()
+    campusData.mockResolvedValue(anonymous)
+
+    const renderAuthPage = (path) => render(
+      <MemoryRouter initialEntries={[path]}>
+        <CampusSessionProvider><AuthPage /></CampusSessionProvider>
+      </MemoryRouter>,
+    )
+
+    renderAuthPage('/login')
+    await act(async () => {})
+    expect(screen.getByRole('region', { name: 'Clerk sign-in form' })).toBeInTheDocument()
+    cleanup()
+
+    renderAuthPage('/register')
+    await act(async () => {})
+    expect(screen.getByRole('region', { name: 'Clerk sign-up form' })).toBeInTheDocument()
   })
 })

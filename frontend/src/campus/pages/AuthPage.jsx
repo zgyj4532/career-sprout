@@ -4,6 +4,13 @@ import { Link, useLocation } from 'react-router-dom'
 import { safeReturnTo, useCampusSession } from '../auth'
 import RequestError from '../components/RequestError'
 
+const registrationEnabled = import.meta.env.DEV || import.meta.env.VITE_CLERK_SIGN_UP_ENABLED === 'true'
+
+function appPath(path) {
+  const basename = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '')
+  return `${basename}${path}`
+}
+
 const clerkAppearance = {
   variables: {
     colorPrimary: '#0f6e56',
@@ -40,7 +47,7 @@ export default function AuthPage() {
   const [email, setEmail] = useState('')
   const configured = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
   const ready = status && !error && !loadingStage
-  const showClerkForm = ready && status.mode === 'clerk' && configured && !status.authenticated
+  const showClerkForm = ready && status.mode === 'clerk' && configured && !status.authenticated && (!register || registrationEnabled)
   const showProfile = ready && status.mode === 'clerk' && configured && status.authenticated && verify
   const returnQuery = `?returnTo=${encodeURIComponent(returnTo)}`
 
@@ -58,12 +65,12 @@ export default function AuthPage() {
     </svg>
     <div className="campus-auth-content">
       {showClerkForm ? register
-        ? <SignUp appearance={clerkAppearance} routing="hash" signInUrl={`/login${returnQuery}`} forceRedirectUrl={returnTo} />
-        : <SignIn appearance={clerkAppearance} routing="hash" signUpUrl={`/register${returnQuery}`} forceRedirectUrl={returnTo} />
+        ? <SignUp appearance={clerkAppearance} routing="hash" signInUrl={appPath(`/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
+        : <SignIn appearance={clerkAppearance} routing="hash" signUpUrl={appPath(registrationEnabled ? `/register${returnQuery}` : `/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
         : <div className="campus-auth-card campus-form">
           <header className="campus-auth-heading">
             <h1>{verify ? '验证邮箱' : register ? '注册职芽' : '登录职芽'}</h1>
-            <p>{verify ? '登录后，在账号设置中验证你的主邮箱。' : '保存练习与成长记录，随时继续。'}</p>
+            <p>{register && !registrationEnabled ? '正式账号注册尚未开放；完成真实账号、安全与数据隔离验收前，请勿创建公开账号。' : verify ? '登录后，在账号设置中验证你的主邮箱。' : '保存练习与成长记录，随时继续。'}</p>
           </header>
           <RequestError error={error} onRetry={refresh} />
           {!error && loadingStage && <p className="campus-auth-status" role="status">{loadingStage === 'clerk' ? '正在连接安全登录服务…' : '正在确认账号服务状态…'}</p>}
@@ -83,7 +90,7 @@ export default function AuthPage() {
       <nav className="campus-auth-links" aria-label="账号入口">
         {!showClerkForm && <>
           <Link to={`/login${returnQuery}`}>登录</Link>
-          <Link to={`/register${returnQuery}`}>注册</Link>
+          {registrationEnabled && <Link to={`/register${returnQuery}`}>注册</Link>}
         </>}
         {!verify && <Link to={`/verify-email${returnQuery}`}>邮箱验证说明</Link>}
         <Link to="/">返回首页</Link>

@@ -1,0 +1,2 @@
+{"file":".trellis/spec/project/campus-phase1/wsl-local.md","reason":"Check that any Docker remediation preserves the repository's npm/lockfile and credential handling conventions."}
+{"file":".trellis/spec/project/campus-phase1/verification.md","reason":"Check that debug evidence is reproducible, redacted, bounded, and not overstated as a successful image/smoke."}

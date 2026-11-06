@@ -1,0 +1,27 @@
+FROM node:24-bookworm-slim
+
+ENV NODE_ENV=production \
+    PUPPETEER_SKIP_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    CHROMIUM_PATH=/usr/bin/chromium \
+    FFMPEG_PATH=/usr/bin/ffmpeg
+
+RUN sed -i \
+      -e 's#http://deb.debian.org/debian-security#http://mirror.sjtu.edu.cn/debian-security#g' \
+      -e 's#http://deb.debian.org/debian#http://mirror.sjtu.edu.cn/debian#g' \
+      /etc/apt/sources.list.d/debian.sources \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends chromium ffmpeg fonts-noto-cjk \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --omit=dev --ignore-scripts=false \
+    && npm cache clean --force
+COPY --chown=node:node src ./src
+RUN mkdir -p /var/log/career-sprout /home/node/.career-sprout/imports \
+    && chown -R node:node /var/log/career-sprout /home/node/.career-sprout
+
+USER node
+EXPOSE 5002
+CMD ["node", "src/campusServer.js"]

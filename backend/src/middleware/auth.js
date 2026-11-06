@@ -43,7 +43,9 @@ function clerkOrBypass(req, res, next) {
   if (process.env.APP_PROFILE === 'campus-local') {
     req.localBypass = evaluateLocalBypass(process.env, req);
     if (req.localBypass.allow || !process.env.CLERK_SECRET_KEY) return next();
-    return clerkMiddleware()(req, res, next);
+    return clerkMiddleware({
+      publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+    })(req, res, next);
   }
   if (legacyBypassEnabled() || !process.env.CLERK_SECRET_KEY) return next();
   return clerkMiddleware()(req, res, next);

@@ -1,0 +1,27 @@
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+RUN npm ci
+COPY . .
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ENV VITE_APP_PROFILE=campus-local \
+    VITE_BASE_PATH=/career-sprout/ \
+    VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY} \
+    VITE_CLERK_SIGN_UP_ENABLED=true
+RUN test -n "$VITE_CLERK_PUBLISHABLE_KEY" \
+    && case "$VITE_CLERK_PUBLISHABLE_KEY" in pk_live_*) ;; *) echo 'A live Clerk publishable key is required.' >&2; exit 1 ;; esac \
+    && npm run build \
+    && printf '%s' "$VITE_CLERK_PUBLISHABLE_KEY" > /app/clerk-publishable-key
+
+FROM nginx:1.28-alpine
+ARG VITE_CLERK_PUBLISHABLE_KEY
+LABEL org.career-sprout.clerk-publishable-key=${VITE_CLERK_PUBLISHABLE_KEY}
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist/ /usr/share/nginx/html/career-sprout/
+COPY --from=build /app/clerk-publishable-key /etc/career-sprout/clerk-publishable-key
+COPY verify-clerk-publishable-key.sh /docker-entrypoint.d/30-verify-clerk-publishable-key.sh
+COPY retain-career-sprout-assets.sh /docker-entrypoint.d/50-retain-career-sprout-assets.sh
+RUN chmod +x /docker-entrypoint.d/30-verify-clerk-publishable-key.sh /docker-entrypoint.d/50-retain-career-sprout-assets.sh
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]
