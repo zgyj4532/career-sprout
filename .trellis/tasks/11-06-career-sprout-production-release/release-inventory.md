@@ -1,8 +1,10 @@
 # CareerSprout release source inventory
 
-Pre-commit inventory generated from the actual dirty-worktree paths. The approved release commit is local only; no push is authorized. The application package will be built later from the complete commit SHA in a detached worktree.
+Pre-commit inventory generated from the actual dirty-worktree paths. The approved release commit is local only; no push is authorized. The application package will be built later from the complete commit SHA in a detached worktree. This inventory covers the aggregate source delivery from base `463e7d6b3962bb22d8bb3cbb5efa0455c7227907` through the final follow-up commit.
 
 ## Include: runtime, regression coverage, deployment package, and documentation
+
+The inventory contains 70 included paths. The prior 69-path commit is superseded for release by a follow-up that narrows the Mongo Docker build context and excludes private files.
 
 - `.gitignore`
 - `CHANGELOG.md`
@@ -18,6 +20,7 @@ Pre-commit inventory generated from the actual dirty-worktree paths. The approve
 - `backend/src/middleware/auth.js`
 - `backend/src/productionSecrets.js`
 - `deploy/career-sprout/career-sprout.env.example`
+- `deploy/career-sprout/.dockerignore`
 - `deploy/career-sprout/compose.yml`
 - `deploy/career-sprout/mongo-init.js`
 - `deploy/career-sprout/mongo.Dockerfile`

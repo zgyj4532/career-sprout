@@ -48,11 +48,11 @@ Deploy the campus-only CareerSprout service to `zgyjserver` and make it usable a
 
 - Clerk SSL: **ISSUED** per the user's dashboard screenshot; custom Clerk endpoints return with valid TLS. Production site remains undeployed.
 - Docker package: **PARTIAL** — backend local image built with SJTU mirror; the frontend diagnostic image is non-deployable. No SHA-bound release images or full Compose smoke. Focused backend tests passed 16/16 and focused frontend tests passed 62/62; both broader campus commands exceeded the 300-second runner limit.
-- Production private config: **NOT_PREPARED** — user-confirmed live Clerk pair exists locally; private release env and dedicated Mongo/Redis secret files still need creation and verification.
+- Production private config: **LOCAL_READY_FOR_PRIOR_SHA** — live Clerk pair and four random Mongo/Redis credentials are in a mode-0700/0600 private WSL directory; update the release SHA and checksum manifest after the build-context security commit, then transfer only via SSH.
 - Server release/public URL: **NOT_DEPLOYED** — current public path returns 404; target has no CareerSprout containers, volumes, release directory, or 18082 listener. No host mutations have occurred.
-- Immutable source: **STAGED** — the complete release manifest reconciles with 69 staged paths; the user authorized a local release-only commit with no push. The explicit excluded machine diagnostic remains untracked.
+- Immutable source: **FOLLOW-UP_COMMIT_REQUIRED** — initial release commit `0daec0e6e63d35aeb2f11afd33e6035a597f7b5a` matched all 69 inventory paths and blobs. Build-context secret exclusion is now an additional source change; the final source commit must include it. No push.
 
 ## Remaining release gates
 
-- The user authorized a local release-only source commit (no push). Exact file inventory is recorded in `release-inventory.md`; commit follows scoped regression verification.
-- The confirmed live Clerk pair must be copied from local private configuration into a release-only env file without exposing values; dedicated MongoDB/Redis runtime and backup secret files must be generated privately.
+- The user authorized local release-only commits, without pushing. A source commit is already verified; the secret-safe build-context correction must be committed and verified before creating images.
+- The confirmed live Clerk pair and generated MongoDB/Redis files are prepared locally under restrictive permissions; regenerate the `career-sprout.env` release tag and private checksum manifest for the final source SHA.

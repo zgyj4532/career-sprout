@@ -40,10 +40,9 @@ case "$TAG" in (*[!0-9a-f]*|'') echo 'Expected a full lowercase Git SHA' >&2; ex
 BUILD_DIR=$(mktemp -d)
 ARTIFACT_DIR=$(mktemp -d)
 git worktree add --detach "$BUILD_DIR" "$TAG"
-install -m 600 "$PRIVATE_CONFIG/career-sprout.env" "$BUILD_DIR/deploy/career-sprout/career-sprout.env"
 cd "$BUILD_DIR"
 set -a
-. deploy/career-sprout/career-sprout.env
+. "$PRIVATE_CONFIG/career-sprout.env"
 set +a
 unset CLERK_SECRET_KEY
 : "${CAREER_SPROUT_RELEASE_TAG:?Set the source SHA in the protected env file}"
@@ -54,7 +53,7 @@ docker build --label "org.opencontainers.image.revision=$TAG" -f frontend/Docker
 test "$(docker image inspect --format '{{ index .Config.Labels "org.career-sprout.clerk-publishable-key" }}' "career-sprout-campus-frontend:$TAG")" = "$CLERK_PUBLISHABLE_KEY"
 docker build --label "org.opencontainers.image.revision=$TAG" -f deploy/career-sprout/redis.Dockerfile -t "career-sprout-campus-redis:$TAG" deploy/career-sprout
 docker pull mongo:8.0
-docker build -f deploy/career-sprout/mongo.Dockerfile --build-arg MONGO_BASE=mongo:8.0 --build-arg SOURCE_REVISION="$TAG" -t "career-sprout-mongo:$TAG" .
+docker build -f deploy/career-sprout/mongo.Dockerfile --build-arg MONGO_BASE=mongo:8.0 --build-arg SOURCE_REVISION="$TAG" -t "career-sprout-mongo:$TAG" deploy/career-sprout
 for image in "career-sprout-campus-backend:$TAG" "career-sprout-campus-frontend:$TAG" "career-sprout-campus-redis:$TAG" "career-sprout-mongo:$TAG"; do
   test "$(docker image inspect --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' "$image")" = "$TAG"
 done
@@ -62,10 +61,10 @@ docker save -o "$ARTIFACT_DIR/career-sprout-$TAG.tar" \
   "career-sprout-campus-backend:$TAG" "career-sprout-campus-frontend:$TAG" \
   "career-sprout-campus-redis:$TAG" "career-sprout-mongo:$TAG"
 (cd "$ARTIFACT_DIR" && sha256sum "career-sprout-$TAG.tar" > "career-sprout-archives-$TAG.sha256")
-sha256sum deploy/career-sprout/compose.yml deploy/career-sprout/nginx.conf \
-  deploy/career-sprout/mongo-init.js deploy/career-sprout/mongo.Dockerfile \
-  deploy/career-sprout/redis.Dockerfile deploy/career-sprout/redis-entrypoint.sh \
-  deploy/career-sprout/career-sprout.env.example \
+sha256sum deploy/career-sprout/.dockerignore deploy/career-sprout/compose.yml \
+  deploy/career-sprout/nginx.conf deploy/career-sprout/mongo-init.js \
+  deploy/career-sprout/mongo.Dockerfile deploy/career-sprout/redis.Dockerfile \
+  deploy/career-sprout/redis-entrypoint.sh deploy/career-sprout/career-sprout.env.example \
   > "career-sprout-files-$TAG.sha256"
 (
   cd "$PRIVATE_CONFIG"
@@ -75,10 +74,11 @@ sha256sum deploy/career-sprout/compose.yml deploy/career-sprout/nginx.conf \
     > "career-sprout-private-files-$TAG.sha256"
 )
 tar -czf "$ARTIFACT_DIR/career-sprout-config-$TAG.tar.gz" \
-  "career-sprout-files-$TAG.sha256" deploy/career-sprout/compose.yml \
-  deploy/career-sprout/nginx.conf deploy/career-sprout/mongo-init.js \
-  deploy/career-sprout/mongo.Dockerfile deploy/career-sprout/redis.Dockerfile \
-  deploy/career-sprout/redis-entrypoint.sh deploy/career-sprout/career-sprout.env.example
+  "career-sprout-files-$TAG.sha256" deploy/career-sprout/.dockerignore \
+  deploy/career-sprout/compose.yml deploy/career-sprout/nginx.conf \
+  deploy/career-sprout/mongo-init.js deploy/career-sprout/mongo.Dockerfile \
+  deploy/career-sprout/redis.Dockerfile deploy/career-sprout/redis-entrypoint.sh \
+  deploy/career-sprout/career-sprout.env.example
 (cd "$ARTIFACT_DIR" && sha256sum "career-sprout-config-$TAG.tar.gz" >> "career-sprout-archives-$TAG.sha256")
 printf 'Release artifacts: %s\n' "$ARTIFACT_DIR"
 ```

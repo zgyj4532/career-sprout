@@ -1,0 +1,8 @@
+career-sprout.env
+mongo_root_password
+mongo_app_password
+redis_password
+redis_backup_password
+redis_users.acl
+*.tar
+*.sha256

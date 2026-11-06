@@ -27,8 +27,9 @@
 ## Execution progress
 
 - **Complete:** task reconciled and activated; Clerk's dashboard shows both managed certificates issued; custom Clerk endpoints have valid TLS; target host inventory and route checks were read-only.
-- **In progress:** release inventory reconciles to 69 staged paths with one explicitly excluded machine diagnostic; the user authorized a local commit without push. The user confirmed the live publishable/secret pair is from the same Production Clerk instance, and the secret API request succeeded.
-- **Not run:** SHA-bound frontend/backend/Redis/Mongo artifact build, isolated full Compose smoke, private secret generation, transfer, deployment, Nginx path update, and post-deploy checks. No server mutations have occurred.
+- **In progress:** inventory now covers 70 release paths plus one explicitly excluded machine diagnostic. Initial commit `0daec0e6e63d35aeb2f11afd33e6035a597f7b5a` is tree/blob verified; a follow-up adds a deploy-only `.dockerignore` after identifying that a root Mongo build context could carry private env files to Docker. The user authorized local commits without push.
+- **Private setup:** the user-confirmed live Clerk pair and four random database/cache passwords are stored locally with restrictive permissions; update the env tag and checksum manifest after the final source commit. No private values were shown.
+- **Not run:** SHA-bound release image build, disposable Compose smoke, backup/restore proof, transfer, deployment, Nginx path update, and post-deploy checks. No server mutations have occurred.
 
 ## Checks run before source commit
 
