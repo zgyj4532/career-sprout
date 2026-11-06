@@ -83,22 +83,29 @@ tar -czf "$ARTIFACT_DIR/career-sprout-config-$TAG.tar.gz" \
 printf 'Release artifacts: %s\n' "$ARTIFACT_DIR"
 ```
 
-Never build on the target or rebuild under an existing tag. Transfer both archives and `career-sprout-archives-$TAG.sha256`; transfer env/secrets and the private checksum manifest `career-sprout-private-files-$TAG.sha256` only through the approved private channel. Verify archive checksums before extraction, then verify `career-sprout-files-$TAG.sha256` after extraction. Install private files and their manifest under `/opt/career-sprout/releases/$TAG/deploy/career-sprout/`, verify them there with `sha256sum -c career-sprout-private-files-$TAG.sha256`, and retain every prior release's immutable configuration, images, and assets. The build checks that the private env tag equals `$TAG`; the private checksum manifest binds the exact env and runtime credentials used for this release. Compare image tags to the same full source SHA before loading. Compose has no `build:` sections and cannot rebuild implicitly. Do not prune during rollback. Public Clerk publishable key is intentionally embedded in frontend JS/image metadata; it is not a secret. Keep private files out of public artifacts and remove the temporary worktree only after confirming bundles. Never treat an uncommitted tree as a release.
+Never build on the target or rebuild under an existing tag. Transfer the image/config archives and `release-checksums-$TAG.sha256`; transfer env/secrets and `career-sprout-private-files-$TAG.sha256` only through the approved private channel. Verify the archive checksums before extraction, then verify `config-files-$TAG.sha256`. Keep private originals and their manifest under `/opt/career-sprout/private/$TAG/`, mode 600 and directory mode 700. Copy `career-sprout.env` and its five runtime secret files into the protected Compose directory as described below. Retain prior releases and assets; Compose has no `build:` sections. Never treat an uncommitted tree as a release.
 
-## Future authorized startup (not run)
+## Subsequent authorized release procedure
 
-Only after owner authorization and capacity/proxy/DNS/TLS/backup gates, stage the verified bundles under `/opt/career-sprout/releases/$TAG/` and private files under its `deploy/career-sprout/` subdirectory. Verify all manifests and ownership before loading or starting:
+Initial release `9946f38b2d434f429e968c7bdaaff9f1d49e4df1` is live at `https://crayzamb.cloud/career-sprout/` on `zgyjserver`. This procedure remains for later releases: stage public bundles under `/opt/career-sprout/releases/$TAG/` and private originals under `/opt/career-sprout/private/$TAG/`. Verify manifests before loading or starting:
 
 ```sh
 RELEASE_ROOT="/opt/career-sprout/releases/$TAG"
 RELEASE_DIR="$RELEASE_ROOT/deploy/career-sprout"
+PRIVATE_DIR="/opt/career-sprout/private/$TAG"
 cd "$RELEASE_ROOT"
-sha256sum -c "career-sprout-archives-$TAG.sha256"
+sha256sum -c "release-checksums-$TAG.sha256"
 tar -xzf "career-sprout-config-$TAG.tar.gz"
-sha256sum -c "career-sprout-files-$TAG.sha256"
-cd "$RELEASE_DIR"
+sha256sum -c "config-files-$TAG.sha256"
+cd "$PRIVATE_DIR"
 sha256sum -c "career-sprout-private-files-$TAG.sha256"
-sudo docker load -i "$RELEASE_ROOT/career-sprout-$TAG.tar"
+cd "$RELEASE_DIR"
+chmod 700 "$RELEASE_DIR"
+install -m 600 "$PRIVATE_DIR/career-sprout.env" "$RELEASE_DIR/career-sprout.env"
+for secret in mongo_root_password mongo_app_password redis_password redis_backup_password redis_users.acl; do
+  install -m 0444 "$PRIVATE_DIR/$secret" "$RELEASE_DIR/$secret"
+done
+sudo docker load -i "$RELEASE_ROOT/career-sprout-images-$TAG.tar"
 sudo docker compose --env-file "$RELEASE_DIR/career-sprout.env" \
   -f "$RELEASE_DIR/compose.yml" config --quiet
 sudo docker compose --env-file "$RELEASE_DIR/career-sprout.env" \
@@ -107,7 +114,7 @@ sudo docker compose --env-file "$RELEASE_DIR/career-sprout.env" \
   -f "$RELEASE_DIR/compose.yml" ps
 ```
 
-Keep the release directory and private files owned by `ubuntu` (UID 1000), mode 600 for private files. No `--build` is used. Startup must fail safely if images are absent, secrets are missing, keys are malformed/mismatched, or dependencies/index creation fail readiness. The initial inventory found Docker requires `sudo`; re-confirm permissions and ensure no existing listener on `127.0.0.1:18082`. Verify exact images and checksums before changing the host Nginx route.
+Keep the release tree owned by `ubuntu` (UID 1000) and its Compose directory mode 700. Keep `career-sprout.env` and the six private source files mode 600 in `/opt/career-sprout/private/$TAG/`. On this Docker Compose implementation, file-backed secrets are bind mounts and requested `uid`/`gid`/`mode` are ignored; copy the five service secret files into the mode-700 Compose directory as mode 0444 so Mongo and Redis entrypoints can read them, while the directory prevents host users from traversing them. The backend app password is also readable by UID 1000. Never expose the expanded Compose config. Docker requires `sudo`; keep backend, Mongo, and Redis un-published, and verify images/checksums before changing host Nginx.
 
 ## Host Nginx HTTPS route
 
@@ -128,17 +135,17 @@ location ^~ /career-sprout/ {
 }
 ```
 
-Do not expose backend, Mongo, or Redis. Confirm the exact route, TLS, SPA deep link, asset/cache behavior, API health, Clerk callbacks, rate limit client identity, and real auth before enabling public traffic. A configuration snippet is not proof of an installed route.
+Do not expose backend, Mongo, or Redis. For this release, HTTPS root redirect, app root, login/register deep routes, hashed JS/CSS assets, API health, and protected-route 401 were verified. Clerk session/callback behavior was not exercised.
 
-These are future production-release requirements, not gates for the local disposable smoke in this follow-up. The first trusted host Nginx must overwrite any client-supplied `X-Forwarded-For` with `$remote_addr`; the private frontend proxy intentionally forwards that trusted value unchanged, and Express trusts only the frontend container's fixed address. This design is safe only when the host route enforces that overwrite. The route has not been installed or verified, so keep public access closed until an authorized operator verifies it.
+The path-scoped route is installed in `/etc/nginx/sites-available/crayzamb.cloud`; existing TLS and other locations remain intact. The first trusted Nginx hop overwrites client-supplied `X-Forwarded-For` with `$remote_addr`; the private frontend proxy forwards that trusted value unchanged, and Express trusts only the frontend container's fixed address. The pre-release vhost backup is `/opt/career-sprout/nginx-backups/crayzamb.cloud.pre-9946f38b2d434f429e968c7bdaaff9f1d49e4df1.conf`.
 
 ## Production persistence, backup/restore, and rollback
 
-The following backup and rollback requirements apply to a separately authorized production release. The follow-up's isolated backup/restore smoke uses disposable local resources and does not establish a production backup; production backup evidence does not gate this local task.
+The initial production release made an encrypted off-host backup before opening the public route. The encrypted copy and decryption key are separate: the archive is retained locally and on the server, while the random key remains in the protected local private directory only.
 
 Never use `down -v`. The uniquely named volumes persist Mongo data, Redis AOF/snapshot data, imports, logs, and retained frontend assets. Each release keeps its own immutable Compose/Nginx/init files and private env beside the release directory. Roll back by running Compose from the prior versioned release directory with that release's env/image tag; stable external volume names preserve data. Do not roll back database contents with application code.
 
-Before release, an operator must execute and validate an encrypted off-host backup on a separate isolated restore target. Back up all five volumes as a consistent set: close ingress and stop only this project's frontend and backend to quiesce writes/seeding; run authenticated Redis `SAVE` as the backup-only user (read its password only from `/run/secrets/redis_backup_password` inside the Redis container; never place the secret in command arguments), copy Redis dump/AOF, Mongo data with authenticated `mongodump` of `career_sprout`, imports/logs, and retained frontend assets; encrypt with an approved off-host key; record source SHA, timestamp, file list, and SHA-256. Resume the project after collection. Restore only into fresh isolated volumes with matching service versions; restore Mongo via authenticated `mongorestore`, Redis data files while Redis is stopped, and imports/logs/assets; verify service health, representative owner-scoped records/files, retained old hashed assets, and controlled app smoke. Never overwrite production or reuse unrelated volume names during proof. No backup or restore has been performed; recovery remains a release gate.
+Before enabling the route, frontend and backend ingress was closed; authenticated Redis `SAVE` ran as the backup-only user without placing credentials in arguments; all four CareerSprout data services were stopped; then all five volumes were captured as one quiescent tar archive. The archive records source SHA, timestamp, volume list, and SHA-256; AES-256-CBC/PBKDF2 encryption used a random key kept off-host. The local encrypted copy passed checksum verification and decrypted successfully. All five volumes were restored into fresh isolated WSL Docker volumes; restored Mongo answered `ping` and restored Redis answered `PONG`. The temporary restore containers/volumes were removed by exact name. This initial snapshot predates public traffic and contains no Clerk sessions or user-submitted data.
 
 ## Verification boundary
 
@@ -147,6 +154,8 @@ Before release, an operator must execute and validate an encrypted off-host back
 - Full local frontend image built as `career-sprout-frontend:diagnostic-nondeployable-20261106b`, using a dummy `pk_live_`. It is diagnostic-only, not deployable, and must not be transferred. A bounded loopback HTTP smoke returned 200 for `/career-sprout/`, `/career-sprout/auth`, and a hashed JavaScript asset. Redis image built locally as `career-sprout-redis:local-diag-20261106`.
 - Backend image now builds as `career-sprout-backend:local-sjtu-mirror-20261106`, manifest digest `sha256:89fb7b8839ad13a0c89479074e65fa0cbe32237f38083ecce00548354779ac55`, size 573,421,093 bytes. The measured SJTU HTTP source completed apt update/install for 266 packages (~329 MB) in about 83 seconds; APT signature verification remained enabled. The first HTTPS attempt failed because `node:24-bookworm-slim` lacks system CA certificates. The canonical Dockerfile now points Debian Bookworm main/updates and security to SJTU's separate mirror paths. A runtime check confirmed the `node` user, `/app/src/campusServer.js`, Chromium, FFmpeg, and no `.env*` files in `/app`. npm reported 33 dependency advisories (4 moderate, 28 high, 1 critical); no dependency changes were made.
 - Mirror probe: same 9,376,124-byte `libicu72` package took 385 ms from SJTU (~24.4 MB/s), 412 ms BFSU, 812 ms USTC, 702 ms LZU, 5.865 s TUNA, and 5.769 s NJU; `deb.debian.org` package fetch timed out at 30s. Bookworm, updates, and security InRelease metadata returned 200 from the tested mirror endpoints. Earlier direct/proxy apt attempts against `deb.debian.org` timed out (900s / 1500s); these were source-network throughput failures, not apt deadlock. Mirror speed is network-location dependent; remeasure if building from another region.
-- No server upload/deployment, public route change, commit, or push occurred during the local image-build investigation; no server resources were modified.
-- No deployment or server changes occurred. Earlier read-only checks confirmed DNS/TLS for `crayzamb.cloud` and an Nginx 404 at `/career-sprout`; host inventory was inspected without modifying server files, containers, volumes, networks, or routes.
-- Real Clerk sessions and two-account isolation are `NOT_RUN` at the user's direction and are not gates for public sign-up/sign-in. Secret-safe inspection found live-format `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`; the user confirms they belong to the same Production instance. No deployment env or runtime secret files have been installed on the server, so production authentication remains unverified.
+- **Deployed 2026-11-06:** `9946f38b2d434f429e968c7bdaaff9f1d49e4df1` on `zgyjserver`; four pinned image tags, separate Mongo/Redis/backend/frontend containers and volumes. The only host change was the `/career-sprout` location in the existing TLS vhost. Its prior contents were backed up; Nginx config test and reload succeeded.
+- **Release verification:** remote image archive, public config manifest, and private-file manifest passed SHA-256 verification. Local and server image rootfs-layer hashes match for all four images. App containers report healthy; host `127.0.0.1:18082` is the only published app port. HTTPS `/career-sprout` returns 308, `/career-sprout/`, `/login`, `/register`, JS/CSS assets, and `/api/health` return 200; protected `/api/user-profiles/me` returns 401. Browser displayed the production sign-in and sign-up forms; no account was created.
+- **Image-build boundary:** a fresh final-SHA frontend `npm ci` failed after the public npm registry transfer stalled (273,555 of 7,112,377 response bytes in 12 seconds); the `npmmirror` probe also timed out. The four images were reused from their successful `16bab7a7cdc2f7ff9f7fe3d50b09e264450a2ad8` build because the source diff to the deployed commit changes only Compose/Mongo-init and documentation/task files, not the image build inputs. Final-SHA tags are verified to contain identical filesystem layers; OCI revision labels truthfully remain `16bab7a7cdc2f7ff9f7fe3d50b09e264450a2ad8`. Do not describe these as freshly rebuilt from the deployed SHA.
+- **Authentication boundary:** public sign-in/sign-up routes render and registration is not gated. Live Clerk session, email delivery/code completion, and account creation remain `NOT_RUN` by the user's instruction. No real auth success is claimed.
+- **Backup/restore:** the initial five-volume encrypted backup is stored off-host; its key remains local. All five volumes restored into isolated local Docker volumes; Mongo and Redis startup checks passed. This snapshot was taken before exposing the site publicly.

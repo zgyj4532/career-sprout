@@ -1,6 +1,6 @@
 # CareerSprout release source inventory
 
-Pre-commit inventory generated from the actual dirty-worktree paths. The approved release commit is local only; no push is authorized. The application package will be built later from the complete commit SHA in a detached worktree. This inventory covers the aggregate source delivery from base `463e7d6b3962bb22d8bb3cbb5efa0455c7227907` through the final follow-up commit.
+This inventory snapshots the source delivery from base `463e7d6b3962bb22d8bb3cbb5efa0455c7227907` through release commit `9946f38b2d434f429e968c7bdaaff9f1d49e4df1`. The source commit is local-only; no push was authorized. The public deployment config was packaged from this commit; the image layers were reused from the prior build only after verifying their inputs and filesystem content were unchanged.
 
 ## Include: runtime, regression coverage, deployment package, and documentation
 
@@ -87,4 +87,4 @@ The inventory contains 71 changed paths (including deletion of the prior `mongo-
 - `backend/.env`, `frontend/.env.local`, any other `.env*`, private deployment secrets, credentials, and key files: ignored/private; never commit or include in build/archive artifacts.
 - Local build outputs, Docker images/archives, caches, dependencies, and runtime data: generated/non-source artifacts; not part of the source commit.
 
-No other current non-ignored modified or untracked paths are intentionally excluded. This is a local source-delivery inventory, not the eventual image/config bundle manifest; that manifest must be generated and hash-verified from the committed SHA after the build.
+This source inventory remains scoped to the release commit above; the post-deployment report updates `prd.md`, `implement.md`, and `docs/CAREER_SPROUT_DOCKER_DEPLOYMENT.md` are documentation-only and do not change image/config inputs. `docs/evidence/phase1/doctor.json` remains the only explicitly excluded untracked path.
