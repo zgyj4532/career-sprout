@@ -4,7 +4,7 @@ Pre-commit inventory generated from the actual dirty-worktree paths. The approve
 
 ## Include: runtime, regression coverage, deployment package, and documentation
 
-The inventory contains 70 included paths. The prior 69-path commit is superseded for release by a follow-up that narrows the Mongo Docker build context and excludes private files.
+The inventory contains 71 changed paths (including deletion of the prior `mongo-init.js` and addition of `mongo-init.sh`). The prior 69-path commit is superseded for release by follow-ups that isolate the Mongo image build context and correct its init script.
 
 - `.gitignore`
 - `CHANGELOG.md`
@@ -22,6 +22,7 @@ The inventory contains 70 included paths. The prior 69-path commit is superseded
 - `deploy/career-sprout/career-sprout.env.example`
 - `deploy/career-sprout/.dockerignore`
 - `deploy/career-sprout/compose.yml`
+- `deploy/career-sprout/mongo-init.sh`
 - `deploy/career-sprout/mongo-init.js`
 - `deploy/career-sprout/mongo.Dockerfile`
 - `deploy/career-sprout/nginx.conf`

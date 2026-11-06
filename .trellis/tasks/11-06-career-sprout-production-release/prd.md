@@ -47,12 +47,12 @@ Deploy the campus-only CareerSprout service to `zgyjserver` and make it usable a
 ## Open operational state
 
 - Clerk SSL: **ISSUED** per the user's dashboard screenshot; custom Clerk endpoints return with valid TLS. Production site remains undeployed.
-- Docker package: **PARTIAL** — backend local image built with SJTU mirror; the frontend diagnostic image is non-deployable. No SHA-bound release images or full Compose smoke. Focused backend tests passed 16/16 and focused frontend tests passed 62/62; both broader campus commands exceeded the 300-second runner limit.
-- Production private config: **LOCAL_READY_FOR_PRIOR_SHA** — live Clerk pair and four random Mongo/Redis credentials are in a mode-0700/0600 private WSL directory; update the release SHA and checksum manifest after the build-context security commit, then transfer only via SSH.
-- Server release/public URL: **NOT_DEPLOYED** — current public path returns 404; target has no CareerSprout containers, volumes, release directory, or 18082 listener. No host mutations have occurred.
-- Immutable source: **FOLLOW-UP_COMMIT_REQUIRED** — initial release commit `0daec0e6e63d35aeb2f11afd33e6035a597f7b5a` matched all 69 inventory paths and blobs. Build-context secret exclusion is now an additional source change; the final source commit must include it. No push.
+- Docker package: **SMOKE_PASSED_REBUILD_REQUIRED** — all four images initially built with prior SHA `16bab7a7cdc2f7ff9f7fe3d50b09e264450a2ad8`; Compose caught the invalid Mongo initializer, now replaced. After correction, isolated Compose had healthy Mongo/Redis/backend/frontend, static root/auth HTTP 200, API health 200, and protected profile endpoint 401. Rebuild and retest all images at the corrected final SHA before transfer. Focused backend tests passed 16/16 and frontend tests 62/62; broad campus commands exceeded 300 seconds.
+- Production private config: **LOCAL_READY_FOR_PRIOR_SHA** — matching live Clerk pair and four random Mongo/Redis credentials are under restrictive local permissions; regenerate the env release tag and checksum manifest after corrected source commit.
+- Server release/public URL: **NOT_DEPLOYED** — the path still returns 404. No production containers, volumes, release directory, or route changes have been made.
+- Immutable source: **FOLLOW-UP_COMMIT_REQUIRED** — prior 70-path inventory and commit `16bab7a7cdc2f7ff9f7fe3d50b09e264450a2ad8` were verified. The corrected initializer rename and Compose reference must be included in a final commit; no push.
 
 ## Remaining release gates
 
-- The user authorized local release-only commits, without pushing. A source commit is already verified; the secret-safe build-context correction must be committed and verified before creating images.
-- The confirmed live Clerk pair and generated MongoDB/Redis files are prepared locally under restrictive permissions; regenerate the `career-sprout.env` release tag and private checksum manifest for the final source SHA.
+- The user authorized local release-only commits, without pushing. Commit `16bab7a7cdc2f7ff9f7fe3d50b09e264450a2ad8` built and its corrected-config smoke passed, but new SHA-bound images still must be rebuilt and verified before deployment.
+- The confirmed live Clerk pair and generated MongoDB/Redis files are prepared locally under restrictive permissions; update the `career-sprout.env` tag and private checksum manifest for the corrected final SHA.

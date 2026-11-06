@@ -7,7 +7,7 @@ This is a local package for a possible future authorized release at `https://cra
 ## Runtime security and routing
 
 - Backend startup requires `APP_PROFILE=campus-local`, `NODE_ENV=production`, `DEPLOYMENT_MODE=container`, `HOST=0.0.0.0`, explicit `DEV_BYPASS_AUTH=false`, matching live Clerk keys, and exact HTTPS frontend URL. MongoDB and Redis URLs are assembled at backend process startup from mounted secret files; startup validation rejects missing credentials and any service host except Compose `mongo`/`redis`. `DB_AUTO_INDEX=true` creates model indexes before Mongo readiness passes.
-- Mongo uses an authenticated root bootstrap account and a separate `career_sprout` database user limited to `readWrite` on that database. Redis ACL authentication is enabled; a root startup wrapper copies bind-mounted secret files into a 1 MiB tmpfs, sets Redis ownership/mode, then hands off to the Redis entrypoint. Passwords are not in committed env templates, Compose interpolations/commands, image build arguments, or application logs. A secret file's presence/format does not prove the credential works.
+- Mongo uses an authenticated root bootstrap account and a separate `career_sprout` database user limited to `readWrite` on that database. A Mongo entrypoint shell initializer reads the app password file and passes it only through a child-process environment to `mongosh`; neither secret is placed in mongosh arguments or logs. Redis ACL authentication is enabled; a root startup wrapper copies bind-mounted secret files into a 1 MiB tmpfs, sets Redis ownership/mode, then hands off to the Redis entrypoint. Passwords are not in committed env templates, Compose interpolations/commands, image build arguments, or application logs. A secret file's presence/format does not prove the credential works.
 - Frontend receives only the public Clerk publishable key as a build argument. The production campus UI enables both sign-in and public sign-up; configure the production Clerk instance to allow both. Real Clerk session and two-account isolation tests may be recorded as `NOT_RUN` at the user's direction and are not release gates. Production authentication still requires matching real `pk_live_` and `sk_live_` keys: the publishable key is embedded in the frontend build, while the matching `sk_live_` secret remains runtime-only on the backend. Test-format keys must never be used in a production build or runtime.
 - Backend port 5002 and both data services are unpublished. Only frontend Nginx binds `127.0.0.1:18082`. Compose gives frontend a fixed private address and Express trusts forwarded identity only from that exact address. Frontend Nginx forwards the supplied X-Forwarded-For value without appending its own untrusted source. The first trusted host Nginx MUST overwrite `X-Forwarded-For` with `$remote_addr`; never use `$proxy_add_x_forwarded_for` here. If that trusted host-Nginx contract cannot be enforced, keep the app route closed; do not enable general proxy trust. This boundary gives rate limiting the real client address only when every stated proxy setting is in force.
 - API URL stays `/career-sprout/api/...` at the host and frontend proxy maps it to backend `/api/...`. SPA deep routes fall back to HTML; hashed assets are immutable and HTML revalidates.
@@ -62,7 +62,7 @@ docker save -o "$ARTIFACT_DIR/career-sprout-$TAG.tar" \
   "career-sprout-campus-redis:$TAG" "career-sprout-mongo:$TAG"
 (cd "$ARTIFACT_DIR" && sha256sum "career-sprout-$TAG.tar" > "career-sprout-archives-$TAG.sha256")
 sha256sum deploy/career-sprout/.dockerignore deploy/career-sprout/compose.yml \
-  deploy/career-sprout/nginx.conf deploy/career-sprout/mongo-init.js \
+  deploy/career-sprout/nginx.conf deploy/career-sprout/mongo-init.sh \
   deploy/career-sprout/mongo.Dockerfile deploy/career-sprout/redis.Dockerfile \
   deploy/career-sprout/redis-entrypoint.sh deploy/career-sprout/career-sprout.env.example \
   > "career-sprout-files-$TAG.sha256"
@@ -76,7 +76,7 @@ sha256sum deploy/career-sprout/.dockerignore deploy/career-sprout/compose.yml \
 tar -czf "$ARTIFACT_DIR/career-sprout-config-$TAG.tar.gz" \
   "career-sprout-files-$TAG.sha256" deploy/career-sprout/.dockerignore \
   deploy/career-sprout/compose.yml deploy/career-sprout/nginx.conf \
-  deploy/career-sprout/mongo-init.js deploy/career-sprout/mongo.Dockerfile \
+  deploy/career-sprout/mongo-init.sh deploy/career-sprout/mongo.Dockerfile \
   deploy/career-sprout/redis.Dockerfile deploy/career-sprout/redis-entrypoint.sh \
   deploy/career-sprout/career-sprout.env.example
 (cd "$ARTIFACT_DIR" && sha256sum "career-sprout-config-$TAG.tar.gz" >> "career-sprout-archives-$TAG.sha256")

@@ -27,9 +27,9 @@
 ## Execution progress
 
 - **Complete:** task reconciled and activated; Clerk's dashboard shows both managed certificates issued; custom Clerk endpoints have valid TLS; target host inventory and route checks were read-only.
-- **In progress:** inventory now covers 70 release paths plus one explicitly excluded machine diagnostic. Initial commit `0daec0e6e63d35aeb2f11afd33e6035a597f7b5a` is tree/blob verified; a follow-up adds a deploy-only `.dockerignore` after identifying that a root Mongo build context could carry private env files to Docker. The user authorized local commits without push.
-- **Private setup:** the user-confirmed live Clerk pair and four random database/cache passwords are stored locally with restrictive permissions; update the env tag and checksum manifest after the final source commit. No private values were shown.
-- **Not run:** SHA-bound release image build, disposable Compose smoke, backup/restore proof, transfer, deployment, Nginx path update, and post-deploy checks. No server mutations have occurred.
+- **In progress:** source inventory covers 70 paths plus one explicitly excluded machine diagnostic. Commit `16bab7a7cdc2f7ff9f7fe3d50b09e264450a2ad8` and its four SHA-bound images passed tree/label checks, but its Compose smoke initially exposed that `mongo-init.js` called `cat()` unavailable in `mongosh`. Replaced it with `mongo-init.sh`, which reads the app secret in the Mongo entrypoint shell and passes it to `mongosh` only through child environment. Isolated Compose now reaches healthy Mongo/Redis/backend/frontend; frontend root and auth route return 200, API health returns 200, and protected profile API returns 401. These smoke images use the prior SHA labels; rebuild all from the corrected final SHA before transfer.
+- **Private setup:** production Clerk pair and four random database/cache passwords are in a mode-0700/0600 WSL directory. The SHA-specific env tag and private checksum manifest must be regenerated after the corrected final source commit; no private values were shown.
+- **Not run:** final-SHA image rebuild, persistence/restart and backup/restore proof, transfer, deployment, Nginx path update, and post-deploy checks. The server has not been changed.
 
 ## Checks run before source commit
 
@@ -37,4 +37,4 @@
 - Frontend focused regressions passed **62/62** across CampusApp routing, API path handling, auth/sign-up, and ResumePage compression comparison.
 - Frontend lint passed. Backend lint passed for all changed backend source/test files; repository-wide backend lint remains red on six errors in untouched legacy files (`communityAppController.js`, `uploadValidator.test.js`, `postScheduler.js`).
 - The full campus test commands exceeded the 300-second runner limit. The frontend full run exposed one duplicate-text selector failure; the assertion now scopes to the comparison heading and the focused file/test passes. A Windows Node 20 attempt failed the PDF child-process fixture; the same fixture passes in the project's documented WSL Node 24 runtime.
-- Docker image builds, disposable Compose smoke, backup/restore proof, transfer, deployment, and public URL verification remain pending.
+- The first SHA-bound image set built successfully, including apt install of 266 Debian packages via SJTU and full frontend `npm ci`/build. It is superseded by the Mongo initializer source fix. Follow-up Compose smoke passed all four service health checks, static root/auth HTTP 200, API health 200, and protected API 401. Final-SHA rebuild remains required.
