@@ -55,6 +55,13 @@ Clerk Express also requires `CLERK_PUBLISHABLE_KEY` in `backend/.env`, with the 
 
 Campus authentication distinguishes Clerk initialization from backend session lookup. Initialization is bounded to 20 seconds (or fails earlier when the SDK reports failure); account-status lookup, including token acquisition, is bounded to 15 seconds. A Clerk initialization retry reloads the current URL, so save unsaved work first. A backend-status retry stays on the page. Neither timeout grants a local identity or indicates a successful login. The warm centered Clerk card uses static decorative leaves; mobile layouts hide them. If another browser works but yours fails, inspect the reported stage and browser/network blocking rather than treating key presence as proof of connectivity.
 
+当前代码的账号入口：只有匿名访问根路径 `/` 会自动进入 `/login`；已登录用户仍看到业务首页。直接打开 `/profile`、`/teacher` 等明确页面不会被全站登录守卫重定向，但受保护请求仍由后端拒绝未登录或未授权访问。登录/注册完成后保留安全内部目标、查询参数和片段；生产 `/career-sprout/` 前缀只添加一次。教师登录复用同一账号服务，不会因为点击入口而授予教师权限。
+
+注册使用一个全名输入框：中文姓名按第一个 Unicode 字符和剩余部分保存，英文姓名按第一个词和其余词保存；单字/单词允许空的后半部分，不填虚构姓氏，不改写已有用户姓名。邮箱验证码、重发及会话建立仍由真实 Clerk 完成。若账号还有安全设置步骤，先完成该步骤；若提示“职芽尚未确认账号”，可重试或退出更换账号，不要重复注册。
+
+密码页的最低输入长度为 8，允许更长，但这不代表提供商已经接受 8。2026-11-07 匿名读取生产公开策略仍为最低 15；用户已批准实际最低 8 的配置目标，管理访问条件和真实边界验收尚未完成。应分别核对 7 字符拒绝、未泄露且符合其他策略的 8 字符可接受、更长密码可用。官方中文词典已用于账号界面，但 SDK 的密码显示按钮无障碍标签、部分 Google 标签和品牌脚注仍有英文，不宣称全部中文。
+
+
 `RESEND_API_KEY`、`RESEND_FROM`、`APP_PUBLIC_URL` 仅为未启用的预留；相应邮箱接口返回503，不发送邮件、不创建账户或会话，不能替代 Clerk。已有 Evren 服务和账号不改动。
 
 ## 诊断日志

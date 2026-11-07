@@ -1,0 +1,39 @@
+{
+  "id": "login-ux",
+  "name": "login-ux",
+  "title": "登录与注册界面优化",
+  "description": "修复生产登录卡住并优化登录注册中文体验、教师入口、全名字段及密码长度要求",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": "campus-auth",
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-11-06",
+  "completedAt": null,
+  "branch": "feat/teacher-portal-career-workspace",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "frontend/src/campus/auth.jsx",
+    "frontend/src/campus/CampusApp.jsx",
+    "frontend/src/campus/clerkLocalization.js",
+    "frontend/src/campus/pages/AuthPage.jsx",
+    "frontend/src/campus/pages/RegistrationForm.jsx",
+    "frontend/package.json",
+    "frontend/package-lock.json"
+  ],
+  "notes": "User approved continuing this existing task and all review recommendations on 2026-11-07: minimum 8 characters (not exactly 8), custom single-full-name registration and root-only anonymous redirect. Integrated verification belongs to Main. No commit/push/deploy. task.py start ran in degraded mode because no runtime session identity was available; status is in_progress but no active-task pointer was persisted.",
+  "meta": {
+    "implementationApprovedAt": "2026-11-07",
+    "passwordMinimumTarget": 8,
+    "productionPasswordMinimumObserved": 15,
+    "productionRealSessionVerified": false
+  }
+}

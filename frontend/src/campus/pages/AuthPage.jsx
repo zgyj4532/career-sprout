@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { SignIn, SignUp, UserProfile } from '@clerk/clerk-react'
-import { Link, useLocation } from 'react-router-dom'
+import { SignIn, UserProfile } from '@clerk/clerk-react'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { safeReturnTo, useCampusSession } from '../auth'
 import RequestError from '../components/RequestError'
+import RegistrationForm from './RegistrationForm'
 
 const registrationEnabled = import.meta.env.DEV || import.meta.env.VITE_CLERK_SIGN_UP_ENABLED === 'true'
 
@@ -40,16 +41,21 @@ const clerkAppearance = {
 
 export default function AuthPage() {
   const { pathname, search } = useLocation()
-  const { status, error, loadingStage, refresh } = useCampusSession()
+  const { status, error, loadingStage, refresh, signOut, pendingSession, clerkSessionActive } = useCampusSession()
   const returnTo = safeReturnTo(new URLSearchParams(search).get('returnTo'))
   const register = pathname.startsWith('/register')
   const verify = pathname.startsWith('/verify-email')
   const [email, setEmail] = useState('')
   const configured = Boolean(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY)
   const ready = status && !error && !loadingStage
-  const showClerkForm = ready && status.mode === 'clerk' && configured && !status.authenticated && (!register || registrationEnabled)
+  const showPendingFlow = configured && pendingSession && !error && !loadingStage
+  const showClerkForm = showPendingFlow || (ready && status.mode === 'clerk' && configured && !status.authenticated && (!register || registrationEnabled))
   const showProfile = ready && status.mode === 'clerk' && configured && status.authenticated && verify
   const returnQuery = `?returnTo=${encodeURIComponent(returnTo)}`
+  const teacherEntry = /^\/teacher(?:[/?#]|$)/.test(returnTo)
+  const teacherDenied = ready && status.authenticated && teacherEntry && !status.user?.isTeacher
+
+  if (ready && status.mode === 'clerk' && status.authenticated && !verify && !teacherDenied) return <Navigate to={returnTo} replace />
 
   return <section className={`campus-auth${showProfile ? ' campus-auth-profile' : ''}`} aria-label={verify ? '邮箱验证' : register ? '账号注册' : '账号登录'}>
     <svg className="campus-auth-leaves" viewBox="0 0 280 320" fill="none" aria-hidden="true" focusable="false">
@@ -64,8 +70,13 @@ export default function AuthPage() {
       </g>
     </svg>
     <div className="campus-auth-content">
-      {showClerkForm ? register
-        ? <SignUp appearance={clerkAppearance} routing="hash" signInUrl={appPath(`/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
+      {teacherEntry && <p className="campus-note">教师登录与普通账号使用同一登录服务。此入口不会授予教师权限，教师数据仍需服务端授权。</p>}
+      {showPendingFlow && <div className="campus-note" role="status">
+        <p>账号还有安全设置或组织选择步骤待完成，请在下方继续；完成前不能访问受保护数据。</p>
+        <button type="button" onClick={signOut}>退出并更换账号</button>
+      </div>}
+      {showClerkForm ? register && !showPendingFlow
+        ? <RegistrationForm returnTo={returnTo} />
         : <SignIn appearance={clerkAppearance} routing="hash" signUpUrl={appPath(registrationEnabled ? `/register${returnQuery}` : `/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
         : <div className="campus-auth-card campus-form">
           <header className="campus-auth-heading">
@@ -73,12 +84,20 @@ export default function AuthPage() {
             <p>{register && !registrationEnabled ? '正式账号注册尚未开放；完成真实账号、安全与数据隔离验收前，请勿创建公开账号。' : verify ? '登录后，在账号设置中验证你的主邮箱。' : '保存练习与成长记录，随时继续。'}</p>
           </header>
           <RequestError error={error} onRetry={refresh} />
+          {error && clerkSessionActive && <button type="button" onClick={signOut}>退出并更换账号</button>}
           {!error && loadingStage && <p className="campus-auth-status" role="status">{loadingStage === 'clerk' ? '正在连接安全登录服务…' : '正在确认账号服务状态…'}</p>}
           {ready && status.mode === 'local' && <div className="campus-note">当前使用本机体验身份，不是正式注册或登录；不会发送验证邮件，也不能取得教师权限。<Link to={returnTo}>继续本机体验</Link></div>}
           {ready && status.mode === 'clerk' && configured && status.authenticated && <>
             <p>你已登录。{status.user?.emailVerified ? '主邮箱已验证。' : '请在账号设置中验证主邮箱。'}</p>
             {showProfile && <UserProfile appearance={clerkAppearance} routing="hash" />}
-            <Link className="button primary campus-auth-continue" to={returnTo}>继续使用职芽</Link>
+            {teacherDenied ? <>
+              <p>当前账号尚未获得教师授权。请联系管理员核对授权账号，或退出后使用已授权账号登录。</p>
+              <div className="campus-actions">
+                <button type="button" onClick={refresh}>重新确认教师权限</button>
+                <button type="button" onClick={signOut}>退出并更换账号</button>
+                <Link to="/">返回首页</Link>
+              </div>
+            </> : <Link className="button primary campus-auth-continue" to={returnTo}>继续使用职芽</Link>}
           </>}
           {ready && (status.mode === 'unavailable' || (status.mode === 'clerk' && !configured)) && <p className="campus-note">正式账号服务尚不可用。请联系维护者配置 Clerk；不要在其他表单中输入密码。</p>}
           {ready && status.mode !== 'clerk' && <form className="campus-form" onSubmit={(event) => event.preventDefault()} aria-describedby="email-unavailable">
@@ -93,6 +112,7 @@ export default function AuthPage() {
           {registrationEnabled && <Link to={`/register${returnQuery}`}>注册</Link>}
         </>}
         {!verify && <Link to={`/verify-email${returnQuery}`}>邮箱验证说明</Link>}
+        <Link to="/login?returnTo=/teacher">教师登录</Link>
         <Link to="/">返回首页</Link>
       </nav>
     </div>

@@ -1,22 +1,47 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
-import { CampusSessionProvider, useCampusSession } from '../auth'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { CampusSessionProvider, safeReturnTo, SessionNavigation, useCampusSession } from '../auth'
 import { CampusApiError, campusData } from '../api'
 import RequestError from '../components/RequestError'
 
-const clerkState = vi.hoisted(() => ({ isLoaded: false, sessionId: null, status: 'loading', signOut: vi.fn() }))
+const clerkState = vi.hoisted(() => ({ isLoaded: false, sessionId: null, sessionStatus: null, status: 'loading', signOut: vi.fn() }))
 vi.mock('@clerk/clerk-react', () => ({
-  useAuth: () => ({ isLoaded: clerkState.isLoaded, sessionId: clerkState.sessionId }),
+  useSession: () => ({ isLoaded: clerkState.isLoaded, session: clerkState.sessionId ? { id: clerkState.sessionId, status: clerkState.sessionStatus } : null }),
   useClerk: () => ({ status: clerkState.status, signOut: clerkState.signOut }),
   SignIn: () => <div role="region" aria-label="Clerk sign-in form" />,
-  SignUp: () => <div role="region" aria-label="Clerk sign-up form" />,
+  UserProfile: () => <div role="region" aria-label="Clerk profile form" />,
 }))
 vi.mock('../api', async (importOriginal) => ({ ...(await importOriginal()), campusData: vi.fn() }))
+vi.mock('../pages/RegistrationForm', () => ({ default: () => <form aria-label="Custom registration form" /> }))
 
 
 const anonymous = { mode: 'clerk', authenticated: false, user: null }
 const signedIn = { mode: 'clerk', authenticated: true, user: { id: 'test-user', emailVerified: true } }
+
+function LocationProbe() {
+  const { pathname, search, hash } = useLocation()
+  return <output aria-label="Current destination">{`${pathname}${search}${hash}`}</output>
+}
+
+async function renderAuthRoute(path, basename = '/') {
+  const { default: AuthPage } = await import('../pages/AuthPage')
+  const view = render(
+    <MemoryRouter basename={basename} initialEntries={[path]}>
+      <CampusSessionProvider>
+        <LocationProbe />
+        <Routes>
+          <Route path="/login/*" element={<AuthPage />} />
+          <Route path="/register/*" element={<AuthPage />} />
+          <Route path="/verify-email/*" element={<AuthPage />} />
+          <Route path="*" element={<h1>Business destination</h1>} />
+        </Routes>
+      </CampusSessionProvider>
+    </MemoryRouter>,
+  )
+  await act(async () => {})
+  return view
+}
 
 function deferred() {
   let resolve
@@ -29,6 +54,7 @@ function ready(sessionId = null) {
   clerkState.isLoaded = true
   clerkState.status = 'ready'
   clerkState.sessionId = sessionId
+  clerkState.sessionStatus = sessionId ? 'active' : null
 }
 
 function SessionConsumer() {
@@ -45,6 +71,7 @@ beforeEach(() => {
   vi.stubEnv('VITE_CLERK_PUBLISHABLE_KEY', 'test-key-only-sdk-is-mocked')
   clerkState.isLoaded = false
   clerkState.sessionId = null
+  clerkState.sessionStatus = null
   clerkState.status = 'loading'
   clerkState.signOut.mockReset().mockResolvedValue(undefined)
   campusData.mockReset().mockResolvedValue(anonymous)
@@ -59,6 +86,45 @@ afterEach(() => {
 })
 
 describe('campus authentication lifecycle', () => {
+  it('keeps pending provider tasks distinct from anonymous and refreshes when the same session becomes active', async () => {
+    ready('session-pending')
+    clerkState.sessionStatus = 'pending'
+    const { result, rerender } = renderHook(() => useCampusSession(), { wrapper: CampusSessionProvider })
+    await act(async () => {})
+    expect(result.current.pendingSession).toBe(true)
+    expect(result.current.clerkSessionActive).toBe(false)
+    expect(result.current.status).toBeNull()
+    expect(result.current.loadingStage).toBeNull()
+    expect(campusData).not.toHaveBeenCalled()
+    campusData.mockResolvedValue(signedIn)
+    clerkState.sessionStatus = 'active'
+    rerender()
+    await act(async () => {})
+    expect(result.current.pendingSession).toBe(false)
+    expect(result.current.status).toEqual(signedIn)
+  })
+
+  it('does not restart sign-in when an active provider session is unrecognized by the backend', async () => {
+    ready('session-active')
+    const { result } = renderHook(() => useCampusSession(), { wrapper: CampusSessionProvider })
+    await act(async () => {})
+    expect(result.current.status).toBeNull()
+    expect(result.current.error?.code).toBe('SESSION_NOT_RECOGNIZED')
+    expect(result.current.clerkSessionActive).toBe(true)
+    campusData.mockResolvedValue(signedIn)
+    await act(() => result.current.refresh())
+    expect(result.current.status).toEqual(signedIn)
+    expect(result.current.error).toBeNull()
+  })
+
+  it('preserves deep-link query and fragment when offering sign-in without granting teacher access', async () => {
+    ready()
+    render(<MemoryRouter initialEntries={['/teacher?view=students#pending']}><CampusSessionProvider><SessionNavigation /></CampusSessionProvider></MemoryRouter>)
+    await act(async () => {})
+    expect(screen.getByRole('link', { name: '登录 / 注册' })).toHaveAttribute('href', '/login?returnTo=%2Fteacher%3Fview%3Dstudents%23pending')
+    expect(screen.queryByRole('link', { name: '教师荐才' })).not.toBeInTheDocument()
+  })
+
   it('bounds SDK initialization, exposes safe recovery and retries the current document instead of querying an unavailable SDK', async () => {
     const { result } = renderHook(() => useCampusSession(), { wrapper: CampusSessionProvider })
     expect(result.current.loadingStage).toBe('clerk')
@@ -352,6 +418,125 @@ describe('campus authentication lifecycle', () => {
 
     renderAuthPage('/register')
     await act(async () => {})
-    expect(screen.getByRole('region', { name: 'Clerk sign-up form' })).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: 'Custom registration form' })).toBeInTheDocument()
+  })
+})
+
+describe('safe return destinations', () => {
+  it.each([
+    ['/teacher?view=students#pending', '/teacher?view=students#pending'],
+    ['/history/record-42?label=%E7%AE%80%E5%8E%86#notes', '/history/record-42?label=%E7%AE%80%E5%8E%86#notes'],
+    ['/career-sprout/teacher?view=students#pending', '/teacher?view=students#pending'],
+    ['/career-sprout/', '/'],
+    ['/resume/../profile', '/profile'],
+  ])('preserves internal destination %s without duplicating the deployment base', (input, expected) => {
+    vi.stubEnv('BASE_URL', '/career-sprout/')
+    expect(safeReturnTo(input)).toBe(expected)
+  })
+
+  it.each([
+    null, '', 'https://evil.test', '//evil.test', '/\\evil.test', '/%2f%2fevil.test',
+    '/%5cevil.test', '/%252f%252fevil.test', '/%00', '/bad%encoding', '/login',
+    '/register/verify-email', '/verify-email?returnTo=/teacher', '/resume/../login',
+    '/career-sprout/login', '/career-sprout/%6cogin', '/career-sprout/register#verify',
+  ])('rejects unsafe or looping destination %s', (input) => {
+    vi.stubEnv('BASE_URL', '/career-sprout/')
+    expect(safeReturnTo(input)).toBe('/')
+  })
+})
+
+describe('authentication page session navigation', () => {
+  it.each(['/login', '/register'])('leaves %s for a signed-in user and preserves the deep destination', async (path) => {
+    ready('session-active')
+    campusData.mockResolvedValue(signedIn)
+    await renderAuthRoute(`${path}?returnTo=${encodeURIComponent('/history/record-42?view=notes#answer')}`)
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent('/history/record-42?view=notes#answer')
+    expect(screen.getByRole('heading', { name: 'Business destination' })).toBeVisible()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-in form' })).not.toBeInTheDocument()
+  })
+
+  it('sends an unsafe signed-in destination to the real home route without a login loop', async () => {
+    ready('session-active')
+    campusData.mockResolvedValue(signedIn)
+    await renderAuthRoute('/login?returnTo=https%3A%2F%2Fevil.test')
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent(/^\/$/)
+    expect(screen.getByRole('heading', { name: 'Business destination' })).toBeVisible()
+  })
+
+  it('strips the public basename once before router navigation', async () => {
+    vi.stubEnv('BASE_URL', '/career-sprout/')
+    ready('session-active')
+    campusData.mockResolvedValue(signedIn)
+    await renderAuthRoute('/career-sprout/login?returnTo=%2Fcareer-sprout%2Fprofile', '/career-sprout')
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent(/^\/profile$/)
+  })
+
+  it('keeps explicit email verification available for the authenticated account', async () => {
+    ready('session-active')
+    campusData.mockResolvedValue(signedIn)
+    await renderAuthRoute('/verify-email?returnTo=%2Fprofile')
+    expect(screen.getByRole('region', { name: 'Clerk profile form' })).toBeVisible()
+    expect(screen.getByRole('link', { name: '继续使用职芽' })).toHaveAttribute('href', '/profile')
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent('/verify-email')
+  })
+
+  it('offers teacher sign-in without granting permission and recovers after server authorization changes', async () => {
+    ready('session-active')
+    campusData.mockResolvedValue(signedIn)
+    await renderAuthRoute('/login?returnTo=%2Fteacher')
+    expect(screen.getByText(/当前账号尚未获得教师授权/)).toBeVisible()
+    expect(screen.getByRole('link', { name: '教师登录' })).toHaveAttribute('href', '/login?returnTo=/teacher')
+    expect(screen.getByRole('button', { name: '退出并更换账号' })).toBeEnabled()
+    expect(screen.queryByRole('heading', { name: 'Business destination' })).not.toBeInTheDocument()
+    campusData.mockResolvedValue({ ...signedIn, user: { ...signedIn.user, isTeacher: true } })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '重新确认教师权限' })) })
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent(/^\/teacher$/)
+  })
+
+  it('retains required Clerk tasks instead of restarting registration', async () => {
+    ready('session-pending')
+    clerkState.sessionStatus = 'pending'
+    await renderAuthRoute('/register?returnTo=%2Fprofile')
+    expect(screen.getByRole('region', { name: 'Clerk sign-in form' })).toBeVisible()
+    expect(screen.queryByRole('form', { name: 'Custom registration form' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '退出并更换账号' })).toBeEnabled()
+    expect(campusData).not.toHaveBeenCalled()
+  })
+
+  it.each(['rejected', 'timed out'])('restores pending task continuation and another sign-out attempt after logout %s', async (outcome) => {
+    ready('session-pending')
+    clerkState.sessionStatus = 'pending'
+    const logout = deferred()
+    clerkState.signOut.mockReturnValueOnce(logout.promise)
+    await renderAuthRoute('/register?returnTo=%2Fprofile')
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '退出并更换账号' })) })
+    if (outcome === 'rejected') {
+      await act(async () => { logout.reject(new Error('PRIVATE_PROVIDER_ERROR')) })
+    } else {
+      await act(() => vi.advanceTimersByTimeAsync(15000))
+    }
+    expect(screen.getByRole('alert')).toBeVisible()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-in form' })).not.toBeInTheDocument()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '重试' })) })
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Clerk sign-in form' })).toBeVisible()
+    expect(screen.queryByRole('form', { name: 'Custom registration form' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '退出并更换账号' })).toBeEnabled()
+    expect(campusData).not.toHaveBeenCalled()
+    if (outcome === 'timed out') {
+      await act(async () => { logout.reject(new Error('LATE_PRIVATE_PROVIDER_ERROR')) })
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    }
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '退出并更换账号' })) })
+    expect(clerkState.signOut).toHaveBeenCalledTimes(2)
+  })
+
+  it('lets an unrecognized active session sign out rather than showing another sign-in form', async () => {
+    ready('session-active')
+    await renderAuthRoute('/login?returnTo=%2Fprofile')
+    expect(screen.getByRole('alert')).toHaveTextContent('职芽尚未确认账号')
+    expect(screen.queryByRole('region', { name: 'Clerk sign-in form' })).not.toBeInTheDocument()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '退出并更换账号' })) })
+    expect(clerkState.signOut).toHaveBeenCalledOnce()
   })
 })

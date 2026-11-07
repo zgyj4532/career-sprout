@@ -1,7 +1,7 @@
 # Execution plan
 
 ## Gate
-Do not activate or modify product code until the user approves the final planning summary.
+Historical implementation was approved and the bounded loading/UI extension completed; see `research/verification.md`. That dated record did not include a genuine-account closure; the user subsequently confirmed the basic account flow on 2026-10-29. The newly reported production login failure is not proven resolved by that earlier confirmation. Further approved UX implementation continues in `11-06-login-ux` as of 2026-11-07.
 
 ## Ordered work
 1. Read scoped frontend quality, directory, hooks/state, API type-safety, campus verification and cross-layer guides before changes. Locate existing auth behavior tests and runtime docs.
@@ -19,8 +19,8 @@ Resolve runtime directory and scripts first. Use npm run doctor in the supported
 External network access, missing WSL runtime dependencies, mismatched keys, Clerk dashboard policy and personal verification can prevent end-to-end proof. Investigate reachable prerequisites before declaring a blocker; do not weaken authentication to obtain a green result.
 
 ## Revised execution gate and checks
-- Await explicit review of the revised loading/UI summary before resuming implementation.
-- Inspect actual SDK script/client initialization and backend status separately; respect the user-reported failure without demanding a second reproduction from them.
-- Implement bounded lifecycle recovery at the owning layer, then theme the existing Clerk forms using the retained upstream centered composition.
+- 历史 loading/UI 扩展已获批准并完成；证据见 `research/verification.md:19-29`，不再等待同一批准。
+- 已实现 20s SDK / 15s session 状态边界、错误恢复与主题；2026-11-07 后续 UX 工作继续于已批准的 `11-06-login-ux`，不重复实施。
+- 本任务原 verification 当时未记录真实账号闭环；10-29 用户后来确认基本账号流程可用。当前生产登录卡住是新的报告，尚未证明解决；历史确认、匿名 smoke 和 mock 不能替代本次故障验收。
 - Prove delayed/failed SDK and failed API recovery via controlled browser scenarios, separately from real provider success. Check desktop/390px, keyboard focus, form switching and safe return destinations. Preserve the original real-session acceptance requirements.
 - After smoke, remove owned test browser state and generated Vite/test caches only once services no longer use them; do not clear shared Redis, MongoDB, user materials or personal browser cookies.
