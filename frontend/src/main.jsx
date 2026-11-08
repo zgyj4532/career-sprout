@@ -1,16 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import '@app-styles'
-import { ClerkProvider } from '@clerk/clerk-react'
-import { clerkLocalization } from './campus/clerkLocalization'
+import { ClerkProvider } from '@clerk/react'
 import Page from '@app-entry'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 const campusLocal = import.meta.env.VITE_APP_PROFILE === 'campus-local'
-const localBypass = campusLocal
-  && import.meta.env.DEV
-  && import.meta.env.VITE_DEV_BYPASS_AUTH === 'true'
-  && !PUBLISHABLE_KEY
 
 class DebugBoundary extends React.Component {
   constructor(props) {
@@ -41,9 +36,10 @@ function Root({ Page }) {
       <Page />
     </DebugBoundary>
   )
-  if (localBypass || !PUBLISHABLE_KEY) return app
+  // Campus mounts its single provider inside its data router for Clerk navigation.
+  if (campusLocal || !PUBLISHABLE_KEY) return app
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl={import.meta.env.BASE_URL} localization={campusLocal ? clerkLocalization : undefined}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl={import.meta.env.BASE_URL}>
       {app}
     </ClerkProvider>
   )

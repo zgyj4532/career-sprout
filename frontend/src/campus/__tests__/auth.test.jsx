@@ -6,7 +6,7 @@ import { CampusApiError, campusData } from '../api'
 import RequestError from '../components/RequestError'
 
 const clerkState = vi.hoisted(() => ({ isLoaded: false, sessionId: null, sessionStatus: null, status: 'loading', signOut: vi.fn() }))
-vi.mock('@clerk/clerk-react', () => ({
+vi.mock('@clerk/react', () => ({
   useSession: () => ({ isLoaded: clerkState.isLoaded, session: clerkState.sessionId ? { id: clerkState.sessionId, status: clerkState.sessionStatus } : null }),
   useClerk: () => ({ status: clerkState.status, signOut: clerkState.signOut }),
   SignIn: () => <div role="region" aria-label="Clerk sign-in form" />,

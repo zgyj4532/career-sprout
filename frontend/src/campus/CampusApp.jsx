@@ -8,6 +8,7 @@ import RouteLoadingBoundary from './components/RouteLoadingBoundary'
 import { CampusSessionProvider, SessionNavigation, useCampusSession } from './auth'
 import UnsavedWorkProvider from './components/UnsavedWorkProvider'
 import RequestError from './components/RequestError'
+import CampusClerkProvider from './CampusClerkProvider'
 
 const ResumePage = lazy(() => import('./pages/ResumePage'))
 const JobsPage = lazy(() => import('./pages/JobsPage'))
@@ -159,6 +160,9 @@ function CampusShell() {
 }
 
 export default function CampusApp() {
-  const [router] = useState(() => createBrowserRouter([{ path: '*', element: <CampusSessionProvider><UnsavedWorkProvider><CampusShell /></UnsavedWorkProvider></CampusSessionProvider> }], { basename: import.meta.env.BASE_URL }))
+  const [router] = useState(() => createBrowserRouter([{
+    path: '*',
+    element: <CampusClerkProvider><CampusSessionProvider><UnsavedWorkProvider><CampusShell /></UnsavedWorkProvider></CampusSessionProvider></CampusClerkProvider>,
+  }], { basename: import.meta.env.BASE_URL }))
   return <RouterProvider router={router} />
 }

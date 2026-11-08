@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
-vi.mock('@clerk/clerk-react', () => ({
+vi.mock('@clerk/react', () => ({
   useUser: () => ({
     isLoaded: true,
     isSignedIn: true,
@@ -25,8 +25,6 @@ vi.mock('@clerk/clerk-react', () => ({
     signOut: vi.fn()
   }),
   ClerkProvider: ({ children }) => children,
-  SignedIn: ({ children }) => children,
-  SignedOut: () => null,
   UserButton: () => <div>UserButton</div>,
   SignIn: () => (
     <div>

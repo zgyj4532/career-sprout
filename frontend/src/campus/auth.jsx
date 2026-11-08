@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { useClerk, useSession } from '@clerk/clerk-react'
+import { useClerk, useSession } from '@clerk/react'
 import { Link, useLocation } from 'react-router-dom'
 import { CampusApiError, campusData } from './api'
 

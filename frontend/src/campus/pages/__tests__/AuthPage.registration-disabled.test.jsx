@@ -5,7 +5,7 @@ import { CampusSessionProvider } from '../../auth'
 import { campusData } from '../../api'
 
 const clerkState = vi.hoisted(() => ({ session: null, signOut: vi.fn() }))
-vi.mock('@clerk/clerk-react', () => ({
+vi.mock('@clerk/react', () => ({
   useSession: () => ({ isLoaded: true, session: clerkState.session }),
   useClerk: () => ({ status: 'ready', signOut: clerkState.signOut }),
   SignIn: () => <div role="region" aria-label="Clerk sign-in form" />,

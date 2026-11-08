@@ -1,6 +1,6 @@
 import { zhCN } from '@clerk/localizations/zh-CN'
 
-// Keep the v5-compatible official dictionary; override brand copy and known
+// Keep the Core 3-compatible official dictionary; override brand copy and known
 // untranslated auth/recovery keys only. Clerk still owns identity and policy.
 export const clerkLocalization = {
   ...zhCN,
@@ -38,6 +38,11 @@ export const clerkLocalization = {
     passwordPwned: { title: '密码已出现在泄露记录中' },
     passwordUntrusted: { title: '密码不再安全' },
     passkey: { title: '使用通行密钥', subtitle: '按设备提示使用指纹、面容或屏幕锁验证身份。' },
+    protectCheck: {
+      ...zhCN.signIn.protectCheck,
+      title: '正在验证请求', subtitle: '请稍候，我们正在验证你的请求。',
+      loading: '正在加载…', retryButton: '重试',
+    },
     emailLink: {
       ...zhCN.signIn.emailLink,
       clientMismatch: { title: '此设备无法使用该验证链接', subtitle: '请在发起登录的设备和浏览器中打开链接。' },
@@ -54,6 +59,11 @@ export const clerkLocalization = {
       clientMismatch: { title: '此设备无法使用该验证链接', subtitle: '请在发起注册的设备和浏览器中打开链接。' },
     },
     enterpriseConnections: { title: '选择企业账号', subtitle: '选择要用于继续注册的企业账号。' },
+    protectCheck: {
+      ...zhCN.signUp.protectCheck,
+      title: '正在验证请求', subtitle: '请稍候，我们正在验证你的请求。',
+      loading: '正在加载…', retryButton: '重试',
+    },
     legalConsent: {
       checkbox: {
         label__onlyPrivacyPolicy: '我同意 {{ privacyPolicyLink || link("隐私政策") }}',
@@ -110,6 +120,13 @@ export const clerkLocalization = {
     passkey_pa_not_supported: '此验证器不支持通行密钥，请使用其他方式。',
     passkey_registration_cancelled: '已取消添加通行密钥，可重新尝试。',
     passkey_retrieval_cancelled: '已取消通行密钥验证，请重试或使用其他方式。',
+    protect_check_execution_failed: '验证未完成，请重试。',
+    protect_check_invalid_script: '无法加载验证，请联系管理员。',
+    protect_check_invalid_sdk_url: '无法启动验证，请联系管理员。',
+    protect_check_required: '本次登录需要额外验证，但当前页面无法显示。请重试或使用其他登录方式。',
+    protect_check_script_load_failed: '无法加载验证。请检查网络或浏览器是否拦截验证脚本；重试后仍有问题，请联系管理员检查安全策略。',
+    protect_check_timed_out: '验证超时，请重试。',
+    protect_check_unsupported_environment: '当前环境不支持验证，请使用常规浏览器继续，或联系管理员。',
     passwordComplexity: { ...zhCN.unstable__errors.passwordComplexity, minimumLength: '至少 {{length}} 个字符', maximumLength: '不超过 {{length}} 个字符' },
   },
   userProfile: {

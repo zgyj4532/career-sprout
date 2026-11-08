@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SignIn, SignUp, UserProfile } from '@clerk/clerk-react'
+import { SignIn, SignUp, UserProfile } from '@clerk/react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { safeReturnTo, useCampusSession } from '../auth'
 import RequestError from '../components/RequestError'
@@ -39,7 +39,7 @@ const clerkAppearance = {
 }
 
 export default function AuthPage() {
-  const { pathname, search } = useLocation()
+  const { pathname, search, hash } = useLocation()
   const { status, error, loadingStage, refresh, signOut, pendingSession, clerkSessionActive } = useCampusSession()
   const returnTo = safeReturnTo(new URLSearchParams(search).get('returnTo'))
   const register = pathname.startsWith('/register')
@@ -53,6 +53,10 @@ export default function AuthPage() {
   const returnQuery = `?returnTo=${encodeURIComponent(returnTo)}`
   const teacherEntry = /^\/teacher(?:[/?#]|$)/.test(returnTo)
   const teacherDenied = ready && status.authenticated && teacherEntry && !status.user?.isTeacher
+  const clerkPath = appPath(register ? '/register' : verify ? '/verify-email' : '/login')
+
+  // Resume the observed legacy bookmark without creating a foreign history entry.
+  if (pathname === '/register' && hash === '#/continue') return <Navigate to={`/register/continue${search}`} replace />
 
   if (ready && status.mode === 'clerk' && status.authenticated && !verify && !teacherDenied) return <Navigate to={returnTo} replace />
 
@@ -75,8 +79,8 @@ export default function AuthPage() {
         <button type="button" onClick={signOut}>退出并更换账号</button>
       </div>}
       {showClerkForm ? register && !showPendingFlow
-        ? <SignUp appearance={clerkAppearance} routing="hash" signInUrl={appPath(`/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
-        : <SignIn appearance={clerkAppearance} routing="hash" signUpUrl={appPath(registrationEnabled ? `/register${returnQuery}` : `/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
+        ? <SignUp appearance={clerkAppearance} routing="path" path={clerkPath} signInUrl={appPath(`/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
+        : <SignIn appearance={clerkAppearance} routing="path" path={clerkPath} signUpUrl={appPath(registrationEnabled ? `/register${returnQuery}` : `/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
         : <div className="campus-auth-card campus-form">
           <header className="campus-auth-heading">
             <h1>{verify ? '验证邮箱' : register ? '注册职芽' : '登录职芽'}</h1>
@@ -88,7 +92,7 @@ export default function AuthPage() {
           {ready && status.mode === 'local' && <div className="campus-note">当前使用本机体验身份，不是正式注册或登录；不会发送验证邮件，也不能取得教师权限。<Link to={returnTo}>继续本机体验</Link></div>}
           {ready && status.mode === 'clerk' && configured && status.authenticated && <>
             <p>你已登录。{status.user?.emailVerified ? '主邮箱已验证。' : '请在账号设置中验证主邮箱。'}</p>
-            {showProfile && <UserProfile appearance={clerkAppearance} routing="hash" />}
+            {showProfile && <UserProfile appearance={clerkAppearance} routing="path" path={clerkPath} />}
             {teacherDenied ? <>
               <p>当前账号尚未获得教师授权。请联系管理员核对授权账号，或退出后使用已授权账号登录。</p>
               <div className="campus-actions">
