@@ -23,12 +23,15 @@ export default function CampusClerkProvider({ children }) {
   const routerPush = useCallback((to, metadata) => navigateClerk(to, false, metadata), [navigateClerk])
   const routerReplace = useCallback((to, metadata) => navigateClerk(to, true, metadata), [navigateClerk])
   const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+  const registrationEnabled = import.meta.env.DEV || import.meta.env.VITE_CLERK_SIGN_UP_ENABLED === 'true'
 
   // Missing-key and explicit local development identity remain provider-free.
   if (!publishableKey) return children
   return <ClerkProvider
     publishableKey={publishableKey}
     localization={clerkLocalization}
+    signInUrl={`${basename}/login`}
+    signUpUrl={`${basename}/${registrationEnabled ? 'register' : 'login'}`}
     afterSignOutUrl={import.meta.env.BASE_URL}
     routerPush={routerPush}
     routerReplace={routerReplace}

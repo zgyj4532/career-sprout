@@ -16,6 +16,8 @@ vi.mock('@clerk/react', async () => {
       <button onClick={() => clerk.callbacks.routerReplace(`${path}/verify-email-address`)}>Replace Clerk step</button>
       <button onClick={() => clerk.callbacks.routerPush(forceRedirectUrl)}>Finish Clerk flow</button>
       <button onClick={() => clerk.callbacks.routerPush(signInUrl || signUpUrl)}>Switch Clerk flow</button>
+      <button onClick={() => clerk.callbacks.routerReplace(clerk.callbacks.signUpUrl)}>Recover signup at configured entry</button>
+      <button onClick={() => clerk.callbacks.routerReplace(clerk.callbacks.signInUrl)}>Recover login at configured entry</button>
     </section>
   }
   return {
@@ -158,6 +160,35 @@ it('replaces only the observed legacy registration continuation, retaining its s
   expect(window.location.hash).toBe('')
   expect(window.history.state.idx).toBe(0)
   expect(router.state.historyAction).toBe('REPLACE')
+})
+
+it.each([
+  ['/career-sprout/', 'true', '/career-sprout/register', 'Official sign-up'],
+  ['/career-sprout/', 'false', '/career-sprout/login', 'Official sign-in'],
+  ['/', 'true', '/register', 'Official sign-up'],
+  ['/', 'false', '/login', 'Official sign-in'],
+])('recovers signup through the configured app entry at base %s with registration=%s', async (basename, enabled, destination, label) => {
+  vi.stubEnv('BASE_URL', basename)
+  vi.stubEnv('DEV', false)
+  vi.stubEnv('VITE_CLERK_SIGN_UP_ENABLED', enabled)
+  // Simulate Clerk's configured-entry redirect when no resumable attempt exists.
+  // Provider request/attempt detection itself still needs the real-browser smoke.
+  const entry = enabled === 'true' ? 'register' : 'login'
+  await mount(`${basename}${entry}${enabled === 'true' ? '#/continue' : '/continue'}`, basename)
+  await waitFor(() => expect(window.location.pathname).toBe(`${basename}${entry}/continue`))
+  const index = window.history.state.idx
+  await click('Recover signup at configured entry')
+  expect(window.location.pathname).toBe(destination)
+  expect(router.state.location.pathname).toBe(destination)
+  expect(window.history.state.idx).toBe(index)
+  expect(screen.getByRole('region', { name: label })).toBeVisible()
+})
+
+it('keeps missing sign-in attempt recovery inside the app', async () => {
+  await mount('/career-sprout/login/continue')
+  await click('Recover login at configured entry')
+  expect(window.location.pathname).toBe('/career-sprout/login')
+  expect(screen.getByRole('region', { name: 'Official sign-in' })).toBeVisible()
 })
 
 it('does not reinterpret unrelated auth fragments as routes', async () => {

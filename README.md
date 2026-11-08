@@ -48,6 +48,8 @@ npm run verify:phase1 -- --include-upstream
 
 **身份与安全：** 2026-10-23 当前批准方向继续使用现有 Clerk，取代此前 Evren/Resend 迁移计划。前端只放公开 `VITE_CLERK_PUBLISHABLE_KEY`，后端私密 `CLERK_SECRET_KEY`；两者来自同一既有 Clerk 应用。配置后关闭开发旁路。无 Clerk 时的本地身份仅限 development + campus-local + loopback，不用于局域网/公网，不是注册或多账号证明。不要提交 `.env` 或把密钥贴到聊天；Resend 预留变量不会启用身份签发。
 
+Campus authentication uses the official Clerk SignUp/SignIn/UserProfile components with path routing. Its single ClerkProvider lives inside the React Router data router; routerPush/routerReplace keep internal steps and browser Back under the existing unsaved-work guard. Provider-level signInUrl/signUpUrl point to the app's `/login` and `/register` routes with `BASE_URL` applied once, so an expired or missing continuation returns to the app rather than the Account Portal. When production registration is disabled, signUpUrl points to `/login`; no public registration is enabled by recovery. The observed legacy `/register#/continue` link is replaced with `/register/continue`, leaving Clerk to resume an existing attempt or return to the configured entry. External OAuth redirects remain document navigations.
+
 ## 文档与验收状态
 
 - [WSL 启动、配置、日志、内存与发布缓存](docs/LOCAL_WSL.md)
