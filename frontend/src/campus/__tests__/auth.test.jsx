@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, renderHook, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { CampusSessionProvider, safeReturnTo, SessionNavigation, useCampusSession } from '../auth'
@@ -10,10 +10,10 @@ vi.mock('@clerk/clerk-react', () => ({
   useSession: () => ({ isLoaded: clerkState.isLoaded, session: clerkState.sessionId ? { id: clerkState.sessionId, status: clerkState.sessionStatus } : null }),
   useClerk: () => ({ status: clerkState.status, signOut: clerkState.signOut }),
   SignIn: () => <div role="region" aria-label="Clerk sign-in form" />,
+  SignUp: () => <div role="region" aria-label="Clerk sign-up form" />,
   UserProfile: () => <div role="region" aria-label="Clerk profile form" />,
 }))
 vi.mock('../api', async (importOriginal) => ({ ...(await importOriginal()), campusData: vi.fn() }))
-vi.mock('../pages/RegistrationForm', () => ({ default: () => <form aria-label="Custom registration form" /> }))
 
 
 const anonymous = { mode: 'clerk', authenticated: false, user: null }
@@ -26,7 +26,7 @@ function LocationProbe() {
 
 async function renderAuthRoute(path, basename = '/') {
   const { default: AuthPage } = await import('../pages/AuthPage')
-  const view = render(
+  const route = () => (
     <MemoryRouter basename={basename} initialEntries={[path]}>
       <CampusSessionProvider>
         <LocationProbe />
@@ -37,10 +37,11 @@ async function renderAuthRoute(path, basename = '/') {
           <Route path="*" element={<h1>Business destination</h1>} />
         </Routes>
       </CampusSessionProvider>
-    </MemoryRouter>,
+    </MemoryRouter>
   )
+  const view = render(route())
   await act(async () => {})
-  return view
+  return { ...view, refreshSession: () => view.rerender(route()) }
 }
 
 function deferred() {
@@ -69,6 +70,8 @@ function SessionConsumer() {
 beforeEach(() => {
   vi.useFakeTimers()
   vi.stubEnv('VITE_CLERK_PUBLISHABLE_KEY', 'test-key-only-sdk-is-mocked')
+  vi.stubEnv('DEV', false)
+  vi.stubEnv('VITE_CLERK_SIGN_UP_ENABLED', 'true')
   clerkState.isLoaded = false
   clerkState.sessionId = null
   clerkState.sessionStatus = null
@@ -399,26 +402,24 @@ describe('campus authentication lifecycle', () => {
     expect(result.current.loadingStage).toBeNull()
   })
  
-  it('shows Clerk sign-in and public sign-up forms when the signup flag is enabled', async () => {
-    vi.stubEnv('VITE_CLERK_SIGN_UP_ENABLED', 'true')
-    const { default: AuthPage } = await import('../pages/AuthPage')
+  it.each([
+    ['/login', 'Clerk sign-in form'],
+    ['/register', 'Clerk sign-up form'],
+  ])('keeps %s unavailable until backend status is known and offers retry after failure', async (path, form) => {
     ready()
-    campusData.mockResolvedValue(anonymous)
-
-    const renderAuthPage = (path) => render(
-      <MemoryRouter initialEntries={[path]}>
-        <CampusSessionProvider><AuthPage /></CampusSessionProvider>
-      </MemoryRouter>,
-    )
-
-    renderAuthPage('/login')
-    await act(async () => {})
-    expect(screen.getByRole('region', { name: 'Clerk sign-in form' })).toBeInTheDocument()
-    cleanup()
-
-    renderAuthPage('/register')
-    await act(async () => {})
-    expect(screen.getByRole('form', { name: 'Custom registration form' })).toBeInTheDocument()
+    const response = deferred()
+    campusData.mockReturnValueOnce(response.promise)
+    await renderAuthRoute(`${path}?returnTo=%2Fprofile`)
+    expect(within(screen.getByRole('region', { name: path === '/login' ? '账号登录' : '账号注册' })).getByRole('status')).toBeVisible()
+    expect(screen.queryByRole('region', { name: form })).not.toBeInTheDocument()
+    await act(async () => { response.reject(new CampusApiError('账号状态暂不可用', 503)) })
+    expect(screen.getByRole('alert')).toBeVisible()
+    expect(screen.queryByRole('region', { name: form })).not.toBeInTheDocument()
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '重试' })) })
+    expect(screen.getByRole('region', { name: form })).toBeVisible()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent(`${path}?returnTo=%2Fprofile`)
+    expect(screen.queryByRole('heading', { name: 'Business destination' })).not.toBeInTheDocument()
   })
 })
 
@@ -453,21 +454,22 @@ describe('authentication page session navigation', () => {
     expect(screen.getByLabelText('Current destination')).toHaveTextContent('/history/record-42?view=notes#answer')
     expect(screen.getByRole('heading', { name: 'Business destination' })).toBeVisible()
     expect(screen.queryByRole('region', { name: 'Clerk sign-in form' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-up form' })).not.toBeInTheDocument()
   })
 
-  it('sends an unsafe signed-in destination to the real home route without a login loop', async () => {
+  it.each(['/login', '/register'])('sends an unsafe signed-in destination from %s to home without a login loop', async (path) => {
     ready('session-active')
     campusData.mockResolvedValue(signedIn)
-    await renderAuthRoute('/login?returnTo=https%3A%2F%2Fevil.test')
+    await renderAuthRoute(`${path}?returnTo=https%3A%2F%2Fevil.test`)
     expect(screen.getByLabelText('Current destination')).toHaveTextContent(/^\/$/)
     expect(screen.getByRole('heading', { name: 'Business destination' })).toBeVisible()
   })
 
-  it('strips the public basename once before router navigation', async () => {
+  it.each(['/login', '/register'])('strips the public basename once before navigation from %s', async (path) => {
     vi.stubEnv('BASE_URL', '/career-sprout/')
     ready('session-active')
     campusData.mockResolvedValue(signedIn)
-    await renderAuthRoute('/career-sprout/login?returnTo=%2Fcareer-sprout%2Fprofile', '/career-sprout')
+    await renderAuthRoute(`/career-sprout${path}?returnTo=%2Fcareer-sprout%2Fprofile`, '/career-sprout')
     expect(screen.getByLabelText('Current destination')).toHaveTextContent(/^\/profile$/)
   })
 
@@ -480,14 +482,15 @@ describe('authentication page session navigation', () => {
     expect(screen.getByLabelText('Current destination')).toHaveTextContent('/verify-email')
   })
 
-  it('offers teacher sign-in without granting permission and recovers after server authorization changes', async () => {
+  it.each(['/login', '/register'])('denies teacher access from %s until fresh server authorization allows continuation', async (path) => {
     ready('session-active')
     campusData.mockResolvedValue(signedIn)
-    await renderAuthRoute('/login?returnTo=%2Fteacher')
+    await renderAuthRoute(`${path}?returnTo=%2Fteacher`)
     expect(screen.getByText(/当前账号尚未获得教师授权/)).toBeVisible()
     expect(screen.getByRole('link', { name: '教师登录' })).toHaveAttribute('href', '/login?returnTo=/teacher')
     expect(screen.getByRole('button', { name: '退出并更换账号' })).toBeEnabled()
     expect(screen.queryByRole('heading', { name: 'Business destination' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-up form' })).not.toBeInTheDocument()
     campusData.mockResolvedValue({ ...signedIn, user: { ...signedIn.user, isTeacher: true } })
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '重新确认教师权限' })) })
     expect(screen.getByLabelText('Current destination')).toHaveTextContent(/^\/teacher$/)
@@ -498,9 +501,32 @@ describe('authentication page session navigation', () => {
     clerkState.sessionStatus = 'pending'
     await renderAuthRoute('/register?returnTo=%2Fprofile')
     expect(screen.getByRole('region', { name: 'Clerk sign-in form' })).toBeVisible()
-    expect(screen.queryByRole('form', { name: 'Custom registration form' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-up form' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '退出并更换账号' })).toBeEnabled()
     expect(campusData).not.toHaveBeenCalled()
+  })
+
+  it('continues registration through pending tasks and waits for backend identity before leaving', async () => {
+    ready()
+    const view = await renderAuthRoute('/register?returnTo=%2Fprofile')
+    expect(screen.getByRole('region', { name: 'Clerk sign-up form' })).toBeVisible()
+    ready('session-new')
+    clerkState.sessionStatus = 'pending'
+    act(() => view.refreshSession())
+    expect(screen.getByRole('region', { name: 'Clerk sign-in form' })).toBeVisible()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-up form' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Business destination' })).not.toBeInTheDocument()
+    expect(campusData).toHaveBeenCalledTimes(1)
+
+    const identity = deferred()
+    campusData.mockReturnValueOnce(identity.promise)
+    clerkState.sessionStatus = 'active'
+    act(() => view.refreshSession())
+    expect(within(screen.getByRole('region', { name: '账号注册' })).getByRole('status')).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'Business destination' })).not.toBeInTheDocument()
+    await act(async () => { identity.resolve(signedIn) })
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent(/^\/profile$/)
+    expect(screen.getByRole('heading', { name: 'Business destination' })).toBeVisible()
   })
 
   it.each(['rejected', 'timed out'])('restores pending task continuation and another sign-out attempt after logout %s', async (outcome) => {
@@ -520,7 +546,7 @@ describe('authentication page session navigation', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '重试' })) })
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Clerk sign-in form' })).toBeVisible()
-    expect(screen.queryByRole('form', { name: 'Custom registration form' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-up form' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: '退出并更换账号' })).toBeEnabled()
     expect(campusData).not.toHaveBeenCalled()
     if (outcome === 'timed out') {
@@ -531,11 +557,12 @@ describe('authentication page session navigation', () => {
     expect(clerkState.signOut).toHaveBeenCalledTimes(2)
   })
 
-  it('lets an unrecognized active session sign out rather than showing another sign-in form', async () => {
+  it.each(['/login', '/register'])('lets an unrecognized active session at %s sign out instead of starting another account flow', async (path) => {
     ready('session-active')
-    await renderAuthRoute('/login?returnTo=%2Fprofile')
+    await renderAuthRoute(`${path}?returnTo=%2Fprofile`)
     expect(screen.getByRole('alert')).toHaveTextContent('职芽尚未确认账号')
     expect(screen.queryByRole('region', { name: 'Clerk sign-in form' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Clerk sign-up form' })).not.toBeInTheDocument()
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '退出并更换账号' })) })
     expect(clerkState.signOut).toHaveBeenCalledOnce()
   })

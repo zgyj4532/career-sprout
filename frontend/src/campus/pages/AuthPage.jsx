@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { SignIn, UserProfile } from '@clerk/clerk-react'
+import { SignIn, SignUp, UserProfile } from '@clerk/clerk-react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { safeReturnTo, useCampusSession } from '../auth'
 import RequestError from '../components/RequestError'
-import RegistrationForm from './RegistrationForm'
 
 const registrationEnabled = import.meta.env.DEV || import.meta.env.VITE_CLERK_SIGN_UP_ENABLED === 'true'
 
@@ -76,7 +75,7 @@ export default function AuthPage() {
         <button type="button" onClick={signOut}>退出并更换账号</button>
       </div>}
       {showClerkForm ? register && !showPendingFlow
-        ? <RegistrationForm returnTo={returnTo} />
+        ? <SignUp appearance={clerkAppearance} routing="hash" signInUrl={appPath(`/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
         : <SignIn appearance={clerkAppearance} routing="hash" signUpUrl={appPath(registrationEnabled ? `/register${returnQuery}` : `/login${returnQuery}`)} forceRedirectUrl={appPath(returnTo)} />
         : <div className="campus-auth-card campus-form">
           <header className="campus-auth-heading">
