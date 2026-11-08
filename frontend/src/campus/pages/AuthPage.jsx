@@ -55,8 +55,8 @@ export default function AuthPage() {
   const teacherDenied = ready && status.authenticated && teacherEntry && !status.user?.isTeacher
   const clerkPath = appPath(register ? '/register' : verify ? '/verify-email' : '/login')
 
-  // Resume the observed legacy bookmark without creating a foreign history entry.
-  if (pathname === '/register' && hash === '#/continue') return <Navigate to={`/register/continue${search}`} replace />
+  // A stale hash is not proof of a live attempt; let the official entry own its state.
+  if (pathname === '/register' && hash === '#/continue') return <Navigate to={`/register${search}`} replace />
 
   if (ready && status.mode === 'clerk' && status.authenticated && !verify && !teacherDenied) return <Navigate to={returnTo} replace />
 

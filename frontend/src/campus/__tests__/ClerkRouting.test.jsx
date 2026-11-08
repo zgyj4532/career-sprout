@@ -153,9 +153,12 @@ it('preserves safe return query and fragment and applies the deployment base onc
   expect(window.location.hash).toBe('#draft')
 })
 
-it('replaces only the observed legacy registration continuation, retaining its search and history index', async () => {
-  await mount('/career-sprout/register?returnTo=%2Fprofile#/continue')
-  await waitFor(() => expect(window.location.pathname).toBe('/career-sprout/register/continue'))
+it.each(['/career-sprout/', '/'])('canonicalizes the legacy signup hash to the official entry at %s without forcing a continuation', async basename => {
+  vi.stubEnv('BASE_URL', basename)
+  await mount(`${basename}register?returnTo=%2Fprofile#/continue`, basename)
+  await waitFor(() => expect(window.location.hash).toBe(''))
+  expect(window.location.pathname).toBe(`${basename}register`)
+  expect(screen.getByRole('region', { name: 'Official sign-up' })).toBeVisible()
   expect(window.location.search).toBe('?returnTo=%2Fprofile')
   expect(window.location.hash).toBe('')
   expect(window.history.state.idx).toBe(0)
@@ -167,15 +170,12 @@ it.each([
   ['/career-sprout/', 'false', '/career-sprout/login', 'Official sign-in'],
   ['/', 'true', '/register', 'Official sign-up'],
   ['/', 'false', '/login', 'Official sign-in'],
-])('recovers signup through the configured app entry at base %s with registration=%s', async (basename, enabled, destination, label) => {
+])('uses the configured signup entry at base %s with registration=%s', async (basename, enabled, destination, label) => {
   vi.stubEnv('BASE_URL', basename)
   vi.stubEnv('DEV', false)
   vi.stubEnv('VITE_CLERK_SIGN_UP_ENABLED', enabled)
-  // Simulate Clerk's configured-entry redirect when no resumable attempt exists.
-  // Provider request/attempt detection itself still needs the real-browser smoke.
-  const entry = enabled === 'true' ? 'register' : 'login'
-  await mount(`${basename}${entry}${enabled === 'true' ? '#/continue' : '/continue'}`, basename)
-  await waitFor(() => expect(window.location.pathname).toBe(`${basename}${entry}/continue`))
+  // Exercise explicit provider entry navigation, not Clerk's internal missing-attempt guard.
+  await mount(`${basename}login`, basename)
   const index = window.history.state.idx
   await click('Recover signup at configured entry')
   expect(window.location.pathname).toBe(destination)
@@ -184,7 +184,7 @@ it.each([
   expect(screen.getByRole('region', { name: label })).toBeVisible()
 })
 
-it('keeps missing sign-in attempt recovery inside the app', async () => {
+it('navigates to the configured sign-in entry inside the app', async () => {
   await mount('/career-sprout/login/continue')
   await click('Recover login at configured entry')
   expect(window.location.pathname).toBe('/career-sprout/login')
