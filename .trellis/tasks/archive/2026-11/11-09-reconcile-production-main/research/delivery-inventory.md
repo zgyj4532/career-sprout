@@ -24,7 +24,7 @@ This is a read-only inventory of the current worktree, index, and local remote-t
 | Untracked state before this inventory | 228 files: 219 under the approved November archive roots, 7 in this active task, and 2 explicit exclusions |
 | Ignored state | 97,390 ignored files reported by `git ls-files --others -i --exclude-standard`; this includes dependency/cache/runtime trees and private env files and is wholly excluded |
 
-Creating this inventory adds one active-task file, and changing this task's recorded branch updates one of the active-task files. Therefore the expected active-task delivery set is now 8 files, while the two excluded untracked files remain outside it. Recompute every count before staging rather than copying these snapshot counts blindly.
+Creating this inventory added one active-task file, and changing this task's recorded branch updated one of the active-task files. The inventory-time active-task delivery set was 8 files. Final-candidate validation later added `research/validation.md`, so the publication-time active-task set is 9 files; the two excluded untracked files remain outside it. Recompute every count before staging rather than copying these snapshot counts blindly.
 
 ## 2. Published branch delta: all 98 paths
 
@@ -146,9 +146,9 @@ Also include the cleanup task archive as its own complete root:
 
 Also include this active reconciliation task as a complete root:
 
-- `.trellis/tasks/11-09-reconcile-production-main/**` — expected 8 files after this inventory: `task.json`, `prd.md`, `design.md`, `implement.md`, `implement.jsonl`, `check.jsonl`, `research/branch-reconciliation.md`, and `research/delivery-inventory.md`.
+- `.trellis/tasks/11-09-reconcile-production-main/**` — 8 files were present after this inventory: `task.json`, `prd.md`, `design.md`, `implement.md`, `implement.jsonl`, `check.jsonl`, `research/branch-reconciliation.md`, and `research/delivery-inventory.md`. Final-candidate validation adds the ninth required file, `research/validation.md`.
 
-Its metadata now records `branch: release/reconcile-production-main`; this records the approved future branch only and does not create or switch a Git branch.
+At inventory time, the metadata recorded `branch: release/reconcile-production-main` as the approved future branch; recording that value did not itself create or switch a Git branch.
 
 ## 4. Exact exclusions
 
@@ -170,7 +170,7 @@ Observed excluded roots/files in the current snapshot include the two untracked 
 1. Fetch `fork/main` and `fork/fix/clerk-auth-login-verified` without tags and repeat the SHAs, merge base, divergence, 98-path comparison, PR/workflow/protection checks, and merge-tree preflight. Stop if refs or merge behavior differ.
 2. Regenerate three machine-readable sets before staging: (a) `git diff --name-status fork/main...fork/fix/clerk-auth-login-verified`; (b) tracked worktree changes; (c) untracked and ignored paths. Reconcile them against Sections 2–4.
 3. Construct an explicit pathspec file from the 21 source task roots, their 21 archive destination roots, the cleanup archive root, and the active-task root. Stage with a pathspec-file mechanism that includes deletions and additions (`git add -A --pathspec-from-file=...`), never repository-wide `git add -A`. The temporary pathspec file must live outside the repository or remain excluded.
-4. Inspect `git diff --cached --name-status --find-renames`. Confirm all 21 moves have both sides represented (renames where Git detects them; delete/add pairs otherwise), the cleanup root is complete, and all 8 active-task files are included.
+4. Inspect `git diff --cached --name-status --find-renames`. Confirm all 21 moves have both sides represented (renames where Git detects them; delete/add pairs otherwise), the cleanup root is complete, and all 9 publication-time active-task files are included.
 5. Compare the staged path set to the generated allowed local-delivery set using exact sorted paths. Required result: no missing paths and no extra paths. Specifically assert that neither explicit exclusion is in `git diff --cached --name-only`, and inspect staged blobs for `.env`/credential/key names and secret-like values without printing secret contents.
 6. Re-run tracked/untracked/ignored inventory. Every remaining changed/untracked path must either be one of the explicit exclusions or have a written reason. No approved task artifact may remain unstaged merely because Git did not detect a rename.
 7. After the task-record commit, compare its commit tree/path/blob set to the verified index, accounting for Git line-ending normalization with Git blob IDs rather than worktree byte hashes. After the ancestry merge, repeat against the exact candidate commit. Push/readback checks belong to the parent publication flow.
