@@ -1,0 +1,28 @@
+{
+  "id": "career-sprout-production-release",
+  "name": "career-sprout-production-release",
+  "title": "CareerSprout production release follow-up",
+  "description": "Build SHA-bound campus Docker release artifacts and deploy CareerSprout to zgyjserver at https://crayzamb.cloud/career-sprout with Clerk SSL issued, public sign-up/sign-in enabled, and remote integrity verification.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-11-06",
+  "completedAt": "2026-11-06",
+  "branch": "feat/teacher-portal-career-workspace",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "11-06-career-sprout-docker-image-build"
+  ],
+  "parent": "11-04-docker-deploy-career-sprout",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

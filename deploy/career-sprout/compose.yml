@@ -1,0 +1,178 @@
+name: career-sprout-production
+
+services:
+  backend:
+    image: career-sprout-campus-backend:${CAREER_SPROUT_RELEASE_TAG:?Set a unique full commit SHA as CAREER_SPROUT_RELEASE_TAG}
+    pull_policy: never
+    command: ["node", "src/productionSecrets.js"]
+    container_name: career-sprout-production-backend
+    init: true
+    restart: unless-stopped
+    env_file:
+      - ./career-sprout.env
+    environment:
+      APP_PROFILE: campus-local
+      NODE_ENV: production
+      DEPLOYMENT_MODE: container
+      HOST: 0.0.0.0
+      PORT: "5002"
+      DEV_BYPASS_AUTH: "false"
+      FRONTEND_URL: ${FRONTEND_URL:?Set FRONTEND_URL=https://crayzamb.cloud/career-sprout}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?Set the existing live Clerk publishable key}
+      MONGO_APP_PASSWORD_FILE: /run/secrets/mongo_app_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      CAMPUS_LOG_DIR: /var/log/career-sprout
+      DB_MAX_POOL_SIZE: "10"
+      DB_AUTO_INDEX: "true"
+      DB_MIN_POOL_SIZE: "1"
+      FFMPEG_PATH: /usr/bin/ffmpeg
+      CHROMIUM_PATH: /usr/bin/chromium
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+    secrets:
+      - mongo_app_password
+      - redis_password
+    expose:
+      - "5002"
+    volumes:
+      - campus_logs:/var/log/career-sprout
+      - campus_imports:/home/node/.career-sprout/imports
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5002/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    cpus: 1.0
+    mem_limit: 768m
+    memswap_limit: 1536m
+    stop_grace_period: 60s
+    networks:
+      campus_app:
+        ipv4_address: 172.30.0.10
+      campus_data:
+
+  frontend:
+    image: career-sprout-campus-frontend:${CAREER_SPROUT_RELEASE_TAG:?Set a unique full commit SHA as CAREER_SPROUT_RELEASE_TAG}
+    pull_policy: never
+    container_name: career-sprout-production-frontend
+    environment:
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:?Set the existing live Clerk publishable key}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18082:8080"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - campus_frontend_assets:/var/cache
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/career-sprout/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    cpus: 0.25
+    mem_limit: 64m
+    memswap_limit: 96m
+    networks:
+      campus_app:
+        ipv4_address: 172.30.0.11
+
+  mongo:
+    image: career-sprout-mongo:${CAREER_SPROUT_RELEASE_TAG:?Set a unique full commit SHA as CAREER_SPROUT_RELEASE_TAG}
+    pull_policy: never
+    container_name: career-sprout-production-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: career_sprout_admin
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
+    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    restart: unless-stopped
+    secrets:
+      - mongo_root_password
+      - mongo_app_password
+    volumes:
+      - campus_mongo_data:/data/db
+      - ./mongo-init.sh:/docker-entrypoint-initdb.d/10-career-sprout-user.sh:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    cpus: 0.5
+    mem_limit: 512m
+    memswap_limit: 768m
+    networks:
+      - campus_data
+
+  redis:
+    image: career-sprout-campus-redis:${CAREER_SPROUT_RELEASE_TAG:?Set a unique full commit SHA as CAREER_SPROUT_RELEASE_TAG}
+    pull_policy: never
+    container_name: career-sprout-production-redis
+    entrypoint: ["/usr/local/bin/career-sprout-redis-entrypoint.sh"]
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec", "--save", "60", "1", "--aclfile", "/run/career-sprout-secrets/users.acl"]
+    restart: unless-stopped
+    secrets:
+      - source: redis_users_acl
+        target: redis_users_acl
+        mode: 0444
+      - source: redis_password
+        target: redis_password
+        mode: 0444
+      - redis_backup_password
+    tmpfs:
+      - /run/career-sprout-secrets:rw,noexec,nosuid,size=1m
+    volumes:
+      - campus_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$(cat /run/career-sprout-secrets/redis_password)\" redis-cli --user default ping | grep -qx PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    cpus: 0.25
+    mem_limit: 128m
+    memswap_limit: 192m
+    networks:
+      - campus_data
+
+secrets:
+  mongo_root_password:
+    file: ./mongo_root_password
+  mongo_app_password:
+    file: ./mongo_app_password
+  redis_password:
+    file: ./redis_password
+  redis_users_acl:
+    file: ./redis_users.acl
+  redis_backup_password:
+    file: ./redis_backup_password
+
+volumes:
+  campus_mongo_data:
+    name: career-sprout-production-mongo-data
+  campus_redis_data:
+    name: career-sprout-production-redis-data
+  campus_imports:
+    name: career-sprout-production-imports
+  campus_logs:
+    name: career-sprout-production-logs
+  campus_frontend_assets:
+    name: career-sprout-production-frontend-assets
+
+networks:
+  campus_app:
+    name: career-sprout-production-app-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  campus_data:
+    name: career-sprout-production-data-network
+    driver: bridge
+    internal: true

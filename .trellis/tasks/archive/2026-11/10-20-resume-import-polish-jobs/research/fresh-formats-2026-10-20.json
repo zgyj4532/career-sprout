@@ -1,0 +1,74 @@
+{
+  "groups": 1,
+  "formats": 3,
+  "rows": [
+    {
+      "format": "pdf",
+      "parse": true,
+      "modelCalls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "reviewable": true,
+      "education": 1,
+      "experiences": 4,
+      "skills": 4,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "rawRetained": true
+    },
+    {
+      "format": "docx",
+      "parse": true,
+      "modelCalls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "reviewable": true,
+      "education": 1,
+      "experiences": 4,
+      "skills": 6,
+      "issues": [
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "UNGROUNDED_FIELD",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "UNGROUNDED_FIELD",
+        "UNGROUNDED_FIELD",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS"
+      ],
+      "rawRetained": true
+    },
+    {
+      "format": "png",
+      "parse": true,
+      "modelCalls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "reviewable": true,
+      "education": 1,
+      "experiences": 1,
+      "skills": 11,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "rawRetained": true
+    }
+  ]
+}

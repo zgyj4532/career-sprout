@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/project/campus-phase1/verification.md", "reason": "Review production authentication, isolation behavior, test quality, and release evidence."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Review the path-based production frontend build and verify the actual served surface."}

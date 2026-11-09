@@ -1,0 +1,9 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Authentication lifecycle, Chinese accessible forms and recovery contracts"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Server authority and stale async state ownership"}
+{"file":".trellis/spec/frontend/hook-guidelines.md","reason":"Session effect cleanup and request identity"}
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Campus-only entry and module ownership"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Behavior regressions and parent-only integrated verification"}
+{"file":".trellis/tasks/11-06-login-ux/prd.md","reason":"User approved existing task on 2026-11-07"}
+{"file":".trellis/tasks/11-06-login-ux/design.md","reason":"Root, locale and custom registration ownership contracts"}
+{"file":".trellis/tasks/11-06-login-ux/research.md","reason":"Known production evidence and provider constraints"}
+{"file":".trellis/tasks/10-26-clerk-auth-integration/research/verification.md","reason":"Preserve completed timeout/theme work and honest real-session limitations"}

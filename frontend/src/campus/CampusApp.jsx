@@ -1,12 +1,14 @@
 import { lazy, useState } from 'react'
-import { NavLink, Route, Routes, createBrowserRouter, RouterProvider, useLocation, Link } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, createBrowserRouter, RouterProvider, useLocation, Link } from 'react-router-dom'
 import './campus.css'
 import Particles from './bits/Particles'
 import { CORE_NAV } from './nav'
 import HomePage from './pages/HomePage'
 import RouteLoadingBoundary from './components/RouteLoadingBoundary'
-import { CampusSessionProvider, SessionNavigation } from './auth'
+import { CampusSessionProvider, SessionNavigation, useCampusSession } from './auth'
 import UnsavedWorkProvider from './components/UnsavedWorkProvider'
+import RequestError from './components/RequestError'
+import CampusClerkProvider from './CampusClerkProvider'
 
 const ResumePage = lazy(() => import('./pages/ResumePage'))
 const JobsPage = lazy(() => import('./pages/JobsPage'))
@@ -64,6 +66,7 @@ function WorkspaceRoutes() {
 
 function CampusShell() {
   const { pathname } = useLocation()
+  const { status, error, loadingStage, pendingSession, refresh } = useCampusSession()
   const room = pathname.startsWith('/interview/session/')
   const note = devNote()
 
@@ -85,6 +88,17 @@ function CampusShell() {
   }
 
   if (pathname === '/') {
+    if (pendingSession || (status && !status.authenticated)) return <Navigate to="/login" replace />
+    if (!status || error || loadingStage) return (
+      <main className="campus campus-auth">
+        <section className="campus-auth-card campus-form" aria-label="账号状态">
+          <h1>正在进入职芽</h1>
+          <RequestError error={error} onRetry={refresh} />
+          {!error && <p role="status">{loadingStage === 'clerk' ? '正在连接安全登录服务…' : '正在确认账号服务状态…'}</p>}
+          <Link to="/login">前往登录与账号恢复</Link>
+        </section>
+      </main>
+    )
     return (
       <div className="campus campus-portal">
         <div className="campus-portal-particles" aria-hidden="true">
@@ -146,6 +160,9 @@ function CampusShell() {
 }
 
 export default function CampusApp() {
-  const [router] = useState(() => createBrowserRouter([{ path: '*', element: <CampusSessionProvider><UnsavedWorkProvider><CampusShell /></UnsavedWorkProvider></CampusSessionProvider> }]))
+  const [router] = useState(() => createBrowserRouter([{
+    path: '*',
+    element: <CampusClerkProvider><CampusSessionProvider><UnsavedWorkProvider><CampusShell /></UnsavedWorkProvider></CampusSessionProvider></CampusClerkProvider>,
+  }], { basename: import.meta.env.BASE_URL }))
   return <RouterProvider router={router} />
 }

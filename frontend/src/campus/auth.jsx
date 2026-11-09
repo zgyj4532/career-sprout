@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { useAuth, useClerk } from '@clerk/clerk-react'
+import { useClerk, useSession } from '@clerk/react'
 import { Link, useLocation } from 'react-router-dom'
 import { CampusApiError, campusData } from './api'
 
@@ -12,18 +12,33 @@ function clerkLoadError(failed) {
 }
 
 export function safeReturnTo(value) {
-  if (typeof value !== 'string' || !/^\/(?!\/)/.test(value) || Array.from(value).some((character) => character.charCodeAt(0) <= 32 || character === '\\' || character === '%')) return '/'
-  return /^\/(?:login|register|verify-email)(?:[/?#]|$)/.test(value) ? '/' : value
+  if (typeof value !== 'string' || !/^\/(?!\/)/.test(value) || Array.from(value).some(character => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127 || character === '\\')) return '/'
+  try {
+    const url = new URL(value, 'https://campus.invalid')
+    if (url.origin !== 'https://campus.invalid') return '/'
+    const basename = import.meta.env.BASE_URL.replace(/\/$/, '')
+    let path = url.pathname
+    if (basename && (path === basename || path.startsWith(`${basename}/`))) path = path.slice(basename.length) || '/'
+    // Check the decoded path too: encoded slashes/names must not conceal an auth loop.
+    const decoded = decodeURIComponent(path)
+    if (!/^\/(?!\/)/.test(decoded) || Array.from(decoded).some(character => character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127 || character === '\\' || character === '%')) return '/'
+    if (/^\/(?:login|register|verify-email)(?:\/|$)/i.test(decoded)) return '/'
+    return `${path}${url.search}${url.hash}`
+  } catch {
+    return '/'
+  }
 }
 export function useCampusSession() { return useContext(SessionContext) }
 
-function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessionId = null, signOut }) {
+function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessionId = null, sessionStatus = null, signOut }) {
   const [status, setStatus] = useState(null)
   const [error, setError] = useState(null)
   const [loadingStage, setLoadingStage] = useState(clerkLoaded ? 'session' : 'clerk')
   const sequence = useRef(0)
   const pending = useRef(null)
-  const loadStatus = useCallback(async () => {
+  const pendingSession = sessionStatus === 'pending'
+  const clerkSessionActive = sessionStatus === 'active'
+  const loadStatus = useCallback(async (expectAuthenticated = clerkSessionActive) => {
     const version = ++sequence.current
     pending.current?.()
     const controller = new AbortController()
@@ -43,6 +58,7 @@ function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessi
       const data = await Promise.race([campusData('/auth/status', { signal: controller.signal }), deadline])
       if (version !== sequence.current) return
       if (!data) throw new CampusApiError('未能读取账号状态，请重试或联系管理员检查账号服务。', 0, { code: 'INVALID_RESPONSE' })
+      if (expectAuthenticated && !data.authenticated) throw new CampusApiError('登录服务已建立会话，但职芽尚未确认账号。请重试；若仍失败，可退出后重新登录，或联系管理员检查前后端 Clerk 实例及会话校验配置。', 0, { code: 'SESSION_NOT_RECOGNIZED' })
       setStatus(data)
     } catch (err) {
       if (version === sequence.current) setError(err instanceof CampusApiError ? err : new CampusApiError('未能确认账号状态，请检查连接后重试。', 0, { code: 'SESSION_STATUS_FAILED' }))
@@ -50,7 +66,7 @@ function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessi
       clearTimeout(timer)
       if (version === sequence.current) { pending.current = null; setLoadingStage(null) }
     }
-  }, [])
+  }, [clerkSessionActive])
   const refresh = useCallback(async () => {
     if (!clerkLoaded || clerkFailed) {
       // A failed SDK script/client is not restarted by rereading account status.
@@ -58,8 +74,19 @@ function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessi
       window.location.reload()
       return
     }
+    if (pendingSession) {
+      // Reconcile to the still-pending SDK session after an unknown logout
+      // outcome. Restore its task UI without granting backend identity.
+      sequence.current += 1
+      pending.current?.()
+      pending.current = null
+      setStatus(null)
+      setError(null)
+      setLoadingStage(null)
+      return
+    }
     await loadStatus()
-  }, [clerkLoaded, clerkFailed, loadStatus])
+  }, [clerkLoaded, clerkFailed, pendingSession, loadStatus])
   useEffect(() => {
     const version = ++sequence.current
     pending.current?.()
@@ -77,11 +104,13 @@ function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessi
         setLoadingStage(null)
         setError(clerkLoadError(false))
       }, CLERK_LOAD_TIMEOUT_MS)
+    } else if (pendingSession) {
+      setLoadingStage(null)
     } else {
       void loadStatus()
     }
     return () => { clearTimeout(timer); sequence.current += 1; pending.current?.(); pending.current = null }
-  }, [clerkLoaded, clerkFailed, sessionId, loadStatus])
+  }, [clerkLoaded, clerkFailed, sessionId, sessionStatus, pendingSession, loadStatus])
   async function logout() {
     const version = ++sequence.current
     pending.current?.()
@@ -96,7 +125,7 @@ function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessi
     try {
       await Promise.race([signOut?.(), deadline])
       clearTimeout(timer)
-      if (version === sequence.current) { pending.current = null; await loadStatus() }
+      if (version === sequence.current) { pending.current = null; await loadStatus(false) }
     } catch (err) {
       if (version === sequence.current) {
         setLoadingStage(null)
@@ -107,22 +136,24 @@ function SessionState({ children, clerkLoaded = true, clerkFailed = false, sessi
       if (version === sequence.current) pending.current = null
     }
   }
-  return <SessionContext.Provider value={{ status, error, loadingStage, refresh, signOut: logout }}>{children}</SessionContext.Provider>
+  return <SessionContext.Provider value={{ status, error, loadingStage, pendingSession, clerkSessionActive, refresh, signOut: logout }}>{children}</SessionContext.Provider>
 }
 function ClerkSession({ children }) {
-  const { isLoaded, sessionId } = useAuth()
+  // useSession preserves pending sessions; useAuth() treats them as signed out by default.
+  const { isLoaded, session } = useSession()
   const clerk = useClerk()
-  return <SessionState clerkLoaded={isLoaded} clerkFailed={clerk.status === 'error'} sessionId={sessionId} signOut={() => clerk.signOut({ redirectUrl: '/login' })}>{children}</SessionState>
+  return <SessionState clerkLoaded={isLoaded} clerkFailed={clerk.status === 'error'} sessionId={session?.id} sessionStatus={session?.status} signOut={() => clerk.signOut({ redirectUrl: `${import.meta.env.BASE_URL}login` })}>{children}</SessionState>
 }
 export function CampusSessionProvider({ children }) {
   return import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ? <ClerkSession>{children}</ClerkSession> : <SessionState>{children}</SessionState>
 }
 export function SessionNavigation() {
   const { status, signOut } = useCampusSession()
-  const { pathname } = useLocation()
+  const { pathname, search, hash } = useLocation()
   if (!status) return <Link to="/login">账号状态</Link>
+  const returnQuery = `?returnTo=${encodeURIComponent(safeReturnTo(`${pathname}${search}${hash}`))}`
   return <div className="campus-session-nav">
-    {status.mode === 'local' ? <><span className="campus-dev-note">本机体验身份 · 非正式账号</span><Link to={`/login?returnTo=${encodeURIComponent(pathname)}`}>注册 / 登录正式账号</Link></> : status.authenticated ? <><span>已登录{status.user?.emailVerified ? '' : ' · 邮箱待验证'}</span><button type="button" onClick={signOut}>退出登录</button></> : <Link to={`/login?returnTo=${encodeURIComponent(pathname)}`}>登录 / 注册</Link>}
+    {status.mode === 'local' ? <><span className="campus-dev-note">本机体验身份 · 非正式账号</span><Link to={`/login${returnQuery}`}>注册 / 登录正式账号</Link></> : status.authenticated ? <><span>已登录{status.user?.emailVerified ? '' : ' · 邮箱待验证'}</span><button type="button" onClick={signOut}>退出登录</button></> : <Link to={`/login${returnQuery}`}>登录 / 注册</Link>}
     {status.user?.isTeacher && <Link to="/teacher">教师荐才</Link>}
   </div>
 }

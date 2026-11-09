@@ -1,5 +1,5 @@
 import React from 'react';
-import { SignUp } from '@clerk/clerk-react';
+import { SignUp } from '@clerk/react';
 import { useLocation } from 'react-router-dom';
 import AuthNotConfigured from '../components/ui/AuthNotConfigured';
 import { resolvePostAuthRedirect } from '../utils/authRedirect';

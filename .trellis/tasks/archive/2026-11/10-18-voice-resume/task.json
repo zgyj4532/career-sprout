@@ -1,0 +1,30 @@
+{
+  "id": "voice-resume",
+  "name": "voice-resume",
+  "title": "可信语音面试与口述简历",
+  "description": "明确真实录音状态与转写确认，实现口述经历的 AI 整理润色及中文简历导出。",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-18",
+  "completedAt": "2026-11-09",
+  "branch": "feat/campus-phase1-wsl",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "10-18-student-career-experience",
+  "relatedFiles": [],
+  "notes": "2026-11-09: Disposition abandoned because this task lacks final integration evidence and later resume and novice tasks retain the exercised flows and audio boundaries.",
+  "meta": {
+    "disposition": "abandoned",
+    "dispositionAt": "2026-11-09",
+    "dispositionReason": "The task lacks final integration evidence; later resume and novice tasks retain the exercised flows and explicit audio boundaries."
+  }
+}

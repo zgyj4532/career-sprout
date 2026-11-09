@@ -1,0 +1,7 @@
+{"file":".trellis/tasks/11-06-login-ux/prd.md","reason":"Approved acceptance criteria and scope"}
+{"file":".trellis/tasks/11-06-login-ux/design.md","reason":"Basename, safe redirects, server authority and registration contracts"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Preserve bounded auth lifecycle and accessible recovery"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Parent integrated tests and actual browser proof"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"No stale identity or account mutation"}
+{"file":".trellis/tasks/10-26-clerk-auth-integration/research/verification.md","reason":"Do not confuse anonymous evidence with real-account acceptance"}
+{"file": ".trellis/tasks/11-06-login-ux/research/session-ux-implementation.md", "reason": "Session changes, observed public policy and exact verification limits"}

@@ -1,0 +1,62 @@
+# CareerSprout verification evidence
+
+Status: local implementation and exercised core flows delivered; external formal-account/human-device acceptance and local directory rename remain explicitly unresolved below. No overall course-release completion claim. Existing baseline reports are not overwritten.
+
+## Environment and memory
+
+Windows host16GiB, initial free1.49GiB with unrelated user applications occupying most memory. WSL7.75GiB configured, available~6.5GiB shares host. Continuous lightweight monitor samples30s; host pressure varied~0.6–1.4GiB. No user processes terminated. No build/dev browser/PDF launched while memory gate unmet. Small serial dependency/HTTP/pure-unit commands explicitly cap Node heap96–128MiB, complete then exit; no parallel test workers. One observed30s sample during contract tests reached736MiB, tests finished immediately afterward; no further heavy command starts until safe. This is not an OOM occurrence.
+
+## Exercised commands
+
+### Archive dependency
+
+`wsl.exe -d Ubuntu-24.04 --cd 'E:\github\career-pilot\backend' env NODE_OPTIONS=--max-old-space-size=128 npm install --ignore-scripts --no-audit --no-fund --prefer-offline`
+
+Exit0; added1 package in2s (approved fflate0.8.3). No install lifecycle scripts. No other dependencies intentionally upgraded.
+
+### Real HTTP auth capability / unavailable email boundary
+
+`wsl.exe -d Ubuntu-24.04 --cd 'E:\github\career-pilot\backend' env NODE_ENV=test NODE_OPTIONS=--max-old-space-size=96 node --test --test-concurrency=1 src/campus/__tests__/careerAuthStatus.test.js`
+
+Exit0,1 test passed,~8.9s process wall. Test starts actual Express HTTP listener with no DB: auth/status unauthenticated/unavailable, four Resend routes503, no fake identity/DB touch/private token response, correlated request IDs. Not real Clerk login or email delivery. Runtime logs showed POST array-route templates as unmatched; owner corrected trusted route capture. Later full campus suite verifies distinct auth/regex-mounted error templates and safe field validation.
+
+### Contract/local safety/privacy regressions
+
+`wsl.exe -d Ubuntu-24.04 --cd 'E:\github\career-pilot\backend' env NODE_ENV=test NODE_OPTIONS=--max-old-space-size=128 node --test --test-concurrency=1 src/campus/__tests__/careerContracts.test.js src/config/__tests__/localDevIdentity.test.js src/middleware/__tests__/globalErrorHandler.test.js`
+
+Exit0,19 tests passed,~14.5s process wall. Covered full interval/day matching and unknown skills, invalid dates/forged fields/duplicates, PDF sanitization and synthetic page-position policy, redacted metadata, no teacher escalation, existing loopback/Host/Origin guards, safe error responses. PDF layout helper test is not a rendered real PDF proof.
+
+## Additional exercised gates
+
+- Isolated Mongo authorization test under systemd scope MemoryHigh256M/MemoryMax512M/MemorySwapMax512M, Node192MiB: exit0,2 tests,48.43s wall. Real isolated HTTP + Mongo owner/grant/target/source/job revision behavior and duplicate answer atomicity; not formal Clerk account proof.
+- Frontend `npm test -- src/campus --maxWorkers=1 --no-file-parallelism`, scope256M high/640M max/768M swap, Node256MiB: exit0,6 files24 tests,147.40s wall. Includes capture/late permissions/explicit review, stale session, empty-body dirty resume, blank stage and safe diagnostics. Later validation UX regression was added afterward and is pending its separate run.
+- Frontend full lint first run: exit1, two no-control-regex errors in new api.js/auth.jsx. Owner replaced regex control ranges with char-code checks, preserving validation; no rule suppression. Post-fix full lint exit0,56.17s wall.
+- Backend full lint: exit1,6 errors96 warnings. Errors in unchanged dormant `controllers/communityAppwriteController.js` (three empty catches), `middleware/__tests__/uploadValidator.test.js` (one empty block), `services/postScheduler.js` (two undefined FieldValue). No new-file errors; do not erase unrelated modules or lower lint rules to manufacture a green full suite. Full output artifact98.
+- `test:campus` first full run timed out300s after isolation assertions passed because the new profile save exercised a persistent Redis cache client; this was a real lifecycle failure, not a pass. Owner isolated REDIS_URL, added cache teardown and restored environment. Subsequent same bounded suite exit0:35 tests6 suites,90.85s wall, including source/job revisions, auth unavailable routes, exact error templates, audio byte/duration/admission/abort bounds, canonical profile year clearing and safe errors. No --force-exit or increased timeout used.
+- Campus production build first run in Node384MiB heap failed exit134 during transform (V8 heap limit). Host process scope bounded the failure; do not claim no OOM ever occurred. Root cause: runtime branch still let Vite traverse dormant full App/template graph plus Tailwind source scanning/PWA. Owner added configuration-time app/style aliases and campus-only plain CSS, excluding dormant graph/plugins without deleting upstream support.
+- Post-fix **same384MiB build** exit0:533 modules,16.74s build/21.25s wall; HTML1.51kB, CSS25.72kB (gzip5.88), JS506.18kB (gzip159.30). Nonblocking >500kB chunk warning retained, not suppressed.
+- Started actual dev:local inside a bounded WSL scope (MemoryHigh320M/max768M/swap1024M, Node192MiB). Frontend became ready before backend; waited for actual `/api/health` DB/Redis OK. No fake readiness. Stopped own service after smoke and confirmed its scope no longer exists.
+- Real API/AI smoke:23 requests all expected statuses,19.56s wall. Auth status local nonteacher; all four Resend boundaries503; private student save/read; published synthetic job create/read; actual skill gap; teacher403; invalid grant400; real resume save/read; actual configured model job analysis200 and resume polish200; source unchanged; targeted generation201, approval200, edit invalidates approval and old revision409. Original student extension restored. Later exact cleanup removed synthetic target/job and resume via actual API; existing unrelated records untouched.
+- Real ASR/model interview smoke: synthetic Chinese WAV (not human microphone) transcribed200 with expected content; actual mixed interview created200; no answer before explicit submit; answer200 then duplicate409 with exactly one saved answer; summary200; history present; synthetic interview deleted.43.92s wall. Credentials never displayed. Missing ASR stage requestId fixed by restoring multipart diagnostic context; later actual compressed WebM57516bytes transcribed200 in1.107s with the same `asr566d1ac0-compressed` ID on prepare/provider/completed/request events.
+- Actual short Chinese PDF export FAILED500 after40.55s (`pdf566d1ac0-live`); logs only pdf.started/pdf.failed PDF_FAILED and generic INTERNAL. Not a pass and not assumed hardware issue. Owner assigned safe stage/error classification before isolated PDF diagnosis. Full app stopped to avoid concurrent Chromium memory load; no repeated failing call merely to confirm.
+- After safe PDF stage instrumentation, isolated real renderer PASS70134bytes/oneA4page. PDF text extracted and PDFium rendered image visually checked: Chinese legible, no clipping. Actual API-only GET then PASS200 application/pdf70063bytes (`pdf566d1ac0-isolated-api`),5.846s with launch/page/content/fonts/print/parse correlation. Original full-runtime failure remains recorded; old generic logs cannot prove its cause, no timeout was increased.
+- Real teacher ZIP route in a throwaway trusted-identity harness + isolated database PASS:56767byte ZIP,56404byte one-page Chinese PDF, manifest included exact approved revision. After deleting that student's grant, same request produced unavailable manifest only and no PDF. Database dropped only under exact dedicated `career_sprout_smoke_566d1ac0` name. This proves actual PDF/ZIP+authorization path, not real Clerk sign-in.
+- Actual browser: desktop homepage has one saved-progress next action; slogan starts formal, click rendered14 animated spans with blur5px→0px/opacity1 and unchanged61.59px heading height. Keyboard Space restored, explicit reduced-motion media immediately switched; reload restores formal. Homepage document width equals viewport at360/390/768/1440. Mobile390 auth form screenshot, labelled email, disabled honest Resend action; login/register/verify routes work, local teacher page denied with explanation.
+- Actual browser at390: job details have no rawJSON and no horizontal overflow; selected synthetic saved resume, actual AI preview returned fact-preserving draft/questions, cancel preserved exact source. Native mic permission denied showed recovery. Controlled real MediaRecorder stream showed prominent recording banner and timer; cancel ended track and removed banner.
+- Actual browser selected saved resume→new2-question mixed interview→controlled synthetic audio played through AudioContext/MediaRecorder→stop→real WebM ASR→editable transcript. Before adoption server answers remained0; editing and explicit adoption/submission saved exactly1 answer and displayed next question. Streams ended after stop. Synthetic browser interview deleted afterward; AudioContext/tab/browser closed. Not human microphone/speaker quality proof.
+- GitHub rename succeeded: `zgyj4532/career-sprout` verified public fork with original parent and ADMIN. Fork remote updated and description set to approved Chinese brand; no history deletion/new repository fallback needed, no commit/push.
+
+## Remaining verification / external boundaries
+
+- Backend broad declared suite plus speech limits completed serially:428 tests111 suites passed, exit0,300.74s wall. Includes latest validation/cache teardown/transcription cancellation and PDF-stage privacy regressions. Legacy JWT tests print a dependency-skip notice even though Node summary reports0 skipped; do not count that as real JWT integration.
+- Full frontend serial invocation hit its600s process deadline after22 files passed (no assertion failures). Remaining5 files were run separately:40 tests passed, exit0,116.54s wall. Combined all27 discovered test files passed across the two batches, but the single full-suite command itself did not finish; report both facts, not a fabricated aggregate exit0. Latest RequestError regression passed in the first batch.
+- Formal Clerk teacher/student accounts, human microphone/speaker/physical mobile remain unverified external conditions; Resend is deliberately unavailable, not delivered email.
+- Local directory rename BLOCKED by current omp main process and worker directory handles. Windows Rename-Item failed sharing violation; after closing all own app/test/browser/monitor and relocating eval cwd, second attempt failed; WSL mv returned permission denied. Read-only process cwd inspection identified main omp cli and broker handles. No user process killed, no Git history removed, no alternate partial copy. Safe external `E:/github/rename-careersprout.ps1` provided, PowerShell parser PASS; actual post-session rename and new-path startup not run.
+
+All synthetic profile changes were restored; synthetic job/resume/target and both interviews were removed by exact IDs/markers. Throwaway scripts, audio/PDF/ZIP files and isolated PDF inspection packages were removed after retaining compact synthetic evidence in `research/evidence/`. App/API/test scopes, browser service and memory monitor stopped;5173/5002 have no listeners. Safe external rename script remains for the unavoidable session-lock step. No real user evidence is fabricated.
+
+## Review and delivery state
+
+Backend runtime7 and accepted security4 findings fixed; focused re-reviews No findings. Frontend3 findings fixed, plus observed lint/build graph issues; targeted re-review No findings. All review results are static evidence in addition to runtime checks. Final code remains uncommitted/unpushed under project rules. Tasks remain in_progress rather than falsely archived while formal external acceptance and directory lock remain.
+
+Memory evidence:202 samples over the active work window, Windows free physical520–1901MiB, minimum commit headroom3602MiB. No systemwide OOM observed and no user process terminated. One explicitly capped Node build hit384MiB heap/exit134; build graph isolation corrected it at the same cap. See `research/evidence/memory-summary.json` rather than claiming zero failures. Task manifests validate with6 entries per action; session journal recorded with --no-commit.

@@ -21,11 +21,27 @@ function setupConnectionEvents() {
   eventListenersAttached = true;
 }
 
-export const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) {
-    return;
-  }
+let connectionPromise = null;
+let schemaReady = false;
 
+export const connectDB = async () => {
+  if (schemaReady && mongoose.connection.readyState === 1) return;
+  if (connectionPromise) return connectionPromise;
+
+  connectionPromise = initializeConnection();
+  try {
+    await connectionPromise;
+    schemaReady = true;
+  } catch (error) {
+    schemaReady = false;
+    await mongoose.disconnect().catch(() => {});
+    throw error;
+  } finally {
+    connectionPromise = null;
+  }
+};
+
+async function initializeConnection() {
   setupConnectionEvents();
 
   const mongoUri = process.env.MONGODB_URI;
@@ -49,8 +65,11 @@ export const connectDB = async () => {
     socketTimeoutMS: 45000,
     maxPoolSize,
     minPoolSize,
-    autoIndex,
+    autoIndex: false,
   });
+  if (autoIndex) {
+    await Promise.all(Object.values(mongoose.models).map((model) => model.createIndexes()));
+  }
   logEvent('database.connected');
 
   // Slow-query profiling is opt-in only. Set ENABLE_DB_PROFILING=true to activate.
@@ -63,9 +82,10 @@ export const connectDB = async () => {
       logEvent('database.profiling_failed');
     }
   }
-};
+}
 
 export const disconnectDB = async () => {
+  schemaReady = false;
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close(false);
     logEvent('database.disconnected');

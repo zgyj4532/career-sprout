@@ -1,0 +1,77 @@
+{
+  "results": [
+    {
+      "path": "/api/interview/transcribe",
+      "method": "POST",
+      "status": 200,
+      "requestId": "voice566d1ac0-0",
+      "elapsedMs": 969
+    },
+    {
+      "path": "/api/interview/start",
+      "method": "POST",
+      "status": 200,
+      "requestId": "voice566d1ac0-1",
+      "elapsedMs": 4594
+    },
+    {
+      "path": "/api/interview/6ad45cbf2e3116018afe5232",
+      "method": "GET",
+      "status": 200,
+      "requestId": "voice566d1ac0-2",
+      "elapsedMs": 31
+    },
+    {
+      "path": "/api/interview/6ad45cbf2e3116018afe5232/answer",
+      "method": "POST",
+      "status": 200,
+      "requestId": "voice566d1ac0-3",
+      "elapsedMs": 23265
+    },
+    {
+      "path": "/api/interview/6ad45cbf2e3116018afe5232/answer",
+      "method": "POST",
+      "status": 409,
+      "requestId": "voice566d1ac0-4",
+      "elapsedMs": 47
+    },
+    {
+      "path": "/api/interview/6ad45cbf2e3116018afe5232",
+      "method": "GET",
+      "status": 200,
+      "requestId": "voice566d1ac0-5",
+      "elapsedMs": 32
+    },
+    {
+      "path": "/api/interview/6ad45cbf2e3116018afe5232/complete",
+      "method": "POST",
+      "status": 200,
+      "requestId": "voice566d1ac0-6",
+      "elapsedMs": 14359
+    },
+    {
+      "path": "/api/interview/6ad45cbf2e3116018afe5232",
+      "method": "GET",
+      "status": 200,
+      "requestId": "voice566d1ac0-7",
+      "elapsedMs": 31
+    },
+    {
+      "path": "/api/interview/history",
+      "method": "GET",
+      "status": 200,
+      "requestId": "voice566d1ac0-8",
+      "elapsedMs": 31
+    },
+    {
+      "path": "/api/interview/6ad45cbf2e3116018afe5232",
+      "method": "DELETE",
+      "status": 200,
+      "requestId": "voice566d1ac0-9",
+      "elapsedMs": 31
+    }
+  ],
+  "interviewId": "6ad45cbf2e3116018afe5232",
+  "syntheticAudio": true,
+  "realMicrophone": false
+}

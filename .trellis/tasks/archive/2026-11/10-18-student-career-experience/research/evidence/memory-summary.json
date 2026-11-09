@@ -1,0 +1,15 @@
+{
+  "samples": 202,
+  "firstAt": "2026-10-18T04:39:08.020916+00:00",
+  "lastAt": "2026-10-18T06:20:18.852589+00:00",
+  "minimumWindowsPhysicalMiB": 520,
+  "maximumWindowsPhysicalMiB": 1901,
+  "minimumWindowsCommitAvailableMiB": 3602,
+  "nodeHeapLimitFailure": {
+    "heapMiB": 384,
+    "exit": 134,
+    "resolution": "Isolate campus build graph; same heap limit subsequent build passed"
+  },
+  "systemwideOOMObserved": false,
+  "userProcessesTerminated": false
+}

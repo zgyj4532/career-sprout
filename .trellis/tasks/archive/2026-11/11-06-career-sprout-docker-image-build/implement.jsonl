@@ -1,0 +1,2 @@
+{"file":".trellis/spec/project/campus-phase1/wsl-local.md","reason":"Preserve existing Node/npm, .npmrc, lockfile and secret-safe environment handling while diagnosing Linux builder behavior."}
+{"file":".trellis/spec/project/campus-phase1/verification.md","reason":"Require bounded, truthful build/smoke evidence and distinguish Docker failure from successful unit tests."}

@@ -1,0 +1,30 @@
+{
+  "id": "clerk-auth-integration",
+  "name": "clerk-auth-integration",
+  "title": "验证并完成 Clerk 登录注册链路",
+  "description": "检查公私钥加载、登录注册页面跳转、真实后端认证和注册到退出完整流程",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-26",
+  "completedAt": "2026-11-09",
+  "branch": "feat/career-sprout-experience-polish",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "2026-11-09: Disposition completed because the archived 11-06-login-ux successor records real production session confirmation and deployment, satisfying the later authentication outcome.",
+  "meta": {
+    "disposition": "completed",
+    "dispositionAt": "2026-11-09",
+    "dispositionReason": "The archived 11-06-login-ux successor records real production session confirmation and deployment, satisfying the later authentication outcome."
+  }
+}

@@ -57,6 +57,8 @@ MongoDB/Redis 使用本项目独立命名卷与 Compose project name，带健康
 
 本地开发模式必须同时满足后端开发环境、显式开关、只监听 127.0.0.1、严格 Host/Origin 和变更请求来源检查；不信任 X-Forwarded-* 绕过判断。前端分支还需 import.meta.env.DEV。production/staging、绑定 0.0.0.0、通过隧道/远端访问时应拒绝启动本地旁路。开发身份不赋予管理员权限，不支持匿名选择任意 uid。正式模式需真实鉴权和按 owner 过滤资源。
 
+后端集成测试在每个鉴权场景开始时都要显式设置完整的相关环境（`APP_PROFILE`、`NODE_ENV`、`HOST`、`DEV_BYPASS_AUTH`、开发 UID、`FRONTEND_URL` 和 Clerk secret）；不能依赖前一个用例留下的 `process.env` 状态。模拟未配置 Clerk 时将 `CLERK_SECRET_KEY` 设为空字符串而不是删除：档案更新后的缓存失效会懒加载 `config/redis.js`，其 `dotenv.config()` 会把已删除的 key 从 `.env` 恢复，导致后续请求进入 Clerk 路径。测试套件 teardown 必须恢复原值，避免同进程用例顺序改变认证结果或污染其他测试。
+
 单用户开发身份只证明页面和接口可联调，不证明注册、多账号隔离、教师权限已经通过。不得用它做手机 LAN 或公网演示。
 
 ## AI/语音与可选存储

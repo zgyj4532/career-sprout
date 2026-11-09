@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/project/campus-phase1/verification.md", "reason": "Deployment must retain documented auth, isolation, production safety and truthful evidence gates."}
+{"file": ".trellis/spec/project/campus-phase1/wsl-local.md", "reason": "Preserve campus-only entry, single-process invariant, private config and development loopback/bypass contract."}

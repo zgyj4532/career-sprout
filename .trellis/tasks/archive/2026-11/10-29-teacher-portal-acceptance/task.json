@@ -1,0 +1,30 @@
+{
+  "id": "teacher-portal-acceptance",
+  "name": "teacher-portal-acceptance",
+  "title": "教师端建设与核心流程验收",
+  "description": "验收简历篇幅与教师授权导出，建设风格统一的教师端，部署待备案",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-29",
+  "completedAt": "2026-11-09",
+  "branch": "feat/career-sprout-experience-polish",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "2026-11-09: Disposition abandoned because the artifacts contain a plan but no execution or completion evidence, and production deployment does not prove teacher portal acceptance.",
+  "meta": {
+    "disposition": "abandoned",
+    "dispositionAt": "2026-11-09",
+    "dispositionReason": "Artifacts contain a plan but no execution or completion evidence; production deployment does not prove teacher portal acceptance."
+  }
+}

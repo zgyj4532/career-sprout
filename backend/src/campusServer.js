@@ -61,7 +61,7 @@ export function createCampusApp() {
   const app = express();
   const origins = allowedFrontendOrigins(process.env);
   app.disable('x-powered-by');
-  app.set('trust proxy', false);
+  app.set('trust proxy', process.env.NODE_ENV === 'production' ? '172.30.0.11' : false);
   app.use(requestDiagnostics);
   app.use(cors({
     origin(origin, callback) {
@@ -95,12 +95,10 @@ export function createCampusApp() {
     }
     const redis = await checkRedisHealth();
     const ok = Boolean(database?.ok && redis.ok);
-    res.status(ok ? 200 : 503).json({
-      status: ok ? 'OK' : 'DEGRADED',
-      profile: 'campus-local',
-      database,
-      redis,
-    });
+    const status = ok ? 'OK' : 'DEGRADED';
+    res.status(ok ? 200 : 503).json(process.env.NODE_ENV === 'production'
+      ? { status }
+      : { status, profile: 'campus-local', database, redis });
   });
   app.use(async (req, res, next) => {
     if (req.path === '/health' || req.path === '/api/health') return next();

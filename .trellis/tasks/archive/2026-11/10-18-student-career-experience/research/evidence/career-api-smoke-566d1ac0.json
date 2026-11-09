@@ -1,0 +1,171 @@
+{
+  "records": [
+    {
+      "path": "/api/health",
+      "method": "GET",
+      "status": 200,
+      "requestId": "smoke566d1ac0-0",
+      "elapsedMs": 93
+    },
+    {
+      "path": "/api/campus/auth/status",
+      "method": "GET",
+      "status": 200,
+      "requestId": "smoke566d1ac0-1",
+      "elapsedMs": 32
+    },
+    {
+      "path": "/api/campus/auth/register",
+      "method": "POST",
+      "status": 503,
+      "requestId": "smoke566d1ac0-2",
+      "elapsedMs": 171
+    },
+    {
+      "path": "/api/campus/auth/login",
+      "method": "POST",
+      "status": 503,
+      "requestId": "smoke566d1ac0-3",
+      "elapsedMs": 32
+    },
+    {
+      "path": "/api/campus/auth/verify-email",
+      "method": "POST",
+      "status": 503,
+      "requestId": "smoke566d1ac0-4",
+      "elapsedMs": 47
+    },
+    {
+      "path": "/api/campus/auth/resend-verification",
+      "method": "POST",
+      "status": 503,
+      "requestId": "smoke566d1ac0-5",
+      "elapsedMs": 46
+    },
+    {
+      "path": "/api/campus/me",
+      "method": "GET",
+      "status": 200,
+      "requestId": "smoke566d1ac0-6",
+      "elapsedMs": 94
+    },
+    {
+      "path": "/api/campus/me",
+      "method": "PUT",
+      "status": 200,
+      "requestId": "smoke566d1ac0-7",
+      "elapsedMs": 266
+    },
+    {
+      "path": "/api/campus/jobs",
+      "method": "POST",
+      "status": 201,
+      "requestId": "smoke566d1ac0-8",
+      "elapsedMs": 94
+    },
+    {
+      "path": "/api/campus/jobs/6ad45c9a2e3116018afe522e",
+      "method": "GET",
+      "status": 200,
+      "requestId": "smoke566d1ac0-9",
+      "elapsedMs": 46
+    },
+    {
+      "path": "/api/campus/jobs/6ad45c9a2e3116018afe522e/gap",
+      "method": "GET",
+      "status": 200,
+      "requestId": "smoke566d1ac0-10",
+      "elapsedMs": 47
+    },
+    {
+      "path": "/api/campus/teacher/jobs/6ad45c9a2e3116018afe522e/candidates",
+      "method": "GET",
+      "status": 403,
+      "requestId": "smoke566d1ac0-11",
+      "elapsedMs": 47
+    },
+    {
+      "path": "/api/campus/me/sharing",
+      "method": "POST",
+      "status": 400,
+      "requestId": "smoke566d1ac0-12",
+      "elapsedMs": 31
+    },
+    {
+      "path": "/api/resumes",
+      "method": "POST",
+      "status": 201,
+      "requestId": "smoke566d1ac0-13",
+      "elapsedMs": 79
+    },
+    {
+      "path": "/api/resumes/6ad45c9b2e3116018afe522f",
+      "method": "GET",
+      "status": 200,
+      "requestId": "smoke566d1ac0-14",
+      "elapsedMs": 46
+    },
+    {
+      "path": "/api/campus/jobs/analyze",
+      "method": "POST",
+      "status": 200,
+      "requestId": "smoke566d1ac0-15",
+      "elapsedMs": 7141
+    },
+    {
+      "path": "/api/campus/resumes/polish",
+      "method": "POST",
+      "status": 200,
+      "requestId": "smoke566d1ac0-16",
+      "elapsedMs": 5172
+    },
+    {
+      "path": "/api/resumes/6ad45c9b2e3116018afe522f",
+      "method": "GET",
+      "status": 200,
+      "requestId": "smoke566d1ac0-17",
+      "elapsedMs": 31
+    },
+    {
+      "path": "/api/campus/me/resumes/6ad45c9b2e3116018afe522f/target",
+      "method": "POST",
+      "status": 201,
+      "requestId": "smoke566d1ac0-18",
+      "elapsedMs": 4922
+    },
+    {
+      "path": "/api/campus/me/targets/6ad45cad2e3116018afe5231/approve",
+      "method": "POST",
+      "status": 200,
+      "requestId": "smoke566d1ac0-19",
+      "elapsedMs": 78
+    },
+    {
+      "path": "/api/campus/me/targets/6ad45cad2e3116018afe5231",
+      "method": "PATCH",
+      "status": 200,
+      "requestId": "smoke566d1ac0-20",
+      "elapsedMs": 47
+    },
+    {
+      "path": "/api/campus/me/targets/6ad45cad2e3116018afe5231/approve",
+      "method": "POST",
+      "status": 409,
+      "requestId": "smoke566d1ac0-21",
+      "elapsedMs": 47
+    },
+    {
+      "path": "/api/campus/me",
+      "method": "PUT",
+      "status": 200,
+      "requestId": "smoke566d1ac0-22",
+      "elapsedMs": 31
+    }
+  ],
+  "created": {
+    "jobId": "6ad45c9a2e3116018afe522e",
+    "resumeId": "6ad45c9b2e3116018afe522f",
+    "targetId": "6ad45cad2e3116018afe5231"
+  },
+  "fixtureMarker": "CareerSprout synthetic smoke 566d1ac0"
+}

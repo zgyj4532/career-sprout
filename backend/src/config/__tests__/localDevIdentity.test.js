@@ -2,6 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   assertCampusStartup,
+  allowedFrontendOrigins,
   evaluateLocalBypass,
   localDevUser,
 } from '../localDevIdentity.js';
@@ -20,6 +21,21 @@ function request(method, host, extraHeaders = {}) {
   return {
     method,
     headers: { host, ...extraHeaders },
+  };
+}
+
+function productionEnvironment() {
+  return {
+    ...baseEnv,
+    NODE_ENV: 'production',
+    HOST: '0.0.0.0',
+    DEPLOYMENT_MODE: 'container',
+    DEV_BYPASS_AUTH: 'false',
+    FRONTEND_URL: 'https://crayzamb.cloud/career-sprout',
+    CLERK_SECRET_KEY: 'sk_live_1234567890',
+    CLERK_PUBLISHABLE_KEY: 'pk_live_1234567890',
+    MONGODB_URI: 'mongodb://career_sprout:secret@mongo:27017/career_sprout?authSource=career_sprout',
+    REDIS_URL: 'redis://default:secret@redis:6379/',
   };
 }
 
@@ -73,5 +89,32 @@ describe('campus local identity', () => {
     );
     assert.equal(decision.allow, false);
     assert.equal(decision.reason, 'clerk-configured');
+  });
+  test('accepts only the explicit bounded campus production container contract', () => {
+    const production = productionEnvironment();
+    assert.doesNotThrow(() => assertCampusStartup(production));
+  });
+
+  test('refuses missing production auth, bypass, deployment mode, and dedicated services', () => {
+    const production = productionEnvironment();
+    for (const [key, value] of [
+      ['DEPLOYMENT_MODE', undefined],
+      ['DEV_BYPASS_AUTH', 'true'],
+      ['CLERK_SECRET_KEY', undefined],
+      ['CLERK_PUBLISHABLE_KEY', undefined],
+      ['MONGODB_URI', 'mongodb://127.0.0.1:27017/career_sprout'],
+      ['REDIS_URL', 'redis://127.0.0.1:6379'],
+      ['MONGODB_URI', 'mongodb://mongo:27017/career_sprout'],
+      ['REDIS_URL', 'redis://redis:6379'],
+      ['FRONTEND_URL', 'http://crayzamb.cloud/career-sprout'],
+      ['FRONTEND_URL', 'https://other.example/career-sprout'],
+    ]) {
+      const candidate = { ...production };
+      if (value === undefined) delete candidate[key];
+      else candidate[key] = value;
+      assert.throws(() => assertCampusStartup(candidate), (error) => error.code === 'CAMPUS_STARTUP_REFUSED');
+    }
+    assert.equal(allowedFrontendOrigins(production).has('https://crayzamb.cloud'), true);
+    assert.equal(allowedFrontendOrigins(production).has('http://localhost:5173'), false);
   });
 });

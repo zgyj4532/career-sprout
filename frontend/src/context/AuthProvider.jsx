@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useUser, useAuth, useClerk } from '@clerk/clerk-react'
+import { useUser, useAuth, useClerk } from '@clerk/react'
 import { AuthContext } from './AuthContext'
 import { authApi } from '../services/api'
 
