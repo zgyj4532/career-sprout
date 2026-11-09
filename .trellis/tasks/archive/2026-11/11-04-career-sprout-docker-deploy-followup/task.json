@@ -1,0 +1,30 @@
+{
+  "id": "career-sprout-docker-deploy-followup",
+  "name": "career-sprout-docker-deploy-followup",
+  "title": "CareerSprout Docker部署后续准备",
+  "description": "继续完成 CareerSprout Docker 本地验证与安全部署准备：诊断长时间运行的代理、检查构建代理和服务器镜像缓存、确认本地 Clerk 配置状态，并仅在所有生产门禁通过后部署。",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-11-04",
+  "completedAt": "2026-11-09",
+  "branch": "feat/teacher-portal-career-workspace",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "2026-11-09: Disposition completed because local regression, build, and security preparation fed the archived production release and remaining production work was transferred there.",
+  "meta": {
+    "disposition": "completed",
+    "dispositionAt": "2026-11-09",
+    "dispositionReason": "Local regression, build, and security preparation fed the archived production release, with remaining production work transferred there."
+  }
+}

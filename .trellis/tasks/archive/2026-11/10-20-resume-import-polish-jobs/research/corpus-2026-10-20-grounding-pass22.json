@@ -1,0 +1,949 @@
+{
+  "groups": 10,
+  "files": 30,
+  "rows": [
+    {
+      "group": 1,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 707,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "title"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 1,
+      "skills": 5,
+      "preservedOtherChars": 37,
+      "dateIssues": 2,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 44235
+    },
+    {
+      "group": 2,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 723,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 3,
+      "skills": 6,
+      "preservedOtherChars": 138,
+      "dateIssues": 3,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 16210
+    },
+    {
+      "group": 3,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 809,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "title"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "schema"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 40900
+    },
+    {
+      "group": 4,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 731,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 3,
+      "skills": 14,
+      "preservedOtherChars": 63,
+      "dateIssues": 2,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 23621
+    },
+    {
+      "group": 5,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 873,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 5,
+      "skills": 9,
+      "preservedOtherChars": 77,
+      "dateIssues": 4,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 20191
+    },
+    {
+      "group": 6,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 725,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "name"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 5,
+      "skills": 4,
+      "preservedOtherChars": 0,
+      "dateIssues": 3,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION"
+      ],
+      "complete": false,
+      "durationMs": 42550
+    },
+    {
+      "group": 7,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 844,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 5,
+      "skills": 10,
+      "preservedOtherChars": 67,
+      "dateIssues": 3,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 20747
+    },
+    {
+      "group": 8,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 820,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 5,
+      "skills": 7,
+      "preservedOtherChars": 70,
+      "dateIssues": 4,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 17167
+    },
+    {
+      "group": 9,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 881,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "title"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "schema"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 46761
+    },
+    {
+      "group": 10,
+      "format": "pdf",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 714,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 5,
+      "skills": 10,
+      "preservedOtherChars": 101,
+      "dateIssues": 3,
+      "issues": [
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 18601
+    },
+    {
+      "group": 1,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 25,
+      "sourceChars": 658,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 4,
+      "skills": 4,
+      "preservedOtherChars": 41,
+      "dateIssues": 2,
+      "issues": [
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 14303
+    },
+    {
+      "group": 2,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 26,
+      "sourceChars": 683,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "title"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 4,
+      "skills": 4,
+      "preservedOtherChars": 50,
+      "dateIssues": 3,
+      "issues": [
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 42479
+    },
+    {
+      "group": 3,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 31,
+      "sourceChars": 756,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "title"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "schema"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 47558
+    },
+    {
+      "group": 4,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 25,
+      "sourceChars": 663,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "title"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "schema"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 44185
+    },
+    {
+      "group": 5,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 35,
+      "sourceChars": 808,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "title"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "schema"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 50174
+    },
+    {
+      "group": 6,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 26,
+      "sourceChars": 686,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "evidence"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 4,
+      "skills": 5,
+      "preservedOtherChars": 50,
+      "dateIssues": 3,
+      "issues": [
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 48474
+    },
+    {
+      "group": 7,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 32,
+      "sourceChars": 778,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 4,
+      "skills": 9,
+      "preservedOtherChars": 47,
+      "dateIssues": 3,
+      "issues": [
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 14545
+    },
+    {
+      "group": 8,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 31,
+      "sourceChars": 757,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 5,
+      "skills": 7,
+      "preservedOtherChars": 52,
+      "dateIssues": 4,
+      "issues": [
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 18068
+    },
+    {
+      "group": 9,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 35,
+      "sourceChars": 829,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "organization"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "schema"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 45610
+    },
+    {
+      "group": 10,
+      "format": "docx",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 26,
+      "sourceChars": 679,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "fullText"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 5,
+      "skills": 10,
+      "preservedOtherChars": 50,
+      "dateIssues": 3,
+      "issues": [
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SOURCE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 54974
+    },
+    {
+      "group": 1,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 1,
+      "skills": 6,
+      "preservedOtherChars": 72,
+      "dateIssues": 2,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 24469
+    },
+    {
+      "group": 2,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 2,
+      "skills": 7,
+      "preservedOtherChars": 621,
+      "dateIssues": 3,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 20642
+    },
+    {
+      "group": 3,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "name"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 2,
+      "skills": 3,
+      "preservedOtherChars": 55,
+      "dateIssues": 3,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 62435
+    },
+    {
+      "group": 4,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "name"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 1,
+      "skills": 3,
+      "preservedOtherChars": 41,
+      "dateIssues": 2,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 51878
+    },
+    {
+      "group": 5,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "evidence"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "schema"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 67958
+    },
+    {
+      "group": 6,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 4,
+      "skills": 3,
+      "preservedOtherChars": 493,
+      "dateIssues": 3,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 18152
+    },
+    {
+      "group": 7,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 2,
+      "skills": 4,
+      "preservedOtherChars": 665,
+      "dateIssues": 3,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 22181
+    },
+    {
+      "group": 8,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "invalid",
+          "reason": "evidence"
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "status": "invalid",
+          "reason": "evidence"
+        }
+      ],
+      "extraction": "FAIL",
+      "code": "IMPORT_VALIDATION",
+      "durationMs": 57590
+    },
+    {
+      "group": 9,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 3,
+      "skills": 5,
+      "preservedOtherChars": 82,
+      "dateIssues": 4,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 16910
+    },
+    {
+      "group": 10,
+      "format": "png",
+      "parse": "PASS",
+      "parseCode": null,
+      "sourceBlocks": 1,
+      "sourceChars": 0,
+      "coverageIssues": [],
+      "calls": [
+        {
+          "model": "gpt-6-luna",
+          "status": "completed"
+        }
+      ],
+      "extraction": "PASS",
+      "structured": "PASS",
+      "namePresent": true,
+      "education": 1,
+      "experiences": 2,
+      "skills": 14,
+      "preservedOtherChars": 210,
+      "dateIssues": 3,
+      "issues": [
+        "VISION_UNVERIFIED",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "DATE_ASSOCIATION",
+        "SUSPECTED_MISS"
+      ],
+      "complete": false,
+      "durationMs": 22131
+    }
+  ]
+}

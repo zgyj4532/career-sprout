@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "runId": "campus_smoke_f900ffaf132e40258b10210cee18ff16",
+  "uid": "campus_smoke_f900ffaf132e40258b10210cee18ff16",
+  "database": "campus_smoke_f900ffaf132e40258b10210cee18ff16",
+  "startedAt": "2026-10-23T16:12:57.560Z",
+  "node": "v24.14.1",
+  "execPath": "/home/ll/.nvm/versions/node/v24.14.1/bin/node",
+  "status": "PASS",
+  "results": [
+    {
+      "name": "runtime",
+      "status": "PASS",
+      "detail": {
+        "execPath": "/home/ll/.nvm/versions/node/v24.14.1/bin/node",
+        "node": "v24.14.1"
+      }
+    },
+    {
+      "name": "infrastructure",
+      "status": "PASS",
+      "detail": {
+        "mongo": "reachable",
+        "redis": "reachable",
+        "database": "campus_smoke_f900ffaf132e40258b10210cee18ff16"
+      }
+    },
+    {
+      "name": "backend-start",
+      "status": "PASS",
+      "detail": {
+        "pid": 12640,
+        "base": "http://127.0.0.1:46411",
+        "node": "v24.14.1",
+        "execPath": "/home/ll/.nvm/versions/node/v24.14.1/bin/node"
+      }
+    },
+    {
+      "name": "health",
+      "status": "PASS",
+      "detail": {
+        "database": true,
+        "redis": true,
+        "identity": "campus_smoke_f900ffaf132e40258b10210cee18ff16"
+      }
+    },
+    {
+      "name": "disabled-payments",
+      "status": "PASS",
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "remote-host-rejected",
+      "status": "PASS",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "foreign-origin-rejected",
+      "status": "PASS",
+      "detail": {
+        "status": 401
+      }
+    },
+    {
+      "name": "invalid-resume-rejected",
+      "status": "PASS",
+      "detail": {
+        "status": 400
+      }
+    },
+    {
+      "name": "resume-create",
+      "status": "PASS",
+      "detail": {
+        "status": 201,
+        "resumeId": "6adb87a764da6472dc45e6df"
+      }
+    },
+    {
+      "name": "resume-edit",
+      "status": "PASS",
+      "detail": {
+        "status": 200,
+        "revision": 2
+      }
+    },
+    {
+      "name": "resume-read",
+      "status": "PASS",
+      "detail": {
+        "status": "PASS",
+        "healthStatus": 200,
+        "resumeStatus": 200,
+        "kept": true,
+        "runId": "campus_smoke_f900ffaf132e40258b10210cee18ff16"
+      }
+    },
+    {
+      "name": "pdf-download",
+      "status": "NOT_RUN",
+      "detail": "Separate optional export check: --pdf; does not prove Chinese visual readability"
+    },
+    {
+      "name": "backend-stop",
+      "status": "PASS",
+      "detail": {
+        "stopped": true,
+        "forced": false,
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "name": "backend-restart",
+      "status": "PASS",
+      "detail": {
+        "pid": 12880,
+        "base": "http://127.0.0.1:45951",
+        "node": "v24.14.1",
+        "execPath": "/home/ll/.nvm/versions/node/v24.14.1/bin/node"
+      }
+    },
+    {
+      "name": "restart-persistence",
+      "status": "PASS",
+      "detail": {
+        "status": "PASS",
+        "healthStatus": 200,
+        "resumeStatus": 200,
+        "kept": true,
+        "runId": "campus_smoke_f900ffaf132e40258b10210cee18ff16"
+      }
+    },
+    {
+      "name": "cleanup-backend",
+      "status": "PASS",
+      "detail": {
+        "stopped": true,
+        "forced": false,
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "name": "cleanup-database",
+      "status": "PASS",
+      "detail": "Owned database dropped"
+    },
+    {
+      "name": "cleanup-files",
+      "status": "PASS"
+    }
+  ],
+  "boundaries": {
+    "formalClerk": "NOT_RUN",
+    "externalAI": "NOT_RUN",
+    "ASR": "NOT_RUN",
+    "pdfVisualReadability": "NOT_RUN",
+    "identity": "isolated synthetic local bypass, not formal authentication"
+  },
+  "redisScope": "PING only; selected auth/resume/disabled routes do not invoke cache or AI rate-limit writers. No shared Redis keys or volumes are deleted.",
+  "persistence": {
+    "runId": "campus_smoke_f900ffaf132e40258b10210cee18ff16",
+    "uid": "campus_smoke_f900ffaf132e40258b10210cee18ff16",
+    "database": "campus_smoke_f900ffaf132e40258b10210cee18ff16",
+    "base": "http://127.0.0.1:45951",
+    "resumeId": "6adb87a764da6472dc45e6df",
+    "marker": "校园隔离验收 campus_smoke_f900ffaf132e40258b10210cee18ff16",
+    "revision": 2,
+    "title": "隔离合成简历",
+    "originalText": "# 测试同学\n\n校园隔离验收 campus_smoke_f900ffaf132e40258b10210cee18ff16\n\n已通过编辑保存的合成测试数据。"
+  },
+  "cleanup": [
+    {
+      "name": "cleanup-backend",
+      "status": "PASS",
+      "detail": {
+        "stopped": true,
+        "forced": false,
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "name": "cleanup-database",
+      "status": "PASS",
+      "detail": "Owned database dropped"
+    },
+    {
+      "name": "cleanup-files",
+      "status": "PASS"
+    }
+  ],
+  "signal": null,
+  "finishedAt": "2026-10-23T16:13:46.661Z",
+  "exitCode": 0
+}

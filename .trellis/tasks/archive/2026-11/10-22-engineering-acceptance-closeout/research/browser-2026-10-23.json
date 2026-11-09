@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-23T15:51:32.048Z",
+  "environment": "WSL Node24 campus development, isolated synthetic database/UID; Chromium emulated viewports, not physical device",
+  "saveRecovery": "Infrastructure was initially unavailable; input retained; visible check-save-results control recovered with POST201 and one saved resume. No provider request.",
+  "pages": [
+    {
+      "name": "home",
+      "width": 360,
+      "scrollWidth": 360,
+      "focus": "职芽 CareerSprout",
+      "heading": "从现在开始，让每一次练习长成未来。咱平时啊，在学校咱们就练起来从现在开始，让每一次练习长成未来。",
+      "screenshot": "home-360.png"
+    },
+    {
+      "name": "resume",
+      "width": 360,
+      "scrollWidth": 360,
+      "focus": "了解自己",
+      "heading": "把经历写成简历",
+      "screenshot": "resume-360.png"
+    },
+    {
+      "name": "interview",
+      "width": 360,
+      "scrollWidth": 360,
+      "focus": "了解自己",
+      "heading": "用真实经历练面试",
+      "screenshot": "interview-360.png"
+    },
+    {
+      "name": "feedback",
+      "width": 360,
+      "scrollWidth": 360,
+      "screenshot": "feedback-360.png"
+    },
+    {
+      "name": "home",
+      "width": 768,
+      "scrollWidth": 768,
+      "focus": "职芽 CareerSprout",
+      "screenshot": "home-768.png"
+    },
+    {
+      "name": "resume",
+      "width": 768,
+      "scrollWidth": 768,
+      "focus": "职芽 CareerSprout回首页",
+      "screenshot": "resume-768.png"
+    },
+    {
+      "name": "interview",
+      "width": 768,
+      "scrollWidth": 768,
+      "focus": "职芽 CareerSprout回首页",
+      "screenshot": "interview-768.png"
+    },
+    {
+      "name": "feedback",
+      "width": 768,
+      "scrollWidth": 768,
+      "focus": "职芽 CareerSprout回首页",
+      "screenshot": "feedback-768.png"
+    }
+  ],
+  "feedbackExpanded": {
+    "width": 360,
+    "scrollWidth": 360,
+    "syntheticFeedbackVisible": true
+  },
+  "primaryControl": {
+    "width": 360,
+    "button": "开始中文面试",
+    "widthPx": 328,
+    "heightPx": 44,
+    "centerReceivesPointer": true,
+    "notActivated": "No model/provider calls in this acceptance"
+  },
+  "rendering": "Development campus app, not production performance evidence; full-page captures contain sticky header/nav at capture scroll position."
+}

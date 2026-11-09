@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "runId": "campus_smoke_1829035a5482499abb223a2c2d8b596a",
+  "uid": "campus_smoke_1829035a5482499abb223a2c2d8b596a",
+  "database": "campus_smoke_1829035a5482499abb223a2c2d8b596a",
+  "startedAt": "2026-10-23T16:11:27.736Z",
+  "node": "v24.14.1",
+  "execPath": "/home/ll/.nvm/versions/node/v24.14.1/bin/node",
+  "status": "FAIL",
+  "results": [
+    {
+      "name": "runtime",
+      "status": "PASS",
+      "detail": {
+        "execPath": "/home/ll/.nvm/versions/node/v24.14.1/bin/node",
+        "node": "v24.14.1"
+      }
+    },
+    {
+      "name": "infrastructure",
+      "status": "PASS",
+      "detail": {
+        "mongo": "reachable",
+        "redis": "reachable",
+        "database": "campus_smoke_1829035a5482499abb223a2c2d8b596a"
+      }
+    },
+    {
+      "name": "backend-start",
+      "status": "PASS",
+      "detail": {
+        "pid": 11558,
+        "base": "http://127.0.0.1:45601",
+        "node": "v24.14.1",
+        "execPath": "/home/ll/.nvm/versions/node/v24.14.1/bin/node"
+      }
+    },
+    {
+      "name": "health",
+      "status": "PASS",
+      "detail": {
+        "database": true,
+        "redis": true,
+        "identity": "campus_smoke_1829035a5482499abb223a2c2d8b596a"
+      }
+    },
+    {
+      "name": "disabled-payments",
+      "status": "PASS",
+      "detail": {
+        "status": 404
+      }
+    },
+    {
+      "name": "remote-host-rejected",
+      "status": "FAIL",
+      "detail": {
+        "code": "HOST_BOUNDARY_FAILED",
+        "errorType": "Error"
+      }
+    },
+    {
+      "name": "foreign-origin-rejected",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "invalid-resume-rejected",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "resume-create",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "resume-edit",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "resume-read",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "pdf-download",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "backend-stop",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "backend-restart",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "restart-persistence",
+      "status": "NOT_RUN",
+      "detail": "Earlier required step did not complete"
+    },
+    {
+      "name": "cleanup-backend",
+      "status": "PASS",
+      "detail": {
+        "stopped": true,
+        "forced": false,
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "name": "cleanup-database",
+      "status": "PASS",
+      "detail": "Owned database dropped"
+    },
+    {
+      "name": "cleanup-files",
+      "status": "PASS"
+    }
+  ],
+  "boundaries": {
+    "formalClerk": "NOT_RUN",
+    "externalAI": "NOT_RUN",
+    "ASR": "NOT_RUN",
+    "pdfVisualReadability": "NOT_RUN",
+    "identity": "isolated synthetic local bypass, not formal authentication"
+  },
+  "redisScope": "PING only; selected auth/resume/disabled routes do not invoke cache or AI rate-limit writers. No shared Redis keys or volumes are deleted.",
+  "cleanup": [
+    {
+      "name": "cleanup-backend",
+      "status": "PASS",
+      "detail": {
+        "stopped": true,
+        "forced": false,
+        "code": 0,
+        "signal": null
+      }
+    },
+    {
+      "name": "cleanup-database",
+      "status": "PASS",
+      "detail": "Owned database dropped"
+    },
+    {
+      "name": "cleanup-files",
+      "status": "PASS"
+    }
+  ],
+  "signal": null,
+  "finishedAt": "2026-10-23T16:11:59.225Z",
+  "exitCode": 1
+}

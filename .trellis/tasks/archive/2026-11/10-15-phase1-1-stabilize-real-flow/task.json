@@ -1,0 +1,30 @@
+{
+  "id": "phase1-1-stabilize-real-flow",
+  "name": "phase1-1-stabilize-real-flow",
+  "title": "Phase 1.1 stabilize real flow",
+  "description": "Close phase 1 defects and record real AI, voice, and account verification without fake passes.",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-10-15",
+  "completedAt": "2026-11-09",
+  "branch": "feat/campus-phase1-wsl",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "2026-11-09: Disposition abandoned because no completion was recorded and later closeout and authentication tasks superseded its stabilization goals.",
+  "meta": {
+    "disposition": "abandoned",
+    "dispositionAt": "2026-11-09",
+    "dispositionReason": "No completion was recorded, and later closeout and authentication tasks superseded its stabilization goals."
+  }
+}

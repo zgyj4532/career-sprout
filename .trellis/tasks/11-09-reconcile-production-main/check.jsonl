@@ -1,0 +1,5 @@
+{"file":".trellis/spec/project/campus-phase1/verification.md","reason":"Check final-candidate evidence and prevent false acceptance claims"}
+{"file":".trellis/spec/project/campus-phase1/wsl-local.md","reason":"Check runtime, auth and verification safety constraints"}
+{"file":".trellis/tasks/11-09-reconcile-production-main/research/branch-reconciliation.md","reason":"Reconcile exact branch/release facts against implementation"}
+{"file":".trellis/tasks/archive/2026-11/11-06-career-sprout-production-release/release-inventory.md","reason":"Check completeness of runtime and deployment paths"}
+{"file":".trellis/tasks/archive/2026-11/11-06-login-ux/research/deployment.md","reason":"Check deployed-source equality and preserved acceptance boundaries"}
