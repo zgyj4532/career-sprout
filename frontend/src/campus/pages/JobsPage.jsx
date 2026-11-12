@@ -6,6 +6,7 @@ import { SKILL_LEVELS } from '../material'
 import RequestError from '../components/RequestError'
 import GapView from '../components/GapView'
 import JobImageImport from '../components/JobImageImport'
+import { GateArt } from '../art/Decor'
 import { continueWithJob, loadInterviewPrep } from '../import/interviewPrep'
 import { materialSaveOperation, saveMaterialOperation } from '../saveOperation'
 import useUnsavedWork from '../hooks/useUnsavedWork'
@@ -116,13 +117,16 @@ export default function JobsPage() {
     {saveUnknown && <button className="primary" type="button" disabled={working} onClick={() => save()}>检查保存结果并继续</button>}
     {dirty && <p role="status">岗位有未保存的编辑；继续前会先保存，不会静默使用旧内容。</p>}
     {fromInterview && <p><Link to="/interview">取消录入，回到原来的面试准备单</Link></p>}
-    <JobImageImport disabled={busy} onChoose={chooseImageJob} />
-    <button type="button" disabled={busy} onClick={() => { if (dirty && !window.confirm('新建岗位会放弃未保存的编辑，是否继续？')) return; revision.current += 1; setJob(emptyJob()); setDirty(false); setGap(null); setSuggestion(null); setImageDraftId(''); setNote('') }}>录入一个岗位</button>
-    <details className="campus-tool" open={!job}><summary>浏览岗位（{loaded ? total : '读取中'}）</summary>
-    <div className="campus-grid">{items.map((row) => <button className="campus-job-choice" type="button" key={row.id} disabled={busy} onClick={() => open(row.id)}><strong>{row.title}</strong><span>{row.company} · {row.status === 'draft' ? '自己的草稿' : '已发布'}</span></button>)}</div>
-    {!loaded && !error && <p role="status">正在读取岗位…</p>}{loaded && !error && !items.length && <p>还没有岗位。可以上传截图，或手工录入已找到的机会。</p>}
-    <div className="campus-actions"><button type="button" disabled={busy || offset === 0} onClick={() => load(Math.max(0, offset - 20))}>上一页</button><button type="button" disabled={busy || offset + items.length >= total} onClick={() => load(offset + 20)}>下一页</button></div>
-    </details>
+    <div className="direction-ingest-grid">
+      <div className="screenshot-dropzone"><JobImageImport disabled={busy} onChoose={chooseImageJob} /></div>
+      <div className="manual-entry-card campus-card"><button className="btn-secondary-outline" type="button" disabled={busy} onClick={() => { if (dirty && !window.confirm('新建岗位会放弃未保存的编辑，是否继续？')) return; revision.current += 1; setJob(emptyJob()); setDirty(false); setGap(null); setSuggestion(null); setImageDraftId(''); setNote('') }}>录入一个岗位</button><GateArt className="campus-mark" /></div>
+    </div>
+    <section className="jobs-board-section"><h2>浏览岗位（{loaded ? total : '读取中'}）</h2>
+    {!loaded && !error && <p role="status">正在读取岗位…</p>}
+    {loaded && !error && !items.length && <div className="jobs-empty-state"><p>还没有岗位。可以上传截图，或手工录入已找到的机会。</p></div>}
+    {items.length > 0 && <div className="jobs-board-grid">{items.map((row) => <button className="campus-job-choice" type="button" key={row.id} disabled={busy} onClick={() => open(row.id)}><strong>{row.title}</strong><span>{row.company} · {row.status === 'draft' ? '自己的草稿' : '已发布'}</span></button>)}</div>}
+    {loaded && total > 20 && <div className="jobs-pager"><button type="button" disabled={busy || offset === 0} onClick={() => load(Math.max(0, offset - 20))}>上一页</button><button type="button" disabled={busy || offset + items.length >= total} onClick={() => load(offset + 20)}>下一页</button></div>}
+    </section>
     {job && <form className="campus-form" onSubmit={save}><fieldset disabled={!canEdit || busy} className="campus-form campus-fieldset"><legend>{canEdit ? '岗位资料' : '岗位详情（仅发布者可编辑）'}</legend>
       <div className="campus-grid"><label>企业<input required maxLength={150} value={job.company} onChange={(event) => change('company', event.target.value)} /></label><label>岗位<input required maxLength={150} value={job.title} onChange={(event) => change('title', event.target.value)} /></label></div>
       <label>岗位描述<textarea required maxLength={20000} value={job.description} onChange={(event) => change('description', event.target.value)} /></label><label>来源说明<input maxLength={500} value={job.source} onChange={(event) => change('source', event.target.value)} /></label>

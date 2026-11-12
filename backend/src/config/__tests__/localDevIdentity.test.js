@@ -82,13 +82,20 @@ describe('campus local identity', () => {
     assert.equal(localDevUser({ ...baseEnv, ADMIN_EMAILS: 'campus-dev@localhost' }).isAdmin, false);
   });
 
-  test('does not bypass when Clerk is configured', () => {
+  test('uses the local identity on development loopback even when a Clerk key is present', () => {
     const decision = evaluateLocalBypass(
       { ...baseEnv, CLERK_SECRET_KEY: 'sk_test_real' },
       request('GET', '127.0.0.1:5002'),
     );
+    assert.equal(decision.allow, true);
+    assert.equal(decision.user.uid, 'campus-local-dev');
+    assert.equal(decision.user.isAdmin, false);
+  });
+
+  test('does not use the local identity in production when Clerk is configured', () => {
+    const decision = evaluateLocalBypass(productionEnvironment(), request('GET', '127.0.0.1:5002'));
     assert.equal(decision.allow, false);
-    assert.equal(decision.reason, 'clerk-configured');
+    assert.equal(decision.reason, 'switch-off');
   });
   test('accepts only the explicit bounded campus production container contract', () => {
     const production = productionEnvironment();

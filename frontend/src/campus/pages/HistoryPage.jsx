@@ -99,7 +99,7 @@ export function HistoryPage() {
       <p>兴趣交流不打分；正式面试保留当次评分范围与规则。删除记录后不能恢复。</p>
       <RequestError error={error} onRetry={() => setReload((value) => value + 1)} />
       {loading && <p role="status">正在读取历史档案…</p>}
-      <ul className="campus-archives">
+      <div className="campus-archive-veil"><ul className="campus-archives">
         {rows.map((row) => (
           <li className="campus-archive" key={row._id}>
             {editing === row._id ? (
@@ -133,7 +133,7 @@ export function HistoryPage() {
             )}
           </li>
         ))}
-      </ul>
+      </ul></div>
       {!loading && !error && rows.length === 0 && <p>还没有交流或面试档案。<Link to="/discovery">开始聊聊兴趣</Link></p>}
     </section>
   )

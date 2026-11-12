@@ -55,3 +55,26 @@ export function CapArt(props) {
     </svg>
   )
 }
+
+export function SproutMark(props) {
+  return (
+    <svg viewBox="0 0 120 88" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      <path d="M16 74h88" opacity=".45" />
+      <path d="M52 74c2-16 8-28 18-40" />
+      <path d="M70 36c10-14 26-16 34-8-8 12-22 16-34 12" />
+      <path d="M68 46c-16-4-26 2-30 12 16 2 26-4 30-12" />
+      <path d="M60 58c8 2 14 8 14 16" opacity=".7" />
+    </svg>
+  )
+}
+
+export function SheetMark(props) {
+  return (
+    <svg viewBox="0 0 120 88" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      <path d="M34 16h34l18 18v38H34Z" />
+      <path d="M68 16v18h18" />
+      <path d="M44 46h28M44 56h22" opacity=".6" />
+      <path d="M78 62c8 4 14 4 20-2" />
+    </svg>
+  )
+}

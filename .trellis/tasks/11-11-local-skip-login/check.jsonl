@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Campus test and lint commands"}
+{"file": ".trellis/spec/project/campus-phase1/verification.md", "reason": "Bypass boundary and production-bypass failure path"}
+{"file": ".trellis/spec/project/campus-phase1/wsl-local.md", "reason": "Loopback identity constraints the check must preserve"}
+{"file": ".trellis/tasks/11-11-local-skip-login/research/local-auth-boundary.md", "reason": "Expected current behavior before the change"}

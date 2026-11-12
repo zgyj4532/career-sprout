@@ -58,6 +58,7 @@ export default function AuthPage() {
   // A stale hash is not proof of a live attempt; let the official entry own its state.
   if (pathname === '/register' && hash === '#/continue') return <Navigate to={`/register${search}`} replace />
 
+  if (ready && status.mode === 'local') return <Navigate to={returnTo} replace />
   if (ready && status.mode === 'clerk' && status.authenticated && !verify && !teacherDenied) return <Navigate to={returnTo} replace />
 
   return <section className={`campus-auth${showProfile ? ' campus-auth-profile' : ''}`} aria-label={verify ? '邮箱验证' : register ? '账号注册' : '账号登录'}>
@@ -89,7 +90,6 @@ export default function AuthPage() {
           <RequestError error={error} onRetry={refresh} />
           {error && clerkSessionActive && <button type="button" onClick={signOut}>退出并更换账号</button>}
           {!error && loadingStage && <p className="campus-auth-status" role="status">{loadingStage === 'clerk' ? '正在连接安全登录服务…' : '正在确认账号服务状态…'}</p>}
-          {ready && status.mode === 'local' && <div className="campus-note">当前使用本机体验身份，不是正式注册或登录；不会发送验证邮件，也不能取得教师权限。<Link to={returnTo}>继续本机体验</Link></div>}
           {ready && status.mode === 'clerk' && configured && status.authenticated && <>
             <p>你已登录。{status.user?.emailVerified ? '主邮箱已验证。' : '请在账号设置中验证主邮箱。'}</p>
             {showProfile && <UserProfile appearance={clerkAppearance} routing="path" path={clerkPath} />}

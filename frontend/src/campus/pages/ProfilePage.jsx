@@ -9,6 +9,7 @@ import SectionPolish from '../components/SectionPolish'
 import ImportPanel from '../components/ImportPanel'
 import useUnsavedWork from '../hooks/useUnsavedWork'
 import { profileFields, studentFields, reconcileProfileFields, sameProfileField, rebaseConfirmedFields } from '../profileSave'
+import { SproutMark } from '../art/Decor'
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState({ displayName: '', location: '', bio: '', studyStage: '', skills: [] })
@@ -114,23 +115,22 @@ export default function ProfilePage() {
       }
     } finally { setBusy(false) }
   }
-  return <section className="campus-form"><h1>个人资料</h1><p>只记录你愿意分享的内容；想法、正在做的事和已完成经历分开保留。</p>
+  return <section className="profile-page campus-form"><header className="profile-page-header"><h1>个人资料</h1><p>只记录你愿意分享的内容；想法、正在做的事和已完成经历分开保留。</p></header>
     <RequestError error={error} onRetry={!loaded ? load : saveUnknown ? recoverSave : () => save()} />
-    {saveUnknown && <button type="button" className="primary" disabled={saving || importBusy} onClick={recoverSave}>检查档案保存结果</button>}
-    {!loaded && !error && <p role="status">正在读取个人资料…</p>}
-    <ImportPanel disabled={busy || dirty} onSaved={load} onMutationChange={setImportBusy} />
+    {saveUnknown && <button type="button" className="primary btn-primary-green" disabled={saving || importBusy} onClick={recoverSave}>检查档案保存结果</button>}
     {dirty && <p role="status">档案有尚未保存的编辑，请先保存或放弃后再导入，避免覆盖正在写的内容。</p>}
     {note && <p className="campus-note" role="status">{note} <Link to="/resume">去做简历</Link></p>}
+    <div className="profile-bento-grid">
+    <div className="profile-main-col">
+    {!loaded && !error && <p role="status">正在读取个人资料…</p>}
     {loaded && <form className="campus-form" onSubmit={save}><fieldset disabled={busy} className="campus-form campus-fieldset">
-      <legend>基本档案</legend><div className="campus-grid"><label>姓名<input maxLength={100} value={profile.displayName || ''} onChange={(event) => setField('displayName', event.target.value)} /></label><label>所在地<input maxLength={100} value={profile.location || ''} onChange={(event) => setField('location', event.target.value)} /></label></div>
-      <label>年级<select value={profile.studyStage || ''} onChange={(event) => setField('studyStage', event.target.value)}><option value="">暂不填写</option>{STUDY_STAGES.map((stage) => <option key={stage}>{stage}</option>)}</select></label>
-      <label>大学在读情况<select value={profile.collegeStudentKnown && profile.collegeStudent != null ? String(profile.collegeStudent) : ''} onChange={(event) => setProfile((current) => ({ ...current, collegeStudentKnown: true, collegeStudent: event.target.value === '' ? null : event.target.value === 'true' }))}><option value="">未知或暂不回答</option><option value="true">目前在读大学</option><option value="false">目前不在读大学</option></select></label>
+      <section className="profile-section-card"><h2>基本档案</h2><div className="profile-form-grid-2"><label>姓名<input maxLength={100} value={profile.displayName || ''} onChange={(event) => setField('displayName', event.target.value)} /></label><label>所在地<input maxLength={100} value={profile.location || ''} onChange={(event) => setField('location', event.target.value)} /></label><label>年级<select value={profile.studyStage || ''} onChange={(event) => setField('studyStage', event.target.value)}><option value="">暂不填写</option>{STUDY_STAGES.map((stage) => <option key={stage}>{stage}</option>)}</select></label><label>大学在读情况<select value={profile.collegeStudentKnown && profile.collegeStudent != null ? String(profile.collegeStudent) : ''} onChange={(event) => setProfile((current) => ({ ...current, collegeStudentKnown: true, collegeStudent: event.target.value === '' ? null : event.target.value === 'true' }))}><option value="">未知或暂不回答</option><option value="true">目前在读大学</option><option value="false">目前不在读大学</option></select></label></div>
       <label>感兴趣的方向（逗号分隔）<input maxLength={1000} value={interests} onChange={(event) => setInterests(event.target.value)} placeholder="可以写喜欢做的事，不必先确定岗位" /></label>
       <label>简介<textarea maxLength={500} value={profile.bio || ''} onChange={(event) => setField('bio', event.target.value)} /></label>
       <SectionPolish source={profile.bio || ''} maxLength={500} disabled={busy} onAdopt={(value) => { setField('bio', value); setPolished(true) }} />
-      {polished && <p role="status">已采纳到输入框，尚未保存。</p>}
-      {educationRows.length > 0 && <section><h2>教育经历</h2>{educationRows.map((row, index) => <div className="campus-panel" key={index}>{[['institution', '学校'], ['degree', '学历'], ['field', '专业'], ['dateText', '时间原文'], ['fullText', '教育完整原文']].map(([key, label]) => <label key={key}>{label}<input value={row[key] || ''} onChange={(event) => { const education = educationRows.map((item, i) => { const next = { ...item, ...(i === index ? { [key]: event.target.value } : {}) }; delete next._id; return next }); setStudent((current) => ({ ...current, importedEducation: education })); setField('education', education) }} /></label>)}</div>)}</section>}
-      <details><summary>已有技能标签</summary><label>标签不代表熟练程度<input value={skills} onChange={(event) => setSkills(event.target.value)} /></label></details>
+      {polished && <p role="status">已采纳到输入框，尚未保存。</p>}</section>
+      {educationRows.length > 0 && <section className="profile-section-card"><h2>教育经历</h2>{educationRows.map((row, index) => <div className="campus-panel" key={index}>{[['institution', '学校'], ['degree', '学历'], ['field', '专业'], ['dateText', '时间原文'], ['fullText', '教育完整原文']].map(([key, label]) => <label key={key}>{label}<input value={row[key] || ''} onChange={(event) => { const education = educationRows.map((item, i) => { const next = { ...item, ...(i === index ? { [key]: event.target.value } : {}) }; delete next._id; return next }); setStudent((current) => ({ ...current, importedEducation: education })); setField('education', education) }} /></label>)}</div>)}</section>}
+      <section className="profile-section-card"><details className="profile-accordion-item"><summary>已有技能标签</summary><label>标签不代表熟练程度<input value={skills} onChange={(event) => setSkills(event.target.value)} /></label></details>
       <h2>经历与想法</h2>
       {student.experiences.map((row, index) => <fieldset className="campus-panel" key={row.id}><legend>{row.title || `经历 ${index + 1}`}</legend>
         <div className="campus-grid"><label>名称<input required maxLength={150} value={row.title || ''} onChange={(event) => updateExperience(index, 'title', event.target.value)} /></label><label>进展<select value={row.state || 'completed'} onChange={(event) => updateExperience(index, 'state', event.target.value)}><option value="idea">想法，尚未开始</option><option value="in_progress">正在做</option><option value="completed">已完成</option></select></label><label>类型<select value={row.kind} onChange={(event) => updateExperience(index, 'kind', event.target.value)}>{Object.entries(EXPERIENCE_KINDS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label></div>
@@ -139,21 +139,26 @@ export default function ProfilePage() {
         {row.fullText?.trim() || ![row.context, row.actions, row.result].some((value) => value?.trim()) && row.fullText !== undefined ? <label>{row.state === 'idea' ? '想法原文' : '完整经历（不会被精简稿替换）'}<textarea maxLength={100000} value={row.fullText || ''} onChange={(event) => updateExperience(index, 'fullText', event.target.value)} /></label> : [['context', '背景或想解决什么'], ['actions', row.state === 'idea' ? '打算尝试什么' : '你实际做了什么'], ['result', !row.state || row.state === 'completed' ? '实际结果或学到什么' : '目前已发生的结果（没有可留空）']].map(([key, label]) => <label key={key}>{label}<textarea maxLength={key === 'actions' ? 3000 : 2000} value={row[key] || ''} onChange={(event) => updateExperience(index, key, event.target.value)} /></label>)}
         <label>时间原文（可保留月份、至今）<input maxLength={80} value={row.dateText || ''} onChange={(event) => updateExperience(index, 'dateText', event.target.value)} /></label>
         {row.state !== 'idea' && <SectionPolish source={row.fullText || [row.context, row.actions, row.result].filter(Boolean).join('\n')} maxLength={3000} disabled={busy} onAdopt={(value) => { setStudent((current) => ({ ...current, experiences: current.experiences.map((item, i) => i === index ? { ...item, fullText: item.fullText || [item.context, item.actions, item.result].filter(Boolean).join('\n'), brief: value, useConcise: true } : item) })); setPolished(true) }} />}
-        {row.brief !== undefined && <details><summary>精简稿{row.useConcise ? ' · 简历和面试采用此稿' : ' · 未采用'}</summary><label>可选精简稿（完整经历仍保留）<textarea maxLength={3000} value={row.brief} onChange={(event) => updateExperience(index, 'brief', event.target.value)} /></label><label className="campus-check"><input type="checkbox" checked={Boolean(row.useConcise)} onChange={(event) => updateExperience(index, 'useConcise', event.target.checked)} />在简历与面试中使用精简稿（完整经历仍保留）</label></details>}
+        {row.brief !== undefined && <details className="profile-accordion-item"><summary>精简稿{row.useConcise ? ' · 简历和面试采用此稿' : ' · 未采用'}</summary><label>可选精简稿（完整经历仍保留）<textarea maxLength={3000} value={row.brief} onChange={(event) => updateExperience(index, 'brief', event.target.value)} /></label><label className="campus-check"><input type="checkbox" checked={Boolean(row.useConcise)} onChange={(event) => updateExperience(index, 'useConcise', event.target.checked)} />在简历与面试中使用精简稿（完整经历仍保留）</label></details>}
         <button type="button" onClick={() => { if (window.confirm('从个人资料移除这条记录？保存后生效，来源交流仍保留。')) setStudent((current) => ({ ...current, experiences: current.experiences.filter((_, i) => i !== index) })) }}>移除这段经历</button></fieldset>)}
-      <button type="button" disabled={student.experiences.length >= 30} onClick={() => setStudent((current) => ({ ...current, experiences: [...current.experiences, { id: crypto.randomUUID(), kind: 'course', title: '', context: '', actions: '', result: '' }] }))}>添加课程、社团或项目经历</button>
-      <details className="campus-tool"><summary>技能自评与证据（{student.skillAssessments.length} 项）</summary><p>没填写的技能保持“未知”，不会当作零分。</p>
+      <button className="btn-dashed-add" type="button" disabled={student.experiences.length >= 30} onClick={() => setStudent((current) => ({ ...current, experiences: [...current.experiences, { id: crypto.randomUUID(), kind: 'course', title: '', context: '', actions: '', result: '' }] }))}>添加课程、社团或项目经历</button>
+      <details className="campus-tool profile-accordion-item"><summary>技能自评与证据（{student.skillAssessments.length} 项）</summary><p>没填写的技能保持“未知”，不会当作零分。</p>
       {student.skillAssessments.map((row, index) => <div className="campus-panel" key={index}><label>技能名称<input required maxLength={80} value={row.name} onChange={(event) => updateSkill(index, 'name', event.target.value)} /></label><label>目前程度<select value={row.level ?? ''} onChange={(event) => updateSkill(index, 'level', event.target.value === '' ? null : Number(event.target.value))}><option value="">未自评</option>{SKILL_LEVELS.map((label, level) => <option key={label} value={level}>{label}</option>)}</select></label><label>实际证据<input maxLength={1000} value={row.evidence || ''} onChange={(event) => updateSkill(index, 'evidence', event.target.value)} /></label><button type="button" onClick={() => setStudent((current) => ({ ...current, skillAssessments: current.skillAssessments.filter((_, i) => i !== index) }))}>移除这项自评</button></div>)}
-      <button type="button" disabled={student.skillAssessments.length >= 50} onClick={() => setStudent((current) => ({ ...current, skillAssessments: [...current.skillAssessments, { name: '', level: null, evidence: '' }] }))}>添加一项自评</button>
+      <button className="btn-dashed-add" type="button" disabled={student.skillAssessments.length >= 50} onClick={() => setStudent((current) => ({ ...current, skillAssessments: [...current.skillAssessments, { name: '', level: null, evidence: '' }] }))}>添加一项自评</button>
       </details>
       <label>其他原文材料（奖项、证书、联系方式等）<textarea maxLength={20000} value={student.otherMaterials || profile.otherMaterials || ''} onChange={(event) => { setStudent((current) => ({ ...current, otherMaterials: event.target.value })); setField('otherMaterials', event.target.value) }} /></label>
-      <details className="campus-tool"><summary>可实习时间（不确定可留空）</summary><div className="campus-grid">{[['startDate', '最早开始'], ['endDate', '可持续到']].map(([key, label]) => <label key={key}>{label}<input type="date" value={student.availability?.[key] || ''} onChange={(event) => setStudent((current) => ({ ...current, availability: { ...current.availability, [key]: event.target.value || null } }))} /></label>)}</div>
+      <details className="campus-tool profile-accordion-item"><summary>可实习时间（不确定可留空）</summary><div className="campus-grid">{[['startDate', '最早开始'], ['endDate', '可持续到']].map(([key, label]) => <label key={key}>{label}<input type="date" value={student.availability?.[key] || ''} onChange={(event) => setStudent((current) => ({ ...current, availability: { ...current.availability, [key]: event.target.value || null } }))} /></label>)}</div>
       <label>每周可投入天数<input type="number" min="1" max="7" value={student.availability?.daysPerWeek ?? ''} onChange={(event) => setStudent((current) => ({ ...current, availability: { ...current.availability, daysPerWeek: event.target.value ? Number(event.target.value) : null } }))} /></label>
       </details>
-      <button className="primary" type="submit">{busy ? '正在保存…' : '保存档案与成长材料'}</button>
-      <button type="button" disabled={!dirty} onClick={() => { if (window.confirm('放弃当前未保存的档案编辑？已导入的原件不会被丢弃。')) load() }}>放弃本次档案编辑</button>
-    </fieldset></form>}
-    <SharingControls />
-    <ClassMembership />
+      <div className="profile-form-actions"><button className="primary btn-primary-green" type="submit">{busy ? '正在保存…' : '保存档案与成长材料'}</button>
+      <button className="btn-secondary-outline" type="button" disabled={!dirty} onClick={() => { if (window.confirm('放弃当前未保存的档案编辑？已导入的原件不会被丢弃。')) load() }}>放弃本次档案编辑</button></div>
+    </section></fieldset></form>}
+    </div>
+    <aside className="profile-side-col">
+      <div className="profile-section-card"><ImportPanel disabled={busy || dirty} onSaved={load} onMutationChange={setImportBusy} /></div>
+      <div className="profile-section-card"><ClassMembership /></div>
+      <div className="profile-section-card profile-side-fill"><SharingControls /><SproutMark className="campus-mark" /></div>
+    </aside>
+    </div>
   </section>
 }

@@ -153,7 +153,7 @@ export function SessionNavigation() {
   if (!status) return <Link to="/login">账号状态</Link>
   const returnQuery = `?returnTo=${encodeURIComponent(safeReturnTo(`${pathname}${search}${hash}`))}`
   return <div className="campus-session-nav">
-    {status.mode === 'local' ? <><span className="campus-dev-note">本机体验身份 · 非正式账号</span><Link to={`/login${returnQuery}`}>注册 / 登录正式账号</Link></> : status.authenticated ? <><span>已登录{status.user?.emailVerified ? '' : ' · 邮箱待验证'}</span><button type="button" onClick={signOut}>退出登录</button></> : <Link to={`/login${returnQuery}`}>登录 / 注册</Link>}
+    {status.mode === 'local' ? <span className="campus-dev-note">本机体验身份 · 非正式账号</span> : status.authenticated ? <><span>已登录{status.user?.emailVerified ? '' : ' · 邮箱待验证'}</span><button type="button" onClick={signOut}>退出登录</button></> : <Link to={`/login${returnQuery}`}>登录 / 注册</Link>}
     {status.user?.isTeacher && <Link to="/teacher">教师荐才</Link>}
   </div>
 }

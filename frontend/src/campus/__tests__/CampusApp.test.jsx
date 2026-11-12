@@ -118,6 +118,14 @@ it('keeps its data router and dirty editor stable across application rerenders a
   expect(confirm).toHaveBeenCalledOnce()
 })
 
+it('opens the business homepage for the local identity without a login redirect', async () => {
+  session.status = { mode: 'local', authenticated: true, user: { uid: 'campus-local-dev', isTeacher: false } }
+  render(<CampusApp />)
+  expect(await screen.findByRole('heading', { name: 'Home route' })).toBeVisible()
+  expect(window.location.pathname).toBe('/')
+  expect(screen.queryByRole('heading', { name: 'Auth /login' })).not.toBeInTheDocument()
+})
+
 it('redirects only the anonymous root and retains explicit public deep links', async () => {
   session.status = { mode: 'clerk', authenticated: false, user: null }
   const view = render(<CampusApp />)

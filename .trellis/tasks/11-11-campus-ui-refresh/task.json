@@ -1,0 +1,33 @@
+{
+  "id": "campus-ui-refresh",
+  "name": "campus-ui-refresh",
+  "title": "校园主界面与三个工作页视觉重构",
+  "description": "按与当前职芽一致的分享方案，核对暖纸背景，恢复首页卡片，并重做简历、了解自己、找个方向、练面试的布局。",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-11-11",
+  "completedAt": "2026-11-12",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "11-11-restore-home-portal-cards",
+    "11-11-profile-bento-layout",
+    "11-11-direction-board-layout",
+    "11-11-interview-prep-layout",
+    "11-11-campus-paper-background",
+    "11-11-resume-workspace-layout"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
