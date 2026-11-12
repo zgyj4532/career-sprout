@@ -139,9 +139,8 @@ export function evaluateLocalBypass(env = process.env, req = {}) {
   if (env.APP_PROFILE !== 'campus-local') {
     return { mode: 'legacy', allow: false };
   }
-  if (env.CLERK_SECRET_KEY) {
-    return { mode: 'campus', allow: false, reason: 'clerk-configured' };
-  }
+  // Development loopback is the test runtime. A Clerk key saved for production
+  // must not turn this runtime into the Clerk login form.
   if (env.NODE_ENV !== 'development' || env.DEV_BYPASS_AUTH !== 'true') {
     return { mode: 'campus', allow: false, reason: 'switch-off' };
   }

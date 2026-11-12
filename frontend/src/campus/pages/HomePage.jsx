@@ -4,6 +4,7 @@ import { campusData, campusFetch, resumeRows } from '../api'
 import { CORE_NAV } from '../nav'
 import Slogan from '../components/Slogan'
 import RequestError from '../components/RequestError'
+import SpotlightCard from '../bits/SpotlightCard'
 
 export default function HomePage() {
   const [progress, setProgress] = useState(null)
@@ -37,8 +38,8 @@ export default function HomePage() {
       <div className="campus-next-step campus-card"><h2>{unfinished || unfinishedImport || recentResume ? '接着上次的进度' : '从这里开始'}</h2><Link className="button primary" to={next.to}>{next.action}</Link><Link className="campus-interest-entry" to="/discovery">没简历也可以给我讲讲你感兴趣的事</Link></div>
     </>}
     <details className="campus-examples"><summary>没有想法？看看怎样描述一次经历</summary><p>示例，不是你的资料：在一次课程小组任务中，我负责整理访谈记录，把重复的问题归类，并向组员说明发现。试着写出你实际做的事，不必添加没有发生的成果。</p></details>
-    <nav className="campus-capability-nav" aria-label="可以做的事">
-      {CORE_NAV.map(({ to, label }) => <Link key={to} to={to}>{label}</Link>)}
+    <nav className="campus-portal-grid" aria-label="可以做的事">
+      {CORE_NAV.map(({ to, label, copy, Icon }) => <Link className="campus-portal-card-link" key={to} to={to}><SpotlightCard className="campus-card campus-portal-card"><span className="campus-card-icon-box" aria-hidden="true"><Icon /></span><h2 className="campus-card-title">{label}</h2><p className="campus-card-desc">{copy}</p><span className="campus-card-watermark" aria-hidden="true"><Icon /></span></SpotlightCard></Link>)}
     </nav>
   </section>
 }

@@ -31,6 +31,7 @@ const env = {
   BULL_BOARD_ENABLED: 'false',
   CAMPUS_LOG_DIR: path.join(repoRoot, 'logs'),
   CAMPUS_LOG_FILE: 'backend',
+  DEV_BYPASS_AUTH: 'true',
 }
 
 const nodeBin = process.execPath
@@ -84,7 +85,8 @@ if (!backendReady) {
 start(nodeBin, [path.join(repoRoot, 'frontend/node_modules/vite/bin/vite.js')], {
   ...process.env,
   VITE_APP_PROFILE: 'campus-local',
-  VITE_DEV_BYPASS_AUTH: env.CLERK_SECRET_KEY ? 'false' : (env.DEV_BYPASS_AUTH || 'true'),
+  VITE_DEV_BYPASS_AUTH: 'true',
+  VITE_CLERK_PUBLISHABLE_KEY: '',
   VITE_API_BASE: '/api',
   VITE_BIND_LOOPBACK: '1',
 }, path.join(repoRoot, 'frontend'))

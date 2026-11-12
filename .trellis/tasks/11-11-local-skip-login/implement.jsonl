@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/project/campus-phase1/wsl-local.md", "reason": "Local versus Clerk auth contract this task changes"}
+{"file": ".trellis/spec/project/campus-phase1/scope.md", "reason": "Do not remove auth or expose bypass beyond loopback"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Login skip crosses Vite env, API status, and routing"}
+{"file": ".trellis/tasks/11-11-local-skip-login/research/local-auth-boundary.md", "reason": "Evidence for the 15-character Clerk policy and current bypass switch"}

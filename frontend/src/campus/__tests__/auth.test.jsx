@@ -401,6 +401,28 @@ describe('campus authentication lifecycle', () => {
     expect(result.current.error).toBeNull()
     expect(result.current.loadingStage).toBeNull()
   })
+
+  it('shows the local identity without offering formal login', async () => {
+    vi.stubEnv('VITE_CLERK_PUBLISHABLE_KEY', '')
+    campusData.mockResolvedValue({ mode: 'local', authenticated: true, user: { id: 'test-local', isTeacher: false } })
+    render(<MemoryRouter initialEntries={['/']}><CampusSessionProvider><SessionNavigation /></CampusSessionProvider></MemoryRouter>)
+    await act(async () => {})
+    expect(screen.getByText('本机体验身份 · 非正式账号')).toBeVisible()
+    expect(screen.queryByRole('link', { name: '注册 / 登录正式账号' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: '教师荐才' })).not.toBeInTheDocument()
+  })
+
+  it.each(['/login', '/register', '/verify-email'])('sends local identity %s to the saved in-app destination', async (path) => {
+    ready()
+    vi.stubEnv('VITE_CLERK_PUBLISHABLE_KEY', '')
+    campusData.mockResolvedValue({ mode: 'local', authenticated: true, user: { id: 'test-local', isTeacher: false } })
+    await renderAuthRoute(`${path}?returnTo=%2Fprofile`)
+    expect(screen.getByRole('heading', { name: 'Business destination' })).toBeVisible()
+    expect(screen.getByLabelText('Current destination')).toHaveTextContent('/profile')
+    expect(screen.queryByRole('region', { name: 'Clerk sign-in form' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('邮箱地址')).not.toBeInTheDocument()
+    cleanup()
+  })
  
   it.each([
     ['/login', 'Clerk sign-in form'],

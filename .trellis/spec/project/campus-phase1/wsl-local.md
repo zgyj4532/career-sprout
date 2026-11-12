@@ -50,10 +50,12 @@ MongoDB/Redis 使用本项目独立命名卷与 Compose project name，带健康
 
 ## 两种鉴权模式
 
-1. 正式联调模式：保留当前 Clerk，密钥由用户在本地 .env 填入；不改成自建 JWT 或新数据库账号系统。
-2. 可选本地开发身份：用户未配置 Clerk 时用 development + campus-local + 显式开关 + loopback 约束进入固定、非管理员测试身份。前端显示醒目开发模式标识。
+按运行时分开，不按本地 `.env` 里有没有 Clerk 密钥选择：
 
-上游后端已有 DEV_BYPASS_AUTH，但前端未配置 Clerk 只进入匿名预览；不能假定开关已贯通。检查 Clerk client/middleware 是否在本地分支前就被构造；需要最小适配，在无密钥时不调用 Clerk，且不能移除正式路径。
+1. 生产：保留 Clerk。`NODE_ENV=production` 必须显式关闭 `DEV_BYPASS_AUTH`，并使用 live 密钥。密码最低长度由线上 Clerk 实例决定，应用不写死 8 或 15。
+2. 本地测试运行时 `dev:local`：development + campus-local + loopback + `DEV_BYPASS_AUTH=true`。即使 `.env` 留有 Clerk 密钥，也使用固定、非管理员、非教师的本机身份，前端不加载 Clerk，打开首页不进入登录页。
+
+上游后端已有 DEV_BYPASS_AUTH。`dev:local` 必须自己强制旁路并把前端公钥覆盖为空，不能假设 Vite 会忽略 `.env.local`。生产路径仍在有密钥时调用 Clerk，不能移除。
 
 本地开发模式必须同时满足后端开发环境、显式开关、只监听 127.0.0.1、严格 Host/Origin 和变更请求来源检查；不信任 X-Forwarded-* 绕过判断。前端分支还需 import.meta.env.DEV。production/staging、绑定 0.0.0.0、通过隧道/远端访问时应拒绝启动本地旁路。开发身份不赋予管理员权限，不支持匿名选择任意 uid。正式模式需真实鉴权和按 owner 过滤资源。
 
