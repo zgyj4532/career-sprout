@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/project/campus-phase1/index.md", "reason": "校园版第一阶段规范总入口"}
+{"file": ".trellis/spec/project/campus-phase1/scope.md", "reason": "模块裁剪边界、外部副作用与 Git 安全要求"}
+{"file": ".trellis/spec/project/campus-phase1/verification.md", "reason": "材料导入持久化、Grounding 核验、错误矩阵与真实性质量门"}
+{"file": ".trellis/spec/project/campus-phase1/wsl-local.md", "reason": "本地环境变量与运行契约"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端开发规范总索引"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "AI 建议显式确认采纳、防过期覆盖与无障碍表单规范"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "编辑器草稿态、revision 防竞态与未保存保护规范"}
+{"file": ".trellis/tasks/11-24-deepseek-ocr-migration/research/deepseek-and-2c2g-ocr-evaluation.md", "reason": "DeepSeek 模型实测结论与 2C2G 百炼 OCR 架构调研"}
