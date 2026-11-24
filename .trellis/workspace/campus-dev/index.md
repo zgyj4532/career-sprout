@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 4
-- **Last Active**: 2026-10-20
+- **Total Sessions**: 5
+- **Last Active**: 2026-11-24
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~116 | Active |
+| `journal-1.md` | ~149 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 5 | 2026-11-24 | DeepSeek 迁移、百炼云端 OCR 与 7 场景简历润色升级 | `c5a74e5254a57c47093792d82f2d8d9f99b0889e` | `feat/deepseek-ocr-polish-upgrade` |
 | 4 | 2026-10-20 | Existing task continuation and novice workflow safety | - | `feat/career-sprout-experience-polish` |
 | 3 | 2026-10-18 | 职芽 CareerSprout 完整改造与低内存验证 | - | `feat/campus-phase1-wsl` |
 | 2 | 2026-10-15 | Phase 1.1 stabilize | - | `feat/campus-phase1-wsl` |
