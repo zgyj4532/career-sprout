@@ -80,6 +80,13 @@ test('HTTP title/body CAS prevents stale overwrite and only content changes inva
   const migrated = await call(`/resumes/${historical}`, 'PUT', { originalText: 'After revisions', revision: 1 });
   assert.equal(migrated.status, 200);
   assert.equal(migrated.body.data.contentRevision, 2);
+
+  const historicalWithOp = new mongoose.Types.ObjectId();
+  await Resume.collection.insertOne({ _id: historicalWithOp, userId: owner, originalText: 'Legacy materialSave body', title: 'Legacy Op' });
+  const migratedOp = await call(`/resumes/${historicalWithOp}`, 'PUT', { operationId: 'op-legacy-resume-1', originalText: 'Updated via saveMaterial', revision: 1 });
+  assert.equal(migratedOp.status, 200);
+  assert.equal(migratedOp.body.data.revision, 2);
+  assert.equal(migratedOp.body.data.contentRevision, 2);
 });
 
 // Enter account admission first, as the HTTP handler does; invocation before

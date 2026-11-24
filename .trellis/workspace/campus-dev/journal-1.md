@@ -114,3 +114,36 @@ Completed reachable import, screenshot jobs, resume safety and novice recovery w
 ### Next Steps
 
 - 3-5 novice students, formal Clerk accounts and physical-device acceptance remain; no archive or push.
+
+
+## Session 5: DeepSeek 迁移、百炼云端 OCR 与 7 场景简历润色升级
+<!-- trellis-session: v=2 fp=5cbbc7a946e02046 -->
+
+**Date**: 2026-11-24
+**Task**: DeepSeek 迁移、百炼云端 OCR 与 7 场景简历润色升级
+**Branch**: `feat/deepseek-ocr-polish-upgrade`
+
+### Summary
+
+完成大模型迁移至 DeepSeek 官方接口、接入零容器内存增量的百炼 qwen3.5-ocr 两阶段图片识别流水线、升级简历 AI 润色 7 大场景并修复历史无版本号简历与默认思考链超时问题（PR #9）。
+
+### Main Changes
+
+- 新增 DeepSeekAdapter（默认关闭思考链并支持 json_object）与 Qwen ASR 解耦路由
+- 新增百炼 qwen3.5-ocr 云端两阶段 OCR 适配 2C2G（768m）内存限制
+- 简历 AI 润色新增 7 大实用场景与临时粘贴 JD，保留反幻觉逐字核验
+- 修复旧版无 revision 简历的版本冲突、PDF 浏览器探测与本地限流问题
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c5a74e5254a57c47093792d82f2d8d9f99b0889e` | feat: 切换大模型至 DeepSeek、接入百炼云端 OCR 并升级 7 场景简历润色 |
+
+### Testing
+
+- [OK] 后端校园单测/集成测试、前端 33 文件 264 用例、data/Resume 真实简历集及本地免登录全链路实测通过
+
+### Status
+
+[OK] **Completed**

@@ -27,6 +27,7 @@ import {
 import { parseJdFromUrl, parseJdFromText } from '../services/jdParser.service.js';
 import { uploadAudioBuffer } from '../services/upload.service.js';
 import { ownedSource } from '../campus/targets.js';
+import { revisionOf } from '../campus/resumeRevision.js';
 import { visibleJob } from '../campus/growth.js';
 import { readFreshProfile } from '../campus/profileRead.js';
 import { campusError } from '../campus/errors.js';
@@ -91,7 +92,7 @@ router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(st
     const freshProfile = await readFreshProfile(req.user.uid);
     if (req.body.resumeId) {
         const source = await ownedSource(req.body.resumeId, req.user.uid);
-        if (req.body.resumeRevision !== undefined && req.body.resumeRevision !== source.revision) throw campusError(409, 'SOURCE_CHANGED', '简历已更新，请重新确认要使用的版本。');
+        if (req.body.resumeRevision !== undefined && req.body.resumeRevision !== revisionOf(source)) throw campusError(409, 'SOURCE_CHANGED', '简历已更新，请重新确认要使用的版本。');
         const missingSkills = (source.preferences?.skills || []).filter((skill) => !source.originalText.includes(skill));
         req.body.resumeText = [source.originalText, missingSkills.length ? `技能：${missingSkills.join('、')}` : ''].filter(Boolean).join('\n\n');
     } else if (!req.body.resumeText && freshProfile?.skills?.length) {
@@ -183,7 +184,7 @@ router.post('/start', verifyToken, extractAIProvider, aiRateLimiter, validate(st
         }] : []
     });
 
-    if (req.body.resumeId && req.body.resumeRevision !== undefined && (await ownedSource(req.body.resumeId, req.user.uid)).revision !== req.body.resumeRevision) throw campusError(409, 'SOURCE_CHANGED', '生成期间简历已更新，请重新确认版本。');
+    if (req.body.resumeId && req.body.resumeRevision !== undefined && revisionOf(await ownedSource(req.body.resumeId, req.user.uid)) !== req.body.resumeRevision) throw campusError(409, 'SOURCE_CHANGED', '生成期间简历已更新，请重新确认版本。');
     await interview.save();
 
     res.json({

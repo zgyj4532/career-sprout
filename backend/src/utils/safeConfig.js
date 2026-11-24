@@ -10,6 +10,10 @@
 
 // Keys whose values must never appear in logs.
 export const SENSITIVE_KEYS = [
+  'DEEPSEEK_API_KEY',
+  'DASHSCOPE_API_KEY',
+  'QWEN_API_KEY',
+  'CUSTOM_API_KEY',
   'GEMINI_API_KEY',
   'OPENAI_API_KEY',
   'GROQ_API_KEY',

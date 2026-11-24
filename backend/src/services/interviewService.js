@@ -609,12 +609,14 @@ export const transcribeAudio = async ({ audioBuffer, language, signal: requestSi
   signal.throwIfAborted();
   const provider = aiProvider || getDefaultProvider();
   const base = provider.baseURL || provider.client?.baseURL || '';
-  const supported = String(base).includes('vibekey.cn') || process.env.ASR_PROVIDER === 'qwen' || (['openai', 'groq', 'openrouter'].includes(provider.providerName) && provider.client?.audio?.transcriptions?.create) || (provider.providerName === 'gemini' && provider.model);
+  const hasQwenAsrKey = Boolean((process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY || '').trim());
+  const useQwenAsr = String(base).includes('vibekey.cn') || process.env.ASR_PROVIDER === 'qwen' || (hasQwenAsrKey && ['deepseek', 'custom'].includes(provider.providerName));
+  const supported = useQwenAsr || (['openai', 'groq', 'openrouter'].includes(provider.providerName) && provider.client?.audio?.transcriptions?.create) || (provider.providerName === 'gemini' && provider.model);
   if (!supported) throw new Error('Audio transcription is not supported: selected provider does not support audio transcription.');
   logEvent('asr.stage', { requestId, stage: 'prepare' });
   const audio = await prepareSpeechAudio(audioBuffer, signal);
   logEvent('asr.stage', { requestId, stage: 'provider' });
-  if (String(base).includes('vibekey.cn') || process.env.ASR_PROVIDER === 'qwen') {
+  if (useQwenAsr) {
     return transcribeWithQwen({ audio, language, signal });
   }
   const name = provider.providerName;

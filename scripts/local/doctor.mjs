@@ -126,7 +126,7 @@ if (options) {
       const value = configured(backend[key])
       record(`config-${key}`, value === 'set' ? 'PASS' : 'BLOCKED_EXTERNAL', value, { required: true })
     }
-    for (const key of ['APP_PROFILE', 'HOST', 'DEV_BYPASS_AUTH', 'CLERK_SECRET_KEY', 'CAMPUS_TEACHER_UIDS', 'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENROUTER_API_KEY', 'ASR_PROVIDER', 'DASHSCOPE_API_KEY', 'QWEN_API_KEY', 'QWEN_ASR_BASE_URL', 'QWEN_ASR_MODEL', 'FFMPEG_PATH']) {
+    for (const key of ['APP_PROFILE', 'HOST', 'DEV_BYPASS_AUTH', 'CLERK_SECRET_KEY', 'CAMPUS_TEACHER_UIDS', 'AI_PROVIDER', 'DEEPSEEK_API_KEY', 'DEEPSEEK_BASE_URL', 'DEEPSEEK_MODEL', 'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENROUTER_API_KEY', 'ASR_PROVIDER', 'OCR_PROVIDER', 'DASHSCOPE_API_KEY', 'QWEN_API_KEY', 'QWEN_ASR_BASE_URL', 'QWEN_ASR_MODEL', 'QWEN_OCR_MODEL', 'FFMPEG_PATH']) {
       record(`config-${key}`, 'PASS', `presence=${configured(backend[key])}; capability not exercised`, { required: false })
     }
     for (const key of ['VITE_CLERK_PUBLISHABLE_KEY', 'VITE_DEV_BYPASS_AUTH', 'VITE_APP_PROFILE', 'VITE_API_BASE']) {

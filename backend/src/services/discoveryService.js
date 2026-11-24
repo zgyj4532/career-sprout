@@ -25,7 +25,7 @@ async function jsonResult(provider, prompt, schema) {
     // Await cancellation settlement: never release session admission while a
     // provider is still running. The persisted lease is renewed by the caller.
     const result = await (provider || getDefaultProvider()).generateContent(prompt, {
-      signal: controller.signal, timeout: 60000, maxRetries: 0, maxTokens: 6000, temperature: 0,
+      signal: controller.signal, timeout: 60000, maxRetries: 0, maxTokens: 6000, temperature: 0, jsonMode: true,
     });
     if (controller.signal.aborted || typeof result.text !== 'string' || result.text.length > 40000) throw new Error('Invalid result');
     return schema.parse(JSON.parse(result.text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')));

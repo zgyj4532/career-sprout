@@ -49,10 +49,17 @@ export function parseImportResult(raw, { blocks, issues = [], vision = false, op
   const value = parsed.data
   const outputIssues = [...issues]
   let sourceBlocks = blocks
-  if (vision) {
+  const hasPreOcr = blocks.some((block) => block.status === 'vision_unverified' && block.text?.trim())
+  if (vision && !hasPreOcr) {
     if (value.transcription.length !== blocks.length || blocks.some((block) => !value.transcription.some((item) => item.id === block.id && item.text.trim()))) return { ok: false, reason: 'transcription' }
     sourceBlocks = blocks.map((block) => ({ ...block, text: value.transcription.find((item) => item.id === block.id).text, status: 'vision_unverified' }))
-    for (const block of sourceBlocks) outputIssues.push({ id: `${block.id}-vision`, code: 'VISION_UNVERIFIED', blockId: block.id, message: '图片文字由模型读取，可能遗漏；请对照原图确认姓名、日期和重要内容。' })
+  }
+  if (vision || hasPreOcr) {
+    for (const block of sourceBlocks) {
+      if (block.status === 'vision_unverified' && !outputIssues.some((item) => item.code === 'VISION_UNVERIFIED' && item.blockId === block.id)) {
+        outputIssues.push({ id: `${block.id}-vision`, code: 'VISION_UNVERIFIED', blockId: block.id, message: '图片文字由模型读取，可能遗漏；请对照原图确认姓名、日期和重要内容。' })
+      }
+    }
   }
   const sourceText = sourceBlocks.map((block) => block.text).join('\n\n')
   if (!sourceText.trim() || sourceText.length > LIMITS.textChars) return { ok: false, reason: 'source_limit' }

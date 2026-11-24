@@ -13,6 +13,23 @@ import { SheetMark } from '../art/Decor'
 
 const BLANK_DRAFT = JSON.stringify({ title: '', jobRole: '', text: '' })
 
+const POLISH_MODES = [
+  { id: 'general', label: '综合润色', hint: '在不改变真实经历与程度限定的前提下，让表达更清晰简洁。', button: 'AI 润色建议' },
+  { id: 'star_achievements', label: 'STAR 核心成果(3条)', hint: '结合岗位 JD 提炼最多 3 条匹配成果，采用 STAR 句式并保留真实量化数据。', button: '提炼 STAR 核心成果' },
+  { id: 'project_compact', label: '项目栏精简(2行)', hint: '突出项目价值与贡献，压缩到 2 行以内，贴合互联网/运营等行业表达。', button: '生成 2 行项目精简稿' },
+  { id: 'hr_critique', label: 'HR 挑刺与删空话', hint: '站在 HR 视角挑出短板、删掉空话套话，标注与目标岗位弱相关的经历。', button: '开始 HR 视角检查' },
+  { id: 'profile_summary', label: '个人简介(3句话)', hint: '根据目标岗位与真实经历生成 3 句话以内的个人简介，突出核心竞争力。', button: '生成 3 句话个人简介' },
+  { id: 'quantify_value', label: '成果量化与价值转化', hint: '把职责转化为成果表达；有数据突出指标，无数据提炼工作价值并引导补充。', button: '转化成果与工作价值' },
+  { id: 'interview_questions', label: '预测面试追问(5题)', hint: '基于这份简历预测面试官会追问的 5 个问题并附回答思路（只读参考，不改正文）。', button: '预测 5 道面试追问' },
+  { id: 'layout_reorder', label: '排版与顺序优化', hint: '优化模块逻辑与段落顺序，优先展示与目标岗位匹配的能力和核心经历。', button: '优化排版与段落顺序' },
+]
+
+const CRITIQUE_LABELS = {
+  shortcoming: '短板提示',
+  fluff: '空话套话',
+  irrelevant: '岗位弱相关',
+}
+
 export default function ResumePage() {
   const [search] = useSearchParams()
   const navigate = useNavigate()
@@ -27,6 +44,8 @@ export default function ResumePage() {
   const [title, setTitle] = useState('')
   const [jobRole, setJobRole] = useState('')
   const [jobId, setJobId] = useState(search.get('jobId') || '')
+  const [customJd, setCustomJd] = useState('')
+  const [polishMode, setPolishMode] = useState('general')
   const [text, setText] = useState('')
   const [savedText, setSavedText] = useState(BLANK_DRAFT)
   const [suggestion, setSuggestion] = useState(null)
@@ -44,6 +63,7 @@ export default function ResumePage() {
   const polishRequest = useRef(null)
   const dirty = savedText !== JSON.stringify({ title, jobRole, text })
   const allowLeave = useUnsavedWork(dirty || saveUnknown || voiceActive)
+  const activeMode = POLISH_MODES.find((item) => item.id === polishMode) || POLISH_MODES[0]
   async function loadList() { setResumes(resumeRows(await campusFetch('/api/resumes'))) }
   async function initialize() {
     try {
@@ -79,15 +99,30 @@ export default function ResumePage() {
     if (polishing || !text.trim()) return
     const version = revision.current
     const source = text
+    const requestedMode = polishMode
     const controller = new AbortController()
     polishRequest.current = controller
     setPolishing(true); setSuggestion(null); setError(null); setNote('')
     try {
-      const result = await campusData('/resumes/polish', { method: 'POST', signal: controller.signal, body: JSON.stringify({ sourceText: source, ...(jobId ? { jobId } : {}) }) })
-      if (version === revision.current) setSuggestion({ ...result, source, version })
+      const payload = {
+        sourceText: source,
+        ...(jobId ? { jobId } : {}),
+        ...(requestedMode !== 'general' ? { mode: requestedMode } : {}),
+        ...(jobRole.trim() ? { jobRole: jobRole.trim() } : {}),
+        ...(customJd.trim() ? { jobDescription: customJd.trim() } : {}),
+      }
+      const result = await campusData('/resumes/polish', { method: 'POST', signal: controller.signal, body: JSON.stringify(payload) })
+      if (version === revision.current) setSuggestion({ ...result, mode: result.mode || requestedMode, source, version })
       else setNote('输入已改变，旧建议未应用。可以根据新内容重新润色。')
       logClientEvent('resume.polish.completed')
     } catch (err) { if (!controller.signal.aborted) setError(err) } finally { if (polishRequest.current === controller) setPolishing(false) }
+  }
+  function adoptDraft(nextText) {
+    if (!suggestion || revision.current !== suggestion.version) return
+    revision.current += 1
+    setText(nextText)
+    setSuggestion(null)
+    setPolishUnsaved(true)
   }
   async function continueToInterview(saved) {
     try {
@@ -159,11 +194,52 @@ export default function ResumePage() {
     {compression && <section className="campus-panel campus-form"><h2>压缩稿与原文对照</h2><p>压缩稿未保存到原简历；请核对省略内容是否影响事实和上下文。</p><div className="campus-grid"><div><h3>原文</h3><p className="campus-preserve-text">{compression.original}</p></div><div><h3>压缩稿</h3><p className="campus-preserve-text">{compression.draft}</p></div></div><h3>修改对照</h3><ul>{compression.changes.map((change, index) => <li key={index} className="campus-preserve-text">{change}</li>)}</ul><button type="button" disabled={busy || dirty} onClick={() => { const draft = compression.draft; setCurrentId(''); setTitle(`${title.slice(0, 95)} 压缩稿`); setServerRevision(null); setSavedContinue(null); setSavedText(BLANK_DRAFT); editText(draft); setNote('压缩稿已作为新简历草稿放入编辑器，尚未保存；原简历不会被覆盖。') }}>作为新简历修改压缩稿</button></section>}
     <div className="resume-workspace"><div className="campus-form"><form className="campus-card resume-editor-card campus-form" onSubmit={(event) => save(event, true)}>
       <fieldset disabled={busy} className="campus-form campus-fieldset"><div className="resume-meta-row"><label>简历标题<input required maxLength={100} readOnly={Boolean(currentId)} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="给这份简历起个名字" /></label>{currentId && <button type="button" onClick={() => rename({ id: currentId, title, revision: serverRevision })}>修改当前简历名称</button>}<label>想尝试的岗位（可留空）<input maxLength={200} value={jobRole} onChange={(event) => { revision.current += 1; setSuggestion(null); setJobRole(event.target.value) }} placeholder="还没确定方向也可以保存简历" /></label></div>
-      <details className="campus-tool"><summary>补充材料或选择目标岗位</summary><JobSelect jobs={jobs} setJobs={setJobs} total={jobsTotal} loadError={error} value={jobId} disabled={busy} onChange={(id) => { revision.current += 1; setSuggestion(null); setJobId(id); const job = jobs.find((row) => row.id === id); if (job) setJobRole(job.title) }} />
+      <details className="campus-tool"><summary>补充材料、选择岗位或临时粘贴招聘要求（JD）</summary><JobSelect jobs={jobs} setJobs={setJobs} total={jobsTotal} loadError={error} value={jobId} disabled={busy} onChange={(id) => { revision.current += 1; setSuggestion(null); setJobId(id); const job = jobs.find((row) => row.id === id); if (job) setJobRole(job.title) }} />
+      <label>临时粘贴岗位 JD 要求（可选，不新建岗位也可用于本次 AI 润色与诊断）<textarea rows={4} maxLength={10000} value={customJd} onChange={(event) => { revision.current += 1; setSuggestion(null); setCustomJd(event.target.value) }} placeholder="粘贴招聘职责与任职要求，帮助 AI 提炼匹配的 STAR 成果、个人简介或做 HR 视角检查。" /></label>
       <button type="button" disabled={!material || voiceActive} onClick={() => { const source = materialText(material); if (!source) { setNote('档案还没有可用于简历的材料。想法会保留在个人资料，不当作已完成经历。'); return } editText([text, source].filter(Boolean).join('\n\n')) }}>把已保存的档案材料加入正文</button></details>
       <label>真实经历与简历正文<textarea className="resume-textarea" maxLength={20000} value={text} onChange={(event) => editText(event.target.value)} placeholder="课程、社团、项目或工作都可以。只写实际发生的事。" /></label>
-      <div className="campus-actions"><button type="button" disabled={!text.trim() || polishing || voiceActive} onClick={polish}>{polishing ? '正在润色…' : 'AI 润色建议'}</button>{polishing && <button type="button" onClick={() => { revision.current += 1; polishRequest.current?.abort(); setPolishing(false) }}>取消本次润色</button>}{polishUnsaved && <span role="status">尚未保存</span>}</div>
-      {suggestion && <section className="campus-panel"><h2>核对后再采纳</h2><div className="campus-grid"><div><h3>本次原文</h3><p className="campus-preserve-text">{suggestion.source}</p></div><div><h3>AI 建议（尚未保存）</h3><p className="campus-preserve-text">{suggestion.draft}</p></div></div><h3>修改说明</h3><ul>{suggestion.changes.map((change) => <li key={change}>{change}</li>)}</ul><h3>请你补充的事实</h3><ul>{suggestion.questions.map((question) => <li key={question}>{question}</li>)}</ul><div className="campus-actions"><button type="button" onClick={() => { if (revision.current === suggestion.version) { setText(suggestion.draft); setSuggestion(null); setPolishUnsaved(true) } }}>确认事实并采纳建议</button><button type="button" onClick={() => setSuggestion(null)}>取消，保留原文</button></div></section>}
+      <div className="resume-polish-box">
+        <div className="resume-polish-modes" role="group" aria-label="AI 润色与辅导场景">
+          {POLISH_MODES.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={polishMode === item.id}
+              disabled={polishing || voiceActive}
+              className={`resume-mode-chip${polishMode === item.id ? ' is-selected' : ''}`}
+              onClick={() => { revision.current += 1; setSuggestion(null); setPolishMode(item.id) }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <p className="resume-label-hint">{activeMode.hint}</p>
+        <div className="campus-actions"><button type="button" disabled={!text.trim() || polishing || voiceActive} onClick={polish}>{polishing ? '正在润色…' : activeMode.button}</button>{polishing && <button type="button" onClick={() => { revision.current += 1; polishRequest.current?.abort(); setPolishing(false) }}>取消本次润色</button>}{polishUnsaved && <span role="status">尚未保存</span>}</div>
+      </div>
+      {suggestion && suggestion.mode === 'interview_questions' && <section className="campus-panel">
+        <h2>基于简历的面试追问预测（只读参考，不改写简历）</h2>
+        <ol className="resume-interview-list">
+          {(suggestion.interviewQuestions || []).map((item, index) => (
+            <li key={`${index}-${item.question}`} className="resume-interview-item">
+              <strong>{item.question}</strong>
+              {item.sourceExcerpt && <p className="resume-label-hint campus-preserve-text">触发依据：{item.sourceExcerpt}</p>}
+              <p className="campus-preserve-text">回答思路：{item.approach}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="campus-actions"><button type="button" onClick={() => setSuggestion(null)}>收起预测问题</button></div>
+      </section>}
+      {suggestion && suggestion.mode !== 'interview_questions' && <section className="campus-panel"><h2>核对后再采纳</h2>
+        {(suggestion.critiques || []).length > 0 && <div className="resume-critique-box"><h3>HR 视角问题标注</h3><ul className="resume-critique-list">{suggestion.critiques.map((item, index) => <li key={`${index}-${item.kind}`}><span className={`resume-critique-tag is-${item.kind}`}>{CRITIQUE_LABELS[item.kind] || '诊断'}</span>{item.excerpt ? `「${item.excerpt}」：` : ''}{item.advice}</li>)}</ul></div>}
+        <div className="campus-grid"><div><h3>本次原文</h3><p className="campus-preserve-text">{suggestion.source}</p></div><div><h3>AI 建议（尚未保存）</h3><p className="campus-preserve-text">{suggestion.draft}</p></div></div>
+        {(suggestion.changes || []).length > 0 && <><h3>修改说明</h3><ul>{suggestion.changes.map((change) => <li key={change}>{change}</li>)}</ul></>}
+        {(suggestion.questions || []).length > 0 && <><h3>请你补充的事实</h3><ul>{suggestion.questions.map((question) => <li key={question}>{question}</li>)}</ul></>}
+        <div className="campus-actions">
+          {suggestion.mode === 'profile_summary' && <button type="button" onClick={() => adoptDraft(`## 个人简介\n${suggestion.draft}\n\n${suggestion.source}`)}>插入到简历开头</button>}
+          <button type="button" onClick={() => adoptDraft(suggestion.draft)}>确认事实并采纳建议</button>
+          <button type="button" onClick={() => setSuggestion(null)}>取消，保留原文</button>
+        </div>
+      </section>}
       <div className="resume-actions-bar"><button className="btn-primary" type="submit" disabled={!text.trim() || polishing || voiceActive}>{savedContinue && !dirty ? '继续准备面试' : '保存并继续'}</button><button type="button" disabled={!text.trim() || polishing || voiceActive} onClick={(event) => { if (event.currentTarget.form.reportValidity()) save(event) }}>保存简历</button><button type="button" disabled={!currentId || dirty || polishing || voiceActive} onClick={download}>下载确认版 PDF</button></div><p role="status">{dirty ? '编辑尚未保存，PDF 和定向版本使用服务器已保存内容。' : currentId ? `当前内容已保存 · 版本 ${serverRevision}` : '空白草稿，从一件真实经历开始。'} A4 最多第二页上半页；超长时自动尝试压缩并重新检查。</p>
     </fieldset></form>
     {voiceActive && <p role="status">语音输入正在处理中，请展开语音工具完成或取消；文字仍保留。</p>}<details className="campus-tool" open={voiceActive}><summary>用声音补充经历</summary><VoiceReview disabled={busy || polishing} onActiveChange={setVoiceActive} onReview={(review) => editText([text, review].filter(Boolean).join('\n\n'))} /></details>

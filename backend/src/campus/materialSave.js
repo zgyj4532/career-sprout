@@ -37,8 +37,13 @@ async function freezeSave(kind, uid, id, body, operationId, isTeacher) {
       filter = plan.filter;
       update = plan.update;
       update.$set.lastModified = now;
-      result = { ...current, ...update.$set };
-      for (const [key, amount] of Object.entries(update.$inc || {})) result[key] = (result[key] || 0) + amount;
+      result = {
+        ...current,
+        revision: current.revision ?? 1,
+        contentRevision: current.contentRevision ?? 1,
+        ...update.$set,
+      };
+      for (const [key, amount] of Object.entries(update.$inc || {})) result[key] = (result[key] ?? 1) + amount;
     } else {
       if (expectedUpdatedAt === undefined || new Date(expectedUpdatedAt).getTime() !== new Date(current.updatedAt).getTime()) throw campusError(409, 'JOB_CHANGED', '岗位已经变化，请保留编辑并重新核对。');
       if (payload.authorKind !== undefined) payload.authorKind = isTeacher ? 'teacher' : payload.authorKind === 'alumni' ? 'alumni' : 'student';

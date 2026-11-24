@@ -48,7 +48,7 @@ if (options) {
     const testDirectory = path.join(runDirectory, 'backend-tests')
     mkdirSync(testDirectory, { recursive: true })
     const testEnv = { NODE_ENV: 'test', REDIS_URL: '', MONGODB_URI: '', ASR_PROVIDER: '', CLERK_SECRET_KEY: '', DOTENV_CONFIG_PATH: path.join(testDirectory, '.env-absent') }
-    for (const key of ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENROUTER_API_KEY', 'REQUESTY_API_KEY', 'CUSTOM_API_KEY', 'DASHSCOPE_API_KEY', 'QWEN_API_KEY']) testEnv[key] = ''
+    for (const key of ['DEEPSEEK_API_KEY', 'OPENAI_API_KEY', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'OPENROUTER_API_KEY', 'REQUESTY_API_KEY', 'CUSTOM_API_KEY', 'DASHSCOPE_API_KEY', 'QWEN_API_KEY']) testEnv[key] = ''
     const backendScript = (name, script, scope = 'campus') => {
       const manifest = JSON.parse(readFileSync(path.join(backend, 'package.json'), 'utf8'))
       const tokens = manifest.scripts[script]?.trim().split(/\s+/) || []

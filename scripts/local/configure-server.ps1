@@ -18,8 +18,9 @@ $script:AllowedKeys = @(
     'VITE_APP_PROFILE', 'VITE_DEV_BYPASS_AUTH', 'APP_PUBLIC_URL', 'FRONTEND_URL',
     'MONGODB_URI', 'REDIS_URL', 'ENABLE_GITHUB_SYNC_CRON',
     'CLERK_SECRET_KEY', 'VITE_CLERK_PUBLISHABLE_KEY', 'RESEND_API_KEY', 'RESEND_FROM',
-    'AI_PROVIDER', 'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL',
-    'DASHSCOPE_API_KEY', 'QWEN_ASR_BASE_URL', 'QWEN_ASR_MODEL'
+    'AI_PROVIDER', 'DEEPSEEK_API_KEY', 'DEEPSEEK_BASE_URL', 'DEEPSEEK_MODEL',
+    'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL',
+    'DASHSCOPE_API_KEY', 'QWEN_ASR_BASE_URL', 'QWEN_ASR_MODEL', 'QWEN_OCR_MODEL'
 )
 
 function Show-Boundary {
@@ -154,16 +155,33 @@ function Assert-Configuration([System.Collections.IDictionary]$Values) {
         -not $Values.Contains('RESEND_FROM') -or $Values['RESEND_FROM'] -notmatch '^[^<>\r\n]+@[^<>\s]+\.[^<>\s]+$') {
         throw 'Reserved Resend preparation requires an API key and plain sender email; SMTP credentials are not supported.'
     }
-    foreach ($group in @(
-        ,@('AI_PROVIDER', 'OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL')
-        ,@('DASHSCOPE_API_KEY', 'QWEN_ASR_BASE_URL', 'QWEN_ASR_MODEL')
-    )) {
-        $present = @($group | Where-Object { $Values.Contains($_) }).Count
-        if ($present -ne 0 -and $present -ne $group.Count) { throw 'Optional AI/ASR configuration must contain its complete key/base/model group.' }
-    }
     if ($Values.Contains('AI_PROVIDER')) {
-        if ($Values['AI_PROVIDER'] -cne 'openai') { throw 'This preparer supports only the existing openai-compatible chat provider.' }
-        Assert-Https $Values['OPENAI_BASE_URL'] 'OPENAI_BASE_URL'
+        if ($Values['AI_PROVIDER'] -ceq 'deepseek') {
+            $group = @('DEEPSEEK_API_KEY', 'DEEPSEEK_BASE_URL', 'DEEPSEEK_MODEL')
+            if (@($group | Where-Object { $Values.Contains($_) }).Count -ne $group.Count -or $Values.Contains('OPENAI_API_KEY') -or $Values.Contains('OPENAI_BASE_URL') -or $Values.Contains('OPENAI_MODEL')) {
+                throw 'Optional DeepSeek AI configuration must contain its complete DEEPSEEK_API_KEY/BASE_URL/MODEL group without mixed OPENAI_* fields.'
+            }
+            Assert-Https $Values['DEEPSEEK_BASE_URL'] 'DEEPSEEK_BASE_URL'
+        } elseif ($Values['AI_PROVIDER'] -ceq 'openai') {
+            $group = @('OPENAI_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL')
+            if (@($group | Where-Object { $Values.Contains($_) }).Count -ne $group.Count -or $Values.Contains('DEEPSEEK_API_KEY') -or $Values.Contains('DEEPSEEK_BASE_URL') -or $Values.Contains('DEEPSEEK_MODEL')) {
+                throw 'Optional OpenAI configuration must contain its complete OPENAI_API_KEY/BASE_URL/MODEL group without mixed DEEPSEEK_* fields.'
+            }
+            Assert-Https $Values['OPENAI_BASE_URL'] 'OPENAI_BASE_URL'
+        } else {
+            throw 'This preparer supports only deepseek or openai chat providers.'
+        }
+    } elseif ($Values.Contains('DEEPSEEK_API_KEY') -or $Values.Contains('DEEPSEEK_BASE_URL') -or $Values.Contains('DEEPSEEK_MODEL') -or
+              $Values.Contains('OPENAI_API_KEY') -or $Values.Contains('OPENAI_BASE_URL') -or $Values.Contains('OPENAI_MODEL')) {
+        throw 'Optional AI configuration must specify AI_PROVIDER together with its complete key/base/model group.'
+    }
+    $asrGroup = @('DASHSCOPE_API_KEY', 'QWEN_ASR_BASE_URL', 'QWEN_ASR_MODEL')
+    $asrPresent = @($asrGroup | Where-Object { $Values.Contains($_) }).Count
+    if ($asrPresent -ne 0 -and $asrPresent -ne $asrGroup.Count) {
+        throw 'Optional ASR/OCR configuration must contain its complete DASHSCOPE_API_KEY/QWEN_ASR_BASE_URL/QWEN_ASR_MODEL group.'
+    }
+    if ($Values.Contains('QWEN_OCR_MODEL') -and -not $Values.Contains('DASHSCOPE_API_KEY')) {
+        throw 'QWEN_OCR_MODEL requires DASHSCOPE_API_KEY.'
     }
     if ($Values.Contains('QWEN_ASR_BASE_URL')) { Assert-Https $Values['QWEN_ASR_BASE_URL'] 'QWEN_ASR_BASE_URL' }
 }
@@ -241,16 +259,22 @@ function Edit-Configuration([bool]$Overwrite) {
         }
         default { throw 'Select 1 or 2; no authentication mode was selected.' }
     }
-    if ((Read-Host 'Include existing OpenAI-compatible chat configuration? [y/N]') -eq 'y') {
+    if ((Read-Host 'Include DeepSeek chat configuration? [y/N]') -eq 'y') {
+        $values['AI_PROVIDER'] = 'deepseek'
+        $values['DEEPSEEK_API_KEY'] = Read-Field 'DEEPSEEK_API_KEY' $previous -Secret
+        $values['DEEPSEEK_BASE_URL'] = Read-Field 'DEEPSEEK_BASE_URL' $previous -Default 'https://api.deepseek.com'
+        $values['DEEPSEEK_MODEL'] = Read-Field 'DEEPSEEK_MODEL' $previous -Default 'deepseek-flash'
+    } elseif ((Read-Host 'Include fallback OpenAI-compatible chat configuration? [y/N]') -eq 'y') {
         $values['AI_PROVIDER'] = 'openai'
         $values['OPENAI_API_KEY'] = Read-Field 'OPENAI_API_KEY' $previous -Secret
-        $values['OPENAI_BASE_URL'] = Read-Field 'OPENAI_BASE_URL' $previous -Default 'https://api.vibekey.cn/v1'
-        $values['OPENAI_MODEL'] = Read-Field 'OPENAI_MODEL' $previous -Default 'gpt-6.1-sol'
+        $values['OPENAI_BASE_URL'] = Read-Field 'OPENAI_BASE_URL' $previous -Default 'https://api.openai.com/v1'
+        $values['OPENAI_MODEL'] = Read-Field 'OPENAI_MODEL' $previous -Default 'gpt-4o-mini'
     }
-    if ((Read-Host 'Include existing Qwen ASR configuration? [y/N]') -eq 'y') {
+    if ((Read-Host 'Include Bailian DashScope ASR + OCR configuration? [y/N]') -eq 'y') {
         $values['DASHSCOPE_API_KEY'] = Read-Field 'DASHSCOPE_API_KEY' $previous -Secret
         $values['QWEN_ASR_BASE_URL'] = Read-Field 'QWEN_ASR_BASE_URL' $previous -Default 'https://dashscope.aliyuncs.com/compatible-mode/v1'
         $values['QWEN_ASR_MODEL'] = Read-Field 'QWEN_ASR_MODEL' $previous -Default 'qwen3-asr-flash'
+        $values['QWEN_OCR_MODEL'] = Read-Field 'QWEN_OCR_MODEL' $previous -Default 'qwen3.5-ocr'
     }
     Write-PrivateConfiguration $ConfigPath $values $Overwrite
     Write-Host 'Saved private UTF-8 configuration. Contents are not printed. Production is still blocked.'
@@ -387,6 +411,12 @@ function Invoke-SelfTest {
         try { Assert-Configuration $values } catch { $rejected = $true }
         if (-not $rejected) { throw 'Incomplete provider group was accepted.' }
         $values['OPENAI_MODEL'] = 'dummy'
+        $values.Remove('OPENAI_API_KEY'); $values.Remove('OPENAI_BASE_URL'); $values.Remove('OPENAI_MODEL')
+        $values['AI_PROVIDER'] = 'deepseek'; $values['DEEPSEEK_API_KEY'] = 'sk-dummy-deepseek'
+        $values['DEEPSEEK_BASE_URL'] = 'https://api.deepseek.com'; $values['DEEPSEEK_MODEL'] = 'deepseek-flash'
+        Assert-Configuration $values
+        Write-PrivateConfiguration $path $values $true
+        if ((Read-Configuration $path)['AI_PROVIDER'] -cne 'deepseek') { throw 'DeepSeek provider round trip failed.' }
         $values.Remove('CLERK_SECRET_KEY'); $values.Remove('VITE_CLERK_PUBLISHABLE_KEY')
         $values['RESEND_API_KEY'] = 're_dummy'; $values['RESEND_FROM'] = 'dummy@example.invalid'
         Assert-Configuration $values

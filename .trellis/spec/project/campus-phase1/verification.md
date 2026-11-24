@@ -204,3 +204,51 @@ Wrong: `overall = sum(allDimensionScoresOrZero * weights)` or replay `POST` with
 Wrong: `model.updateOne({education: legacyArray}, ...)` silently schema-casts the CAS baseline. Correct: validate the prepared after-values, then use native collection CAS with exact persisted BSON, owner and receipt guards. Never change the legacy fixture to make a cast predicate pass.
 
 Wrong: treating lease expiry as permission for an overlapping worker, or taking a model substring as an affirmative fact. Correct: retain live write admission until settlement; expand excerpts to accepted supporting statements before subject/negation/state checks.
+
+## DeepSeek provider, Bailian cloud OCR and multi-scenario resume polish (2026-11-24)
+
+### 1. Scope / Trigger
+
+Applies when changing default LLM provider selection (`aiProviders.js`), ASR provider fallback (`interviewService.js`), image/screenshot OCR extraction (`ocrService.js`, `imports.js`, `jobImages.js`), or campus resume AI polish modes (`schemas.js`, `campus/ai.js`, `targets.js`, `ResumePage.jsx`). Preserves the 2C2G container memory ceiling (`768m` backend limit) without adding Python/OpenCV/ONNX runtime dependencies.
+
+### 2. Signatures
+
+- `createAIProvider('deepseek', apiKey, modelName?, baseUrl?)` in `backend/src/config/aiProviders.js`: OpenAI-compatible adapter defaulting to `https://api.deepseek.com` and `deepseek-flash`; `resetDefaultProvider()` resets the cached server provider singleton for isolated tests.
+- `extractImageText({ imageDataUrl, signal?, timeoutMs?, fetchImpl?, env? })` in `backend/src/campus/ocrService.js`: calls DashScope compatible `/chat/completions` (`QWEN_OCR_MODEL` default `qwen3.5-ocr`) using `DASHSCOPE_API_KEY` / `QWEN_API_KEY`.
+- `POST /api/campus/resumes/polish`: accepts `{ sourceText, jobId?, mode?, jobRole?, jobDescription? }` where `mode` is `'general' | 'star_achievements' | 'project_compact' | 'hr_critique' | 'profile_summary' | 'quantify_value' | 'interview_questions' | 'layout_reorder'`.
+
+### 3. Contracts
+
+- **Model tiering & non-thinking JSON contract**: interactive chat/polish/discovery/interview and `PRIMARY_MODEL` in `importAi.js` default to `deepseek-flash`; single validation retry `RETRY_MODEL` defaults to `deepseek-v4-pro` (overridable via `DEEPSEEK_MODEL`, `DEEPSEEK_IMPORT_PRIMARY_MODEL`, `DEEPSEEK_IMPORT_RETRY_MODEL`). Because `api.deepseek.com` enables chain-of-thought reasoning (`reasoning_content`) by default on `deepseek-flash` / `deepseek-v4-pro` (which can burn 12,000+ `reasoning_tokens` and return empty `content: ""` on multi-experience resume grounding), `DeepSeekAdapter.generateContent` explicitly sends `thinking: { type: 'disabled' }` unless `options.thinking === true`, caps non-thinking `max_tokens` to `8192`, and sets `response_format: { type: 'json_object' }` when `options.jsonMode === true`.
+- **Legacy resume revision baseline (`revisionOf`)**: `Resume` documents persisted before `revision` / `contentRevision` fields existed return `undefined` under `.lean()` while list/read routes expose `revision ?? 1`. Every CAS comparison and update planner (`planResumeUpdate`, `materialSave`, `/api/interview/start`, `/api/resumes/:id/download`, `resumeDelete`) must normalize via `revisionOf(doc)` (`doc?.revision ?? 1`) and `$set` missing baseline fields rather than comparing raw `doc.revision` or `$inc`ing a missing field from `0`.
+- **Two-stage image import**: `DeepSeekAdapter` rejects direct `imageDataUrl`/`imageDataUrls` (`422 VISION_NOT_SUPPORTED`). Resume images (`imports.js`) and job screenshots (`jobImages.js`) first extract verbatim text via `ocrService`, persist `status: 'vision_unverified'` blocks with `VISION_UNVERIFIED` issues (reused on `continue` without re-billing OCR), and pass text-only blocks to DeepSeek for structured extraction and deterministic source grounding.
+- **Qwen ASR decoupling**: when `DASHSCOPE_API_KEY` (or `QWEN_API_KEY`) is configured and the active text provider lacks native audio transcription (`deepseek` or `custom`) or `ASR_PROVIDER=qwen`, `transcribeAudio` routes to `transcribeWithQwen()`.
+- **Multi-scenario polish safety**: default `mode: 'general'` preserves the `{ draft, changes, questions }` response shape. Every mode returning an adoptable `draft` passes `assertPolishGrounding(sourceText, draft)` (no invented numbers, no Arabic list indices `1. 2. 3.` absent from source, no strengthened participation/proficiency, no dropped negations). `project_compact` enforces at most 2 non-empty lines; `hr_critique` grounds non-empty `critiques[].excerpt` against `sourceText`; `interview_questions` returns `draft: ''` and up to 5 grounded `{ question, approach, sourceExcerpt }` items for read-only coaching display.
+
+### 4. Validation & Error Matrix
+
+| Condition | Observable result |
+| --- | --- |
+| `AI_PROVIDER=deepseek` without `DEEPSEEK_API_KEY` / `OPENAI_API_KEY` | `503 AI_KEY_MISSING` / `AI_UNAVAILABLE` |
+| Direct image payload sent to `DeepSeekAdapter` | `422 VISION_NOT_SUPPORTED` |
+| Image import without `DASHSCOPE_API_KEY` | Draft retained with `OCR_UNAVAILABLE`; recoverable via `continue` |
+| Blank OCR text / >20,000 chars / OCR timeout | `NO_TEXT_LAYER` / `TEXT_TOO_LONG` / `OCR_TIMEOUT`; source retained |
+| Polish draft invents numbers (including new `1. 2.` list numbers) or drops negations | `502 AI_UNGROUNDED`; editor text unchanged |
+| Unknown `mode` on `/api/campus/resumes/polish` | `400 VALIDATION_FAILED` |
+
+### 5. Good / Base / Bad Cases
+
+- **Good**: PNG resume screenshot runs Bailian `qwen3.5-ocr` (~148 MiB RSS on Node 24), persists `vision_unverified` text, completes `deepseek-flash` structuring on first call, and flags `VISION_UNVERIFIED` for human review.
+- **Base**: omitting `mode` on `/api/campus/resumes/polish` runs `'general'` and returns `{ draft, changes, questions }` compatible with `SectionPolish` and `TargetResumes`.
+- **Bad**: asking a polish prompt for "3 bullet points" without forbidding Arabic numerals causes the LLM to emit `1. ... 2. ... 3.`, tripping `validateGrounding`'s number check when `1/2/3` are absent from `sourceText`.
+
+### 6. Tests Required
+
+- `backend/src/campus/__tests__/deepseekAndOcr.test.js` (included in `test:campus`): covers `DeepSeekAdapter` defaults and vision rejection, `ocrService` success/missing-key/empty/timeout paths, two-stage OCR -> DeepSeek resume & job screenshot grounding, and multi-mode polish grounding + read-only `interview_questions`.
+- `backend/src/services/__tests__/transcription.test.js`: verifies `deepseek` text provider + `DASHSCOPE_API_KEY` routes to Qwen ASR.
+- `frontend/src/campus/pages/__tests__/ResumePage.test.jsx`: verifies mode selection, ad-hoc JD forwarding, `profile_summary` prepend-to-top adoption, and read-only `interview_questions` rendering without an adoption button.
+
+### 7. Wrong vs Correct
+
+Wrong: sending `image_url` to DeepSeek, installing a 300MB Python/OpenCV OCR stack inside the `768m` backend container, or letting `interview_questions` populate `draft` so clicking adopt overwrites the student's resume with interview questions.
+Correct: run stateless DashScope OCR first (`0` extra container RAM), ground DeepSeek JSON against the persisted OCR text, use `- ` bullets in polish prompts to avoid ungrounded numeral indices, and render `interview_questions` as a read-only panel with `draft: ''`.

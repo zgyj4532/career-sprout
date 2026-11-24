@@ -5,7 +5,7 @@ dotenv.config();
 
 if (process.env.NODE_ENV === 'development') {
     const url = process.env.REDIS_URL;
-    if (!url || url.includes('localhost') || url.includes('127.0.0.1')) {
+    if (!url) {
         console.warn(
             '⚠️  No local Redis detected. Run `docker compose up -d redis` (or start Redis on 6379) to enable caching, queues and realtime features.'
         );
