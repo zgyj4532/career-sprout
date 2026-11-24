@@ -6,6 +6,7 @@ import ResumeComment from '../models/ResumeComment.model.js'
 import { CampusResumeTombstone, CampusTarget, CampusSaveOperation } from './models.js'
 import { campusError } from './errors.js'
 import { withAccountWrite } from './accountWrites.js'
+import { revisionOf } from './resumeRevision.js'
 
 // All association writers and deletion share admission in the single campus
 // server. The durable deleting flag still blocks writers after a restart.
@@ -43,7 +44,7 @@ async function deleteOwned(resumeId, userId, { expectedRevision } = {}) {
   return withResumeLock(resumeId, async () => {
     if (expectedRevision !== undefined) {
       const current = await Resume.findOne({ _id: resumeId, userId }).lean()
-      if (current && !current.deleting && current.revision !== expectedRevision) throw campusError(409, 'RESTORE_CONFLICT', '简历已在导入后修改，不能覆盖这些修改。')
+      if (current && !current.deleting && revisionOf(current) !== expectedRevision) throw campusError(409, 'RESTORE_CONFLICT', '简历已在导入后修改，不能覆盖这些修改。')
     }
     const resume = await Resume.findOneAndUpdate(
       { _id: resumeId, userId, deleting: { $ne: true } },

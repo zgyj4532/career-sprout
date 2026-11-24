@@ -115,7 +115,7 @@ export async function campusFetch(path, options = {}) {
   const abort = () => controller.abort()
   if (options.signal?.aborted) controller.abort()
   else options.signal?.addEventListener('abort', abort, { once: true })
-  const timeout = setTimeout(() => { timedOut = true; controller.abort() }, /\/(?:export|download)$/.test(path) ? 300000 : 120000)
+  const timeout = setTimeout(() => { timedOut = true; controller.abort() }, /\/(?:export|download|imports|jobs\/images)(?:\/|$)/.test(path) ? 300000 : 120000)
   try {
     if (window.Clerk?.session) {
       const token = await window.Clerk.session.getToken()

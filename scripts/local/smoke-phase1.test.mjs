@@ -34,11 +34,12 @@ test('database isolation never keeps developer DB or accepts remote services', (
 
 test('child gets owned paths and current runtime but never parent credentials or dotenv overrides', () => {
   const directory = path.join(tmpdir(), runId)
-  const env = backendEnvironment({ PATH: '/other', HOME: '/home/test', CLERK_SECRET_KEY: 'private', OPENAI_API_KEY: 'private', NODE_OPTIONS: '--require unsafe', DOTENV_CONFIG_PATH: '/private/.env', DEV_USER_UID: 'developer' }, {
+  const env = backendEnvironment({ PATH: '/other', HOME: '/home/test', CLERK_SECRET_KEY: 'private', DEEPSEEK_API_KEY: 'private', OPENAI_API_KEY: 'private', NODE_OPTIONS: '--require unsafe', DOTENV_CONFIG_PATH: '/private/.env', DEV_USER_UID: 'developer' }, {
     runId, directory, mongoUri: `mongodb://127.0.0.1:27018/${runId}`, redisUrl: 'redis://127.0.0.1:6380',
   })
   assert.equal(env.DEV_USER_UID, runId)
   assert.equal(env.CLERK_SECRET_KEY, '')
+  assert.equal(env.DEEPSEEK_API_KEY, undefined)
   assert.equal(env.OPENAI_API_KEY, undefined)
   assert.equal(env.NODE_OPTIONS, undefined)
   assert.equal(env.DOTENV_CONFIG_PATH, undefined)

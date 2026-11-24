@@ -44,7 +44,7 @@ const buildStore = () => {
   if (!process.env.REDIS_URL) return undefined; // falls back to express-rate-limit in-memory store
 
   try {
-    const client = new Redis(process.env.REDIS_URL, { lazyConnect: true, enableOfflineQueue: false });
+    const client = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 1 });
     client.on('error', (err) => console.warn('Rate limiter Redis error:', err.message));
     return new RedisStore(client, WINDOW_MS);
   } catch {
@@ -55,7 +55,7 @@ const buildStore = () => {
 
 export const aiRateLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  max: DAILY_LIMIT,
+  max: () => (process.env.NODE_ENV === 'development' && process.env.DEV_BYPASS_AUTH === 'true' && process.env.APP_PROFILE !== 'test' ? 500 : DAILY_LIMIT),
   keyGenerator: (req) => req.user?.uid || req.ip,
   store: buildStore(),
   standardHeaders: true,

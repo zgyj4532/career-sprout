@@ -155,3 +155,42 @@ it('shows the compression comparison and opens a new unsaved resume without repl
   expect(screen.getByRole('button', { name: '下载确认版 PDF' })).toBeDisabled()
   expect(campusFetch.mock.calls.some(([, options]) => options?.method === 'PUT')).toBe(false)
 })
+
+it('supports multi-scenario AI polish modes, ad-hoc JD context, summary prepend, and read-only interview predictions', async () => {
+  campusData.mockImplementation((path, options) => {
+    if (path === '/me') return Promise.resolve({ profile: {}, student: { targetJobId: null } })
+    if (path.startsWith('/jobs')) return Promise.resolve({ items: [], total: 0 })
+    if (path === '/resumes/polish') {
+      const payload = JSON.parse(options.body)
+      if (payload.mode === 'profile_summary') {
+        return Promise.resolve({ mode: 'profile_summary', draft: '具备扎实内容策划经验的校园运营人。', changes: ['提炼核心优势'], questions: [] })
+      }
+      if (payload.mode === 'interview_questions') {
+        return Promise.resolve({
+          mode: 'interview_questions',
+          draft: '',
+          changes: [],
+          questions: [],
+          interviewQuestions: [{ question: '你在项目中具体负责哪一块？', approach: '用 STAR 法说明分工与结果', sourceExcerpt: '真实经历测试文本' }],
+        })
+      }
+    }
+    return Promise.resolve({})
+  })
+  open()
+  fireEvent.click(await screen.findByRole('button', { name: stored.title }))
+  await waitFor(() => expect(screen.getByLabelText('真实经历与简历正文')).toHaveValue(stored.originalText))
+
+  fireEvent.change(screen.getByLabelText(/临时粘贴岗位 JD 要求/), { target: { value: '负责新媒体选题与活动执行' } })
+  fireEvent.click(screen.getByRole('button', { name: '个人简介(3句话)' }))
+  fireEvent.click(screen.getByRole('button', { name: '生成 3 句话个人简介' }))
+  await screen.findByText('具备扎实内容策划经验的校园运营人。')
+  fireEvent.click(screen.getByRole('button', { name: '插入到简历开头' }))
+  expect(screen.getByLabelText('真实经历与简历正文').value).toContain('## 个人简介\n具备扎实内容策划经验的校园运营人。\n\n真实经历测试文本')
+
+  fireEvent.click(screen.getByRole('button', { name: '预测面试追问(5题)' }))
+  fireEvent.click(screen.getByRole('button', { name: '预测 5 道面试追问' }))
+  await screen.findByText('你在项目中具体负责哪一块？')
+  expect(screen.queryByRole('button', { name: '确认事实并采纳建议' })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: '收起预测问题' }))
+})

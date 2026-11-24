@@ -825,6 +825,72 @@
   box-shadow: 0 0 0 3px rgba(15, 110, 86, 0.12);
 }
 
+.resume-polish-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #f8f4ec;
+  border: 1px solid rgba(217, 208, 195, 0.75);
+  border-radius: 10px;
+}
+
+.resume-polish-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.campus .resume-mode-chip {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #ffffff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.campus .resume-mode-chip.is-selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.resume-critique-box {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: #fcfaf5;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.resume-critique-list,
+.resume-interview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-left: 18px;
+}
+
+.resume-critique-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #ebe4d8;
+  color: var(--ink);
+}
+
+.resume-critique-tag.is-shortcoming { background: #f5dfd8; color: #7a2e1d; }
+.resume-critique-tag.is-fluff { background: #f3ead3; color: #6b4e16; }
+.resume-critique-tag.is-irrelevant { background: #e3e8ee; color: #2c435a; }
+
 .resume-actions-bar {
   display: flex;
   align-items: center;

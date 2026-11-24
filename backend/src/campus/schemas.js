@@ -35,9 +35,42 @@ export const studentSchema = z.object({
 }).strict();
 export const jobSchema = z.object({ company: text(150).min(1), title: text(150).min(1), description: text(20000).min(1), source: text(500).default(''), authorKind: z.enum(['student', 'alumni', 'teacher']).default('student'), availability: availabilitySchema.default({ startDate: null, endDate: null, daysPerWeek: null }), requirements: requirementsSchema.default([]), status: z.enum(['draft', 'published']).default('draft'), operationId: operationIdSchema }).strict();
 export const jobPatchSchema = jobSchema.partial().extend({ expectedUpdatedAt: expectedUpdatedAtSchema });
+export const POLISH_MODES = [
+  'general',
+  'star_achievements',
+  'project_compact',
+  'hr_critique',
+  'profile_summary',
+  'quantify_value',
+  'interview_questions',
+  'layout_reorder',
+];
 export const analyzeSchema = z.object({ description: text(20000).min(1) }).strict();
-export const polishSchema = z.object({ sourceText: text(20000).min(1), jobId: objectId.optional() }).strict();
-export const polishResultSchema = z.object({ draft: text(20000).min(1), changes: z.array(text(500)).max(30), questions: z.array(text(500)).max(20) }).strict();
+export const polishSchema = z.object({
+  sourceText: text(20000).min(1),
+  jobId: objectId.optional(),
+  mode: z.enum(POLISH_MODES).default('general'),
+  jobRole: text(200).optional(),
+  jobDescription: text(10000).optional(),
+}).strict();
+export const polishCritiqueItemSchema = z.object({
+  kind: z.enum(['shortcoming', 'fluff', 'irrelevant']),
+  excerpt: text(500).default(''),
+  advice: text(500).min(1),
+}).strict();
+export const polishInterviewQuestionSchema = z.object({
+  question: text(300).min(1),
+  approach: text(800).min(1),
+  sourceExcerpt: text(500).default(''),
+}).strict();
+export const polishResultSchema = z.object({
+  mode: z.enum(POLISH_MODES).default('general'),
+  draft: text(20000).default(''),
+  changes: z.array(text(500)).max(30).default([]),
+  questions: z.array(text(500)).max(20).default([]),
+  critiques: z.array(polishCritiqueItemSchema).max(20).default([]),
+  interviewQuestions: z.array(polishInterviewQuestionSchema).max(10).default([]),
+}).strict();
 export const targetCreateSchema = z.object({ jobId: objectId }).strict();
 export const revisionSchema = z.object({ revision: z.number().int().positive() }).strict();
 export const targetEditSchema = revisionSchema.extend({ draft: text(20000).min(1) });

@@ -37,7 +37,14 @@ async function ownedTarget(id, uid) {
 const router = express.Router();
 router.post('/resumes/polish', aiRateLimiter, validate(polishSchema), asyncHandler(async (req, res) => {
   const job = req.body.jobId ? await visibleJob(req.body.jobId, req.user.uid) : null;
-  res.json({ success: true, data: await polishResume(req.body.sourceText, job) });
+  res.json({
+    success: true,
+    data: await polishResume(req.body.sourceText, job, {
+      mode: req.body.mode || 'general',
+      jobRole: req.body.jobRole || '',
+      jobDescription: req.body.jobDescription || '',
+    }),
+  });
 }));
 router.post('/me/resumes/:id/target', aiRateLimiter, validate(targetCreateSchema), asyncHandler(async (req, res) => {
   const source = await ownedSource(req.params.id, req.user.uid);

@@ -24,7 +24,7 @@ import { getDefaultProvider } from '../config/aiProviders.js';
 import { analyzeResume } from '../services/resumeService.js';
 import { logEvent } from '../utils/diagnostics.js';
 import { campusError } from '../campus/errors.js';
-import { planResumeUpdate } from '../campus/resumeRevision.js';
+import { planResumeUpdate, revisionOf, contentRevisionOf } from '../campus/resumeRevision.js';
 import { withResumeAssociation, deleteResumeOwned } from '../campus/resumeDelete.js';
 import { saveMaterial, recoverMaterialSave } from '../campus/materialSave.js';
 
@@ -230,6 +230,8 @@ router.put('/:resumeId', verifyToken, validate(updateResumeSchema), asyncHandler
     data: {
       id: updatedResume._id.toString(),
       ...updatedResume,
+      revision: revisionOf(updatedResume),
+      contentRevision: contentRevisionOf(updatedResume),
       _id: undefined
     }
   });
@@ -265,6 +267,8 @@ router.put('/:resumeId/reorder', verifyToken, validate(reorderResumeSchema), asy
     data: {
       id: updatedResume._id.toString(),
       ...updatedResume,
+      revision: revisionOf(updatedResume),
+      contentRevision: contentRevisionOf(updatedResume),
       _id: undefined
     }
   });
@@ -418,7 +422,7 @@ router.get('/:resumeId/download', verifyToken, validate(downloadResumeQuerySchem
       title: resume.title || 'Resume', signal: controller.signal, requestId: req.requestId,
     });
     const current = await Resume.findOne({ _id: resumeId, userId, deleting: { $ne: true } }).select('revision originalText enhancedText').lean();
-    if (!current || current.revision !== resume.revision || current.originalText !== resume.originalText || current.enhancedText !== resume.enhancedText) {
+    if (!current || revisionOf(current) !== revisionOf(resume) || current.originalText !== resume.originalText || current.enhancedText !== resume.enhancedText) {
       throw campusError(409, 'REVISION_CONFLICT', '导出期间简历已更新，请重新导出。');
     }
     if (controller.signal.aborted) return;

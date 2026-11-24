@@ -9,6 +9,7 @@ import mongoose from 'mongoose'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { parseInChild, readImportImage } from './importParse.js'
 import { runImportModels } from './importAi.js'
+import { extractImageText } from './ocrService.js'
 import { campusError } from './errors.js'
 import { LIMITS } from './importLimits.js'
 import { importModelQuota } from './importModelQuota.js'
@@ -125,15 +126,42 @@ async function processDraft(draft) {
       // are durable and the parser retries only failed blocks on Continue.
       if (!parsed.ok || readFailed) return null
     }
+    const isImage = ['png', 'jpeg', 'webp'].includes(draft.kind)
+    if (isImage) {
+      const currentBlocks = draft.toObject().blocks || []
+      const needsOcr = currentBlocks.some((block) => block.kind === 'image' && !block.text?.trim())
+      if (needsOcr) {
+        await persistDraft(draft, { status: 'processing', phase: '正在识别图片文字', errorCode: null })
+        const imageDataUrl = await readImportImage(draft.filePath, draft.kind)
+        const ocrBlocks = []
+        for (const block of currentBlocks) {
+          if (block.kind === 'image' && !block.text?.trim()) {
+            const text = await extractImageText({ imageDataUrl })
+            ocrBlocks.push({ ...block, text, status: 'vision_unverified' })
+          } else {
+            ocrBlocks.push(block)
+          }
+        }
+        const ocrIssues = issueIds([
+          ...(draft.toObject().issues || []).filter((item) => item.code !== 'VISION_UNVERIFIED'),
+          ...ocrBlocks.filter((b) => b.status === 'vision_unverified').map((b) => ({
+            id: `${b.id}-vision`,
+            code: 'VISION_UNVERIFIED',
+            blockId: b.id,
+            message: '图片文字由模型读取，可能遗漏；请对照原图确认姓名、日期和重要内容。',
+          })),
+        ], String(draft._id))
+        await persistDraft(draft, { blocks: ocrBlocks, issues: ocrIssues })
+      }
+    }
     await persistDraft(draft, { status: 'processing', phase: '正在整理经历', errorCode: null })
-    const imageDataUrl = ['png', 'jpeg', 'webp'].includes(draft.kind) ? await readImportImage(draft.filePath, draft.kind) : undefined
     // Mongoose arrays are proxies and cannot cross structuredClone/worker
     // boundaries. Snapshot once so checkpoint persistence cannot rehydrate the
     // pipeline's in-flight source blocks or previously received model output.
     const material = draft.toObject()
     const organized = await runImportModels({
       blocks: material.blocks, issues: material.issues,
-      sourceText: (material.blocks || []).map((block) => block.text || '').join('\n'), imageDataUrl,
+      sourceText: (material.blocks || []).map((block) => block.text || '').join('\n'),
       quota: importModelQuota, operationId: String(draft._id), userId: draft.userId, state: material.modelState || {},
       onCheckpoint: async (modelState) => persistDraft(draft, { modelState }),
     })

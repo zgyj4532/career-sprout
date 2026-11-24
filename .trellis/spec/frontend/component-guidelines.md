@@ -14,7 +14,7 @@ Use semantic forms and labelled native controls. Non-submit buttons explicitly u
 
 ## Editing and AI
 
-AI output is a suggestion, not saved data. Show adoption/cancellation and retain source text. `VoiceInput` owns capture/transcription only and delivers `onTranscript(text, duration, captureId)` once per capture; the interview appends into its sole parent-owned editor without submitting. `VoiceReview` adds the separate explicit review/adoption surface used by resume editing. Neither callback implies server persistence. Keep dirty editor state when operating on another list item. Late responses must not replace newer edits.
+AI output is a suggestion, not saved data. Show adoption/cancellation and retain source text. Multi-scenario polish in `ResumePage.jsx` invalidates in-flight requests (`revision.current += 1`) whenever body text, job selection, role, ad-hoc JD (`customJd`), or polish mode changes; `profile_summary` offers explicit prepend-to-top alongside full replacement, while coaching-only `interview_questions` renders read-only cards without an adoption button that could overwrite resume prose. `VoiceInput` owns capture/transcription only and delivers `onTranscript(text, duration, captureId)` once per capture; the interview appends into its sole parent-owned editor without submitting. `VoiceReview` adds the separate explicit review/adoption surface used by resume editing. Neither callback implies server persistence. Keep dirty editor state when operating on another list item. Late responses must not replace newer edits.
 
 An absent optional object may be `null`, not merely `undefined`: check it before dereferencing or passing to projections. A JavaScript default parameter (`value = {}`) does not handle explicit null.
 

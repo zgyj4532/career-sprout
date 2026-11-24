@@ -125,6 +125,32 @@ describe('transcribeAudio — provider routing', () => {
       /Audio transcription is not supported/
     );
   });
+  test('DeepSeek text provider routes to Qwen ASR when DASHSCOPE_API_KEY is configured', async () => {
+    const savedDash = process.env.DASHSCOPE_API_KEY;
+    const savedFetch = globalThis.fetch;
+    process.env.DASHSCOPE_API_KEY = 'sk-synthetic-dashscope';
+    globalThis.fetch = async (url) => {
+      assert.match(String(url), /dashscope\.aliyuncs\.com/);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ id: 'req-qwen-1', choices: [{ message: { content: '使用百炼完成语音识别' } }] }),
+      };
+    };
+    try {
+      const result = await transcribeAudio(
+        { audioBuffer: wavFixture(), mimeType: 'audio/wav', language: 'zh' },
+        { providerName: 'deepseek', baseURL: 'https://api.deepseek.com', modelName: 'deepseek-flash' },
+      );
+      assert.equal(result.text, '使用百炼完成语音识别');
+      assert.equal(result.provider, 'qwen');
+    } finally {
+      globalThis.fetch = savedFetch;
+      if (savedDash === undefined) delete process.env.DASHSCOPE_API_KEY;
+      else process.env.DASHSCOPE_API_KEY = savedDash;
+    }
+  });
+
   test('request cancellation reaches provider signal before service settles', async () => {
     const controller = new AbortController();
     const provider = { providerName: 'openai', client: { audio: { transcriptions: { create: async (_args, options) => {

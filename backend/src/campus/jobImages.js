@@ -11,6 +11,7 @@ import { createQuotaBook } from './importQuota.js';
 import { parseInChild, readImportImage } from './importParse.js';
 import { importModelQuota } from './importModelQuota.js';
 import { runJobImageModels } from './importJobAi.js';
+import { extractImageText } from './ocrService.js';
 import { IMPORT_ROOT, accountImport } from './importStorage.js';
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -83,17 +84,29 @@ async function processDraft(draft) {
   if (!locked) throw campusError(409, 'IMPORT_PROCESSING', '这组截图仍在处理，原图已保留。请稍后查看。');
   try {
     await accountImport(locked, null, { processing: true });
+    const existingBlocks = new Map((locked.toObject().blocks || []).filter((b) => b?.id && b?.text?.trim()).map((b) => [b.id, b.text]));
     const images = [];
-    for (const file of locked.files) {
-      const parsed = await parseInChild(file.filePath, { mode: file.kind });
-      if (parsed.busy) {
-        locked.status = 'busy'; locked.phase = '截图已收好';
-        return locked;
+    const ocrBlocks = [];
+    for (let index = 0; index < locked.files.length; index += 1) {
+      const file = locked.files[index];
+      let text = existingBlocks.get(file.id);
+      if (!text) {
+        const parsed = await parseInChild(file.filePath, { mode: file.kind });
+        if (parsed.busy) {
+          locked.status = 'busy'; locked.phase = '截图已收好';
+          return locked;
+        }
+        if (!parsed.ok) throw campusError(422, parsed.code || 'IMPORT_IMAGE_INVALID', '截图无法读取，请查看原图或更换这张图片。');
+        const imageDataUrl = await readImportImage(file.filePath, file.kind);
+        text = await extractImageText({ imageDataUrl });
       }
-      if (!parsed.ok) throw campusError(422, parsed.code || 'IMPORT_IMAGE_INVALID', '截图无法读取，请查看原图或更换这张图片。');
-      const imageDataUrl = await readImportImage(file.filePath, file.kind);
-      images.push({ id: file.id, imageDataUrl });
+      images.push({ id: file.id, text });
+      ocrBlocks.push({ id: file.id, page: index + 1, text, status: 'vision_unverified' });
     }
+    locked.blocks = ocrBlocks;
+    await accountImport(locked, null, { processing: true });
+    const checkpointBlocks = await CampusImportDraft.updateOne({ _id: locked._id, leaseToken: token }, { $set: { blocks: ocrBlocks, reservedBytes: locked.reservedBytes, leaseUntil: new Date(Date.now() + 300000) } });
+    if (!checkpointBlocks.matchedCount) throw campusError(409, 'IMPORT_LEASE_EXPIRED', '处理权已转移，请重新打开这组截图。');
     const result = await runJobImageModels({
       images, quota: importModelQuota, userId: locked.userId, operationId: String(locked._id), state: locked.modelState || {},
       onCheckpoint: async state => {

@@ -1,9 +1,10 @@
 import { LIMITS, limitError } from './importLimits.js'
 import { parseImportResult } from './importGrounding.js'
+import { extractImageText } from './ocrService.js'
 export { degreeStrengthened, negationDropped, validateGrounding } from './importGrounding.js'
 
-export const PRIMARY_MODEL = 'gpt-6-luna'
-export const RETRY_MODEL = 'gpt-6.1-sol'
+export const PRIMARY_MODEL = process.env.DEEPSEEK_IMPORT_PRIMARY_MODEL || 'deepseek-flash'
+export const RETRY_MODEL = process.env.DEEPSEEK_IMPORT_RETRY_MODEL || 'deepseek-v4-pro'
 
 export function createQuota() {
   const days = new Map()
@@ -35,9 +36,17 @@ export function applyServerOwnership(payload, ownerId) {
 export async function generateImportContent({ model, prompt, imageDataUrl, imageDataUrls, signal, maxTokens }) {
   const { getDefaultProvider } = await import('../config/aiProviders.js')
   const provider = getDefaultProvider()
-  if (provider.providerName !== 'openai') throw limitError('AI_UNAVAILABLE')
-  if (![PRIMARY_MODEL, RETRY_MODEL].includes(model)) throw limitError('MODEL_NOT_ALLOWED')
-  const result = await provider.generateContent(prompt, { model, temperature: 0, imageDataUrl, imageDataUrls, signal, maxTokens, maxRetries: 0, timeout: 60000 })
+  if (!['deepseek', 'openai'].includes(provider.providerName)) throw limitError('AI_UNAVAILABLE')
+  const allowedModels = [
+    PRIMARY_MODEL,
+    RETRY_MODEL,
+    process.env.DEEPSEEK_IMPORT_PRIMARY_MODEL,
+    process.env.DEEPSEEK_IMPORT_RETRY_MODEL,
+    process.env.DEEPSEEK_MODEL,
+    process.env.OPENAI_MODEL,
+  ].filter(Boolean)
+  if (!allowedModels.includes(model)) throw limitError('MODEL_NOT_ALLOWED')
+  const result = await provider.generateContent(prompt, { model, temperature: 0, jsonMode: true, imageDataUrl, imageDataUrls, signal, maxTokens, maxRetries: 0, timeout: 60000 })
   return result.text
 }
 
@@ -71,7 +80,7 @@ export async function runBoundedModels({ generate = generateImportContent, promp
       })
       try {
         if (signal?.aborted) abort()
-        const raw = await Promise.race([generate({ model: call.model, prompt, imageDataUrl, imageDataUrls, signal: controller.signal, maxTokens: 12000 }), cancelled])
+        const raw = await Promise.race([generate({ model: call.model, prompt, imageDataUrl, imageDataUrls, signal: controller.signal, maxTokens: 8192 }), cancelled])
         call.status = 'received'
         call.raw = typeof raw === 'string' && raw.length <= LIMITS.outputChars ? raw : ''
         await checkpoint()
@@ -109,12 +118,25 @@ const INSTRUCTION = `把材料一次整理为简历字段，不另做润色调�
 {"name":"","email":"","phone":"","education":[{"sourceBlockId":"来源块编号","evidence":"逐字依据","institution":"学校","degree":"","field":"","startDate":"原样日期","endDate":"原样日期或至今","dateText":"原样完整时间段","fullText":"这段教育的完整原文"}],"experiences":[{"sourceBlockId":"来源块编号","evidence":"逐字依据","kind":"course或club或project或internship或other","title":"原文名称","organization":"原文机构","startDate":"","endDate":"","dateText":"","fullText":"完整经历原文，不能摘要或省略","brief":"可选的连续原文摘句，不改写"}],"skills":[{"sourceBlockId":"来源块编号","evidence":"原文依据","name":"原文技能"}],"transcription":[]}。
 缺的字段留空，缺的栏目用空数组。保留月份、至今、否定、参与程度和全部长经历。不要把岗位意向当工作经历，不推断技能等级。来源块编号必须来自输入；同一经历跨多个段落时，增加 sourceBlockIds:["按原文顺序的块编号"]，sourceBlockId 是其中首块，fullText 为这些块中连续原文以换行连接，不能把不同经历拼接。每项字段必须在引用的来源块中。只有图片输入时 transcription 必须逐图完整转写为 [{"id":"图片块编号","text":"全部可读文字"}]，不可只转写已整理的字段；文字文件不重写来源。奖项、证书、联系方式和未分类内容都保留。`
 
-export async function runImportModels({ sourceText = '', blocks, issues = [], imageDataUrl, operationId, userId, ...options }) {
-  const sourceBlocks = blocks?.length ? blocks : [{ id: 'text-1', text: sourceText, status: 'read', kind: 'text' }]
+export async function runImportModels({ sourceText = '', blocks, issues = [], imageDataUrl, ocr, operationId, userId, ...options }) {
+  let sourceBlocks = blocks?.length ? blocks.map((block) => ({ ...block })) : [{ id: 'text-1', text: sourceText, status: 'read', kind: 'text' }]
+  const useTwoStageOcr = Boolean(imageDataUrl) && (typeof ocr === 'function' || !options.generate)
+  let forwardedImage = imageDataUrl
+  if (useTwoStageOcr) {
+    const ocrFn = ocr || extractImageText
+    sourceBlocks = await Promise.all(sourceBlocks.map(async (block) => {
+      if (block.kind === 'image' && !block.text?.trim()) {
+        const text = await ocrFn({ imageDataUrl, signal: options.signal })
+        return { ...block, text, status: 'vision_unverified' }
+      }
+      return block
+    }))
+    forwardedImage = undefined
+  }
   if (sourceBlocks.reduce((total, block) => total + (block.text || '').length, 0) > LIMITS.textChars) throw limitError('TEXT_TOO_LONG')
   const prompt = boundPrompt(INSTRUCTION, sourceBlocks.map(({ id, text, kind, status }) => ({ id, text, kind, status })))
-  const output = await runBoundedModels({ ...options, prompt, imageDataUrl, userId, operationId,
-    validate: (raw) => parseImportResult(raw, { blocks: sourceBlocks, issues, vision: Boolean(imageDataUrl), operationId }),
+  const output = await runBoundedModels({ ...options, prompt, imageDataUrl: forwardedImage, userId, operationId,
+    validate: (raw) => parseImportResult(raw, { blocks: sourceBlocks, issues, vision: Boolean(forwardedImage), operationId }),
   })
   return { ...output, result: applyServerOwnership(output.result, userId) }
 }

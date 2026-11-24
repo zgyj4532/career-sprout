@@ -55,7 +55,13 @@ async function render(input, options, markdown = false) {
     if (Buffer.byteLength(html, 'utf8') > 200000) throw campusError(422, 'RESUME_TOO_LONG', '简历内容过长，请精简后导出。');
     if (signal?.aborted) throw campusError(499, 'REQUEST_ABORTED', '导出已取消。');
     enterStage('launch');
-    browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'], timeout: 30000 });
+    const configuredExecutable = [process.env.PUPPETEER_EXECUTABLE_PATH, process.env.CHROMIUM_PATH, '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome-stable'].find((candidate) => candidate && existsSync(candidate));
+    browser = await puppeteer.launch({
+      headless: true,
+      ...(configuredExecutable ? { executablePath: configuredExecutable } : {}),
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      timeout: 30000,
+    });
     abort = () => { void browser.close().catch(() => {}); };
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) throw campusError(499, 'REQUEST_ABORTED', '导出已取消。');

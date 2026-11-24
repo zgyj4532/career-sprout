@@ -94,6 +94,7 @@ describe('extractAIProvider middleware', () => {
   test('returns safe unavailable error when no key is configured', async () => {
     // Clear env keys
     const saved = {
+      DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY,
       GEMINI_API_KEY: process.env.GEMINI_API_KEY,
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       GROQ_API_KEY: process.env.GROQ_API_KEY,
@@ -101,6 +102,7 @@ describe('extractAIProvider middleware', () => {
       CUSTOM_BASE_URL: process.env.CUSTOM_BASE_URL,
       AI_PROVIDER: process.env.AI_PROVIDER,
     };
+    delete process.env.DEEPSEEK_API_KEY;
     delete process.env.GEMINI_API_KEY;
     delete process.env.OPENAI_API_KEY;
     delete process.env.GROQ_API_KEY;
@@ -117,6 +119,8 @@ describe('extractAIProvider middleware', () => {
 
     process.env.GEMINI_API_KEY = saved.GEMINI_API_KEY;
     process.env.AI_PROVIDER = saved.AI_PROVIDER;
+    if (saved.DEEPSEEK_API_KEY) process.env.DEEPSEEK_API_KEY = saved.DEEPSEEK_API_KEY;
+    else delete process.env.DEEPSEEK_API_KEY;
     if (saved.OPENAI_API_KEY) process.env.OPENAI_API_KEY = saved.OPENAI_API_KEY;
     else delete process.env.OPENAI_API_KEY;
     if (saved.GROQ_API_KEY) process.env.GROQ_API_KEY = saved.GROQ_API_KEY;
