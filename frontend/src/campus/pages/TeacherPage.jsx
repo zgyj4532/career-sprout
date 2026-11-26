@@ -85,7 +85,7 @@ export default function TeacherPage() {
       setSelected(ids.filter((id, index) => data.manifest[index]?.status !== 'included'))
     } catch (err) { setError(err) } finally { setBusy(false) }
   }
-  if (!status?.user?.isTeacher) return <section className="campus-form"><h1>教师荐才</h1><RequestError error={sessionError} onRetry={refresh} /><p>{!status ? '正在确认账号权限…' : '此页面需要已验证邮箱、并由服务端授权的正式教师账号。本机体验和学生自选身份不能取得教师权限。'}</p><Link to="/login?returnTo=/teacher">查看正式账号状态</Link><Link to="/profile">管理自己对教师的授权</Link></section>
+  if (!status?.user?.isTeacher) return <section className="campus-form"><h1>教师荐才</h1><RequestError error={sessionError} onRetry={refresh} /><p>{!status ? '正在确认账号权限…' : '此页面需要已验证邮箱、并由服务端授权的正式教师账号。本机体验和学生自选身份不能取得教师权限。'}</p><Link to="/login?returnTo=/teacher">查看正式账号状态</Link><Link to="/profile?view=materials">管理自己对教师的授权</Link></section>
   return <section className="campus-form"><h1>教师工作台</h1><TeacherClasses /><section className="campus-form"><h2>为岗位整理候选材料</h2><p>选择岗位后自动匹配并为班级授权学生生成定向稿。技能是自评而非录用概率；时间冲突和未知需你自行核对，推荐由你决定。生成稿可展开查看，学生也能在自己的定向简历中查看和修改。</p>
     <RequestError error={error} onRetry={jobsTotal === null ? loadJobs : () => load()} />
     <JobSelect jobs={jobs} setJobs={setJobs} total={jobsTotal} loadError={error} value={jobId} disabled={busy} label="选择岗位" onChange={load} />

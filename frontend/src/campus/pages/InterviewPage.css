@@ -1,0 +1,109 @@
+.interview-prep-page {
+  display: grid;
+  gap: clamp(16px, 3vw, 28px);
+  max-width: 800px;
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.interview-prep-page .campus-fieldset {
+  padding-inline: clamp(16px, 4vw, 32px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.interview-prep-page .interview-prep-step {
+  padding-block: clamp(16px, 3vw, 24px);
+}
+
+.interview-prep-page .interview-prep-step + .interview-prep-step {
+  border-top: 1px solid var(--line);
+}
+
+.interview-prep-page .interview-prep-step h2,
+.interview-prep-page .interview-prep-step p {
+  margin: 0;
+}
+
+.interview-prep-page .interview-prep-step label {
+  min-width: 0;
+}
+
+.interview-prep-page .interview-prep-settings {
+  padding-block: 8px;
+}
+
+.interview-prep-page .interview-prep-settings summary {
+  color: var(--ink);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.interview-prep-page .interview-prep-settings summary::marker {
+  color: var(--accent);
+}
+
+.interview-prep-page .interview-prep-options {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  padding-block: 4px 12px;
+}
+
+.interview-prep-page .interview-prep-secondary {
+  align-items: center;
+  column-gap: 12px;
+}
+
+.interview-prep-page .interview-prep-secondary a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+@media (max-width: 767px) {
+  .interview-prep-page { gap: var(--mobile-inset); }
+
+  .interview-prep-page [hidden] { display: none; }
+
+  .interview-prep-page .interview-prep-mobile-heading {
+    display: grid;
+    justify-items: start;
+    gap: var(--mobile-gap);
+  }
+
+  .interview-prep-page .interview-prep-mobile-heading h1 {
+    margin: 0;
+    font-size: var(--mobile-title);
+    line-height: 1.35;
+  }
+
+  .interview-prep-page .interview-prep-overview {
+    display: grid;
+    min-width: 0;
+  }
+
+  .interview-prep-page .interview-prep-overview button {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--mobile-gap);
+    padding: var(--mobile-gap) 0;
+    text-align: start;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .interview-prep-page .interview-prep-overview span:last-child { color: var(--accent); }
+
+  .interview-prep-page .interview-prep-step { padding-block: var(--mobile-inset); }
+  .interview-prep-page .interview-prep-settings { padding-block-end: 0; }
+  .interview-prep-page .interview-prep-step[hidden] + .interview-prep-step { border-top: 0; }
+  .interview-prep-page .interview-prep-step :is(input, select, textarea) { min-height: 44px; font-size: 1rem; }
+  .interview-prep-page .interview-prep-step textarea { min-height: 7rem; }
+  .interview-prep-page .interview-prep-step a { display: inline-flex; align-items: center; min-height: 44px; }
+  .interview-prep-page footer .primary { width: 100%; }
+}

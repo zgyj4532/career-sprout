@@ -1,14 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { campusData } from '../api'
 import RequestError from './RequestError'
 import useUnsavedWork from '../hooks/useUnsavedWork'
 
-function TargetEditor({ target, onChanged }) {
+function TargetEditor({ target, onChanged, onWorkChange }) {
   const [draft, setDraft] = useState(target.draft)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const dirty = draft !== target.draft
   useUnsavedWork(dirty)
+  const work = busy ? 'working' : dirty ? 'editing' : null
+  const workId = `${target.id}:${target.revision}`
+  useEffect(() => {
+    onWorkChange(workId, work)
+    return () => onWorkChange(workId, null)
+  }, [onWorkChange, workId, work])
   const stale = target.stale || error?.code === 'JOB_CHANGED' || error?.code === 'SOURCE_CHANGED'
   async function persist(approve) {
     if (busy || stale) return
@@ -31,10 +37,22 @@ function TargetEditor({ target, onChanged }) {
     {error?.status === 409 && !stale && <p>服务器版本已变化。请先复制你要保留的文字，再刷新页面读取最新版本；不会自动覆盖你的编辑。</p>}
   </article>
 }
-export default function TargetResumes({ resumeId, jobId, disabled }) {
+export default function TargetResumes({ resumeId, jobId, disabled, onWorkChange }) {
   const [targets, setTargets] = useState([])
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [editorWork, setEditorWork] = useState({})
+  const reportEditorWork = useCallback((id, work) => {
+    setEditorWork((current) => {
+      if ((current[id] ?? null) === work) return current
+      if (work) return { ...current, [id]: work }
+      const { [id]: _, ...remaining } = current
+      return remaining
+    })
+  }, [])
+  const workStates = Object.values(editorWork)
+  const work = busy || workStates.includes('working') ? 'working' : workStates.includes('editing') ? 'editing' : null
+  useEffect(() => { onWorkChange?.(work) }, [onWorkChange, work])
   const listVersion = useRef(0)
   async function load() {
     const version = ++listVersion.current
@@ -48,8 +66,9 @@ export default function TargetResumes({ resumeId, jobId, disabled }) {
     try { const target = await campusData(`/me/resumes/${resumeId}/target`, { method: 'POST', body: JSON.stringify({ jobId }) }); setTargets((current) => [target, ...current.filter((row) => row.id !== target.id)]) } catch (err) { setError(err) } finally { setBusy(false) }
   }
   return <section className="campus-form"><h2>企业定向简历</h2><RequestError error={error} onRetry={load} />
+    {work === 'working' && <p role="status">正在处理定向版本，请稍候…</p>}
     <details className="campus-tool"><summary>为岗位生成独立版本</summary><p>使用已保存的简历，不改原件；核对事实后单独确认教师导出权限。</p><button type="button" disabled={disabled || busy || !resumeId || !jobId} onClick={generate}>{busy ? '正在生成定向版本…' : '为所选岗位生成定向版本'}</button>
     {(!resumeId || !jobId) && <p>请先保存并选择简历，再选择目标岗位。</p>}</details>
-    {targets.map((target) => <TargetEditor key={`${target.id}:${target.revision}`} target={target} onChanged={(updated) => { listVersion.current += 1; setTargets((current) => current.map((row) => row.id === updated.id ? updated : row)) }} />)}
+    {targets.map((target) => <TargetEditor key={`${target.id}:${target.revision}`} target={target} onWorkChange={reportEditorWork} onChanged={(updated) => { listVersion.current += 1; setTargets((current) => current.map((row) => row.id === updated.id ? updated : row)) }} />)}
   </section>
 }

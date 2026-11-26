@@ -7,6 +7,7 @@ import { RoomReport } from '../components/InterviewFeedback'
 import DiscoveryReport from '../components/DiscoveryReport'
 import useQuestionSpeech from '../hooks/useQuestionSpeech'
 import useUnsavedWork from '../hooks/useUnsavedWork'
+import './InterviewSessionPage.css'
 
 function generationPending(item) {
   return item?.generation?.status === 'pending' && (!item.generation.leaseUntil || new Date(item.generation.leaseUntil).getTime() > Date.now())
@@ -30,6 +31,9 @@ function InterviewRoom({ id }) {
   const mounted = useRef(true)
   const pendingAnswer = useRef(null)
   const captures = useRef(new Set())
+  const questionStage = useRef(null)
+  const questionHeading = useRef(null)
+  const previousQuestionId = useRef(null)
   const speech = useQuestionSpeech()
   const answers = item?.answers || []
   const discovery = item?.purpose === 'discovery'
@@ -37,6 +41,18 @@ function InterviewRoom({ id }) {
   const question = item?.questions?.find((row) => !answers.some((answer) => answer.questionId === row.questionId))
   const busy = phase !== 'ready'
   const last = !discovery && answers.length + 1 >= item?.totalQuestionCount
+  const questionId = question?.questionId
+  const moreDiscovery = discovery && answers.length < item.totalQuestionCount
+
+  useEffect(() => {
+    if (!questionId) return
+    if (previousQuestionId.current && previousQuestionId.current !== questionId) {
+      const focused = document.activeElement
+      // Saving can disable or remove the focused control; leave explicit focus elsewhere alone.
+      if (focused === document.body || questionStage.current?.contains(focused)) questionHeading.current?.focus()
+    }
+    previousQuestionId.current = questionId
+  }, [questionId])
 
   async function canonical() {
     const data = (await campusFetch(`/api/interview/${id}`)).data
@@ -130,29 +146,51 @@ function InterviewRoom({ id }) {
     try { await generate(kind, await canonical()) } catch (err) { if (mounted.current) { setError(err); setUncertain(true) } } finally { lock.current = false; if (mounted.current) setPhase('ready') }
   }
   if (item?.status === 'completed') return discovery ? <DiscoveryReport item={item} /> : <RoomReport item={item} />
-  return <section className="campus-form campus-interview-review"><h1>{discovery ? '聊聊你感兴趣的事' : '这一次，慢慢说清楚'}</h1>
-    {discovery && <p>这是了解兴趣和经历的交流，不打能力分。不想回答可以随时结束，设想也可以原样说。</p>}
-    <div className="campus-progress"><span>已保存 {answers.length} / {item?.totalQuestionCount || '—'} {discovery ? '段' : '题'}</span></div>
+  const status = <>
     <RequestError error={error} onRetry={!item ? load : undefined} />
     {note && <p className="campus-note" role="status">{note}</p>}
     {busy && <p role="status">{phase === 'loading' ? '正在读取进度…' : phase === 'summary' ? '正在生成总结…' : phase === 'next' ? '正在准备下一问…' : '正在确认保存进度…'}</p>}
-    {uncertain && <button type="button" disabled={busy} onClick={recover}>恢复服务器进度</button>}
-    {question && <>
-      <article className="campus-question-card"><div className="campus-q-index">{answers.length + 1}</div><h2>{question.question}</h2></article>
-      <div className="campus-actions">{speech.speaking ? <button type="button" onClick={speech.cancel}>停止播报</button> : <button type="button" disabled={busy || voiceActive} onClick={() => speech.speak(question.question)}>朗读这道题</button>}</div>
-      {speech.notice && <p role="status">{speech.notice}</p>}
-      <VoiceInput key={question.questionId} disabled={busy || speech.speaking || uncertain} onActiveChange={setVoiceActive} onTranscript={(text, seconds, captureId) => {
-        const key = `${question.questionId}:${captureId}`
-        if (captures.current.has(key)) return
-        captures.current.add(key)
-        setTranscript((current) => [current, text].filter(Boolean).join('\n'))
-        setDuration((current) => current + seconds)
-        setNote('转写已带入同一个回答区，请校对后保存。')
-      }} />
-      <form className="campus-form" onSubmit={submit}><label>检查并编辑本题回答<textarea disabled={busy || uncertain} value={transcript} maxLength={answerLimit} aria-describedby="answer-limit" onChange={(event) => setTranscript(event.target.value)} placeholder="可以直接打字，也可以录音转写。" /></label><p id="answer-limit">本次每段最多{answerLimit}字。</p>{transcript.length > answerLimit && <p role="alert">回答超过{answerLimit}字，请精简或分段整理后保存；现有文字完整保留，没有截断。</p>}<div className="campus-actions"><button className="primary" type="submit" disabled={busy || voiceActive || speech.speaking || uncertain || !transcript.trim() || transcript.length > answerLimit}>{last ? '保存并查看反馈' : discovery ? '保存并继续聊' : '保存并下一题'}</button></div></form>
-    </>}
-    {item && !question && !uncertain && <button className="primary" type="button" disabled={busy || voiceActive} onClick={() => act(discovery && answers.length < item.totalQuestionCount ? 'continue' : 'complete')}>{discovery && answers.length < item.totalQuestionCount ? '继续交流' : '查看反馈'}</button>}
-    {item && (discovery || answers.length > 0) && (question || (discovery && answers.length < item.totalQuestionCount)) && <button type="button" disabled={busy || voiceActive || speech.speaking || uncertain} onClick={() => act('complete')}>{discovery ? '结束交流，查看总结' : '提前结束，查看反馈'}</button>}
-    <details><summary>已保存的回答（{answers.length}）</summary>{answers.map((answer) => <article className="campus-turn" key={answer.questionId}><h3>{answer.question}</h3><p className="campus-preserve-text">{answer.transcript}</p></article>)}</details>
+    {uncertain && <div className="campus-actions"><button className="primary" type="button" disabled={busy} onClick={recover}>恢复服务器进度</button></div>}
+  </>
+  return <section className="interview-room">
+    <header className="interview-room-meta">
+      <h1>{discovery ? '聊聊你感兴趣的事' : '面试练习'}</h1>
+      {item && <p>已保存 {answers.length} / {item.totalQuestionCount || '—'} {discovery ? '段' : '题'}</p>}
+    </header>
+    {discovery && <p>这是了解兴趣和经历的交流，不打能力分。不想回答可以随时结束，设想也可以原样说。</p>}
+
+    {question ? <div className="interview-room-stage" ref={questionStage}>
+      <header className="interview-room-question">
+        <p className="interview-room-position">{discovery ? `第 ${answers.length + 1} 问` : `第 ${answers.length + 1} 题`}</p>
+        <h2 ref={questionHeading} tabIndex={-1}>{question.question}</h2>
+        <div className="campus-actions">{speech.speaking ? <button type="button" onClick={speech.cancel}>停止播报</button> : <button type="button" disabled={busy || voiceActive} onClick={() => speech.speak(question.question)}>朗读这道题</button>}</div>
+        {speech.notice && <p role="status">{speech.notice}</p>}
+      </header>
+
+      <form className="interview-room-answer campus-form" onSubmit={submit}>
+        <VoiceInput key={question.questionId} disabled={busy || speech.speaking || uncertain} onActiveChange={setVoiceActive} onTranscript={(text, seconds, captureId) => {
+          const key = `${question.questionId}:${captureId}`
+          if (captures.current.has(key)) return
+          captures.current.add(key)
+          setTranscript((current) => [current, text].filter(Boolean).join('\n'))
+          setDuration((current) => current + seconds)
+        }} />
+        <div className="interview-room-editor">
+          <label>检查并编辑本题回答<textarea disabled={busy || uncertain} value={transcript} maxLength={answerLimit} aria-describedby="answer-limit" onChange={(event) => setTranscript(event.target.value)} placeholder="可以直接打字，也可以录音转写。" /></label>
+          <p id="answer-limit">本次每段最多{answerLimit}字。</p>
+          {transcript.length > answerLimit && <p role="alert">回答超过{answerLimit}字，请精简或分段整理后保存；现有文字完整保留，没有截断。</p>}
+        </div>
+        {status}
+        <div className="campus-actions"><button className={uncertain ? undefined : 'primary'} type="submit" disabled={busy || voiceActive || speech.speaking || uncertain || !transcript.trim() || transcript.length > answerLimit}>{last ? '保存并查看反馈' : discovery ? '保存并继续聊' : '保存并下一题'}</button></div>
+      </form>
+    </div> : <div className="interview-room-stage campus-form">
+      {status}
+      {item && !uncertain && <div className="campus-actions"><button className="primary" type="button" disabled={busy || voiceActive} onClick={() => act(moreDiscovery ? 'continue' : 'complete')}>{moreDiscovery ? '继续交流' : '查看反馈'}</button></div>}
+    </div>}
+
+    {(answers.length > 0 || discovery) && <div className="interview-room-secondary campus-form">
+      {answers.length > 0 && <details><summary>已保存的回答（{answers.length}）</summary><div className="campus-form">{answers.map((answer) => <article className="campus-turn" key={answer.questionId}><h3>{answer.question}</h3><p className="campus-preserve-text">{answer.transcript}</p></article>)}</div></details>}
+      {(question || moreDiscovery) && <div className="campus-actions"><button type="button" disabled={busy || voiceActive || speech.speaking || uncertain} onClick={() => act('complete')}>{discovery ? '结束交流，查看总结' : '提前结束，查看反馈'}</button></div>}
+    </div>}
   </section>
 }

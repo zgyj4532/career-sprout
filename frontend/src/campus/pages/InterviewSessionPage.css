@@ -1,0 +1,127 @@
+.interview-room {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.interview-room :is(h1, h2, h3, p) {
+  margin: 0;
+}
+
+.interview-room .interview-room-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.interview-room .interview-room-meta h1 {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.interview-room .interview-room-meta p,
+.interview-room .interview-room-position,
+.interview-room .interview-room-editor > p {
+  font-size: 0.875rem;
+}
+
+.interview-room .interview-room-meta p {
+  font-variant-numeric: tabular-nums;
+}
+
+.interview-room .interview-room-stage {
+  min-width: 0;
+  padding: clamp(16px, 4vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.interview-room .interview-room-question {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  border-inline-start: 3px solid var(--accent);
+  padding-inline-start: clamp(12px, 3vw, 20px);
+}
+
+.interview-room .interview-room-question h2 {
+  font-size: clamp(1.25rem, 3.75vw, 1.875rem);
+  line-height: 1.45;
+}
+
+.interview-room .interview-room-question h2:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.interview-room .interview-room-position {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.interview-room .interview-room-answer {
+  margin-top: clamp(16px, 4vw, 24px);
+}
+
+.interview-room .interview-room-editor {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.interview-room .interview-room-editor label {
+  font-weight: 700;
+}
+
+.interview-room .interview-room-editor textarea {
+  min-height: 9rem;
+  font-weight: 400;
+}
+
+.interview-room .interview-room-editor [role="alert"] {
+  color: var(--danger);
+}
+
+.interview-room .interview-room-answer .campus-voice {
+  gap: 8px;
+  padding-block: 0 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.875rem;
+}
+
+.interview-room .interview-room-secondary {
+  border-top: 1px solid var(--line);
+  padding-block: 4px;
+}
+
+.interview-room .interview-room-secondary summary {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  .campus-practice .campus-room-main:has(> .interview-room) {
+    padding-block: 0 max(24px, env(safe-area-inset-bottom));
+  }
+
+  .campus-practice:has(.interview-room) .campus-room-bar {
+    padding-block: env(safe-area-inset-top, 0px) 4px;
+  }
+
+  .interview-room { gap: 8px; }
+  .interview-room .interview-room-stage { padding: 12px; }
+  .interview-room .interview-room-question { gap: 4px; }
+  .interview-room .interview-room-question h2 { font-size: 1.125rem; }
+  .interview-room .interview-room-answer { margin-top: 8px; gap: 8px; }
+  .interview-room .interview-room-answer .campus-voice { gap: 4px; padding-bottom: 8px; }
+  .interview-room .interview-room-answer .campus-voice p[role="status"]:empty { position: absolute; }
+  .interview-room .campus-recording-banner { gap: 4px 8px; padding: 8px; }
+  .interview-room .campus-recording-banner strong { font-size: 1rem; }
+  .interview-room .campus-timer { font-size: 1.125rem; }
+  .interview-room .interview-room-editor textarea { min-height: 5rem; font-size: 1rem; }
+  .interview-room .interview-room-answer button[type="submit"] { width: 100%; }
+}

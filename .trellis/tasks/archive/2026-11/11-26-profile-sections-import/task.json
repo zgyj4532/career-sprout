@@ -1,0 +1,28 @@
+{
+  "id": "profile-sections-import",
+  "name": "profile-sections-import",
+  "title": "了解自己：单栏目与一键导入",
+  "description": "将档案拆成独立栏目并简化简历确认与归档",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-11-26",
+  "completedAt": "2026-11-26",
+  "branch": "feat/deepseek-ocr-polish-upgrade",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "11-26-profile-illustrations"
+  ],
+  "parent": "11-25-frontend-interaction-v2",
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

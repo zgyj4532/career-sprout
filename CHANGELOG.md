@@ -1,5 +1,26 @@
 # 职芽 CareerSprout — Unreleased
 
+## Profile view navigation
+
+- The profile editor and import/authorization views keep both drafts when switching by link or browser history. Leaving Profile still asks before discarding unsaved work. Import stays disabled until profile edits are saved or discarded, and the profile editor remains locked until import confirmation and refresh finish.
+- Profile now has four addressable views: personal details, experiences, skills and materials, and import and authorization. Confirming a parsed resume fills the corresponding views through the existing import flow; review and refresh recovery remain separate from confirmation.
+- Added four original Profile SVG illustrations and matching navigation motifs. Entry accents run once per view and are disabled by the reduced-motion preference.
+
+## Jobs, Resume, and Interview workspace refresh
+
+- Jobs shows the list, screenshot import, or editor one at a time. Returning to the list restores its page and position.
+- Resume separates editing, import, and saved versions while keeping drafts and active work. Interview preparation and the question/answer flow use a single main column.
+- Added original compass, stitched resume, and microphone SVGs. Their entry accents honor reduced motion.
+
+## Mobile workspace
+
+- Removed the mobile workspace banner. Profile opens with four category buttons and short links to focused edit, import, or authorization views. Home, History, and Account remain available from the workspace menu.
+- Jobs separates requirements and matching; Resume separates materials and AI review; Interview separates direction, materials, and settings. Mobile panel navigation retains drafts and existing deep links. Desktop keeps the illustrated layout.
+- Unified phone spacing and typography, grouped Profile task links into a single list, and shortened workspace hints and status messages without changing save, import, or sharing behavior.
+- On phones, the resume editor shows title, target role, and body before optional tools; save, continue, and PDF actions follow the editor without sticking to the viewport.
+- The mobile Personal Profile opens Workspace Menu from a floating shortcut above the bottom navigation. Menu rows use the workspace’s shared colors and type scale.
+- The mobile home hides the duplicate brand and account banner and fits the four workspace shortcuts into a compact two-column grid. The mobile Profile overview has a visible heading again.
+
 ## 2026-11-04 Campus Docker packaging and production path
 
 - Added a separate campus-only Docker Compose package with dedicated authenticated MongoDB/Redis users (including a SAVE-only Redis backup account), runtime secret files, five persistent volumes, health checks, bounded per-container RAM and RAM+swap, and loopback-only frontend ingress. Existing local Compose data and legacy full-app deployment files remain untouched.

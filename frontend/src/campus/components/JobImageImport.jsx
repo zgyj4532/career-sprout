@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { campusData, campusFetch } from '../api'
 import RequestError from './RequestError'
 
-export default function JobImageImport({ disabled, onChoose }) {
-  const [expanded, setExpanded] = useState(false)
+export default function JobImageImport({ disabled, onChoose, reviewDraftId, onLocalFilesChange }) {
   const [images, setImages] = useState([])
   const [draft, setDraft] = useState(null)
   const [history, setHistory] = useState([])
@@ -16,6 +15,8 @@ export default function JobImageImport({ disabled, onChoose }) {
   const [note, setNote] = useState('')
   const urls = useRef(new Set())
   const sequence = useRef(0)
+  const hasLocalFiles = images.some((image) => image.file) && !draft
+  useLayoutEffect(() => { onLocalFilesChange?.(hasLocalFiles) }, [hasLocalFiles, onLocalFilesChange])
   function preview(blob) { const url = URL.createObjectURL(blob); urls.current.add(url); return url }
   function clearImages() { for (const url of urls.current) URL.revokeObjectURL(url); urls.current.clear(); setImages([]) }
   async function list(reset = true) {
@@ -73,13 +74,22 @@ export default function JobImageImport({ disabled, onChoose }) {
   const lockedOrder = Boolean(draft)
   const candidates = draft?.candidates || []
   const candidate = candidates.find((row, index) => String(row.id || index) === selected)
+  // The import owner remains mounted while the editor is open. Source review is
+  // read-only so its draft, previews and candidate cannot drift from the job.
+  if (reviewDraftId) return <section className="campus-panel campus-form">
+    {draft?.id === reviewDraftId ? <>
+      <RequestError error={error} />
+      <ol className="job-image-list">{images.map((image, index) => <li key={image.id}><figure>{image.url ? <img src={image.url} alt={`岗位截图 ${index + 1}`} /> : <p>这张原图不可用。</p>}<figcaption>截图 {index + 1}</figcaption></figure></li>)}</ol>
+      <details><summary>查看提取原文</summary>{(draft.blocks || []).map((block, index) => <p className="campus-preserve-text" key={block.id || index}>截图 {block.page || index + 1}：{block.text}</p>)}</details>
+    </> : <p role="status">当前岗位的截图原件不可用。</p>}
+  </section>
   return <section className="campus-panel campus-form" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (!busy && !disabled) add(event.dataTransfer.files) }} onPaste={(event) => { if (!busy && !disabled && event.clipboardData.files.length) { event.preventDefault(); add(event.clipboardData.files) } }}>
-    <button type="button" aria-expanded={expanded || Boolean(draft) || images.length > 0} disabled={Boolean(draft) || images.length > 0} onClick={() => setExpanded((value) => !value)}>从岗位截图整理</button>
-    <div hidden={!expanded && !draft && !images.length}><p>最多 5 张 / 10MB，先调整顺序再读取。只保存为自己的岗位草稿。</p><label>添加岗位截图<input type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={disabled || busy || Boolean(draft)} onChange={(event) => { add(event.target.files); event.target.value = '' }} /></label></div>
+    <p>最多 5 张 / 10MB，先调整顺序再读取。只保存为自己的岗位草稿。</p>
+    <label>添加岗位截图<input type="file" multiple accept="image/png,image/jpeg,image/webp" disabled={disabled || busy || Boolean(draft)} onChange={(event) => { add(event.target.files); event.target.value = '' }} /></label>
     <RequestError error={error} />{note && <p role="status">{note}</p>}
     <ol className="job-image-list">{images.map((image, index) => <li key={image.id}><figure>{image.url ? <img src={image.url} alt={`岗位截图 ${index + 1}`} /> : <p>这张原图不可用，可丢弃导入后更换文件。</p>}<figcaption>截图 {index + 1}</figcaption></figure><div className="campus-actions"><button type="button" disabled={busy || disabled || lockedOrder || index === 0} onClick={() => move(index, -1)}>上移</button><button type="button" disabled={busy || disabled || lockedOrder || index === images.length - 1} onClick={() => move(index, 1)}>下移</button><button type="button" disabled={busy || disabled || lockedOrder} onClick={() => { URL.revokeObjectURL(image.url); urls.current.delete(image.url); setImages((current) => current.filter((row) => row.id !== image.id)); setSelected('') }}>删除这张</button></div></li>)}</ol>
     <div className="campus-actions">{(!draft || draft.canContinue) && <button type="button" className="primary" disabled={busy || disabled || !images.length} onClick={extract}>{busy ? '正在读取截图…' : draft ? '继续读取已收到的截图' : '读取这些截图'}</button>}{(draft || images.length > 0) && <button type="button" disabled={busy || disabled} onClick={() => { clearImages(); setDraft(null); setSelected(''); setNote('已关闭当前截图，服务器收到的导入仍可找回。') }}>关闭当前截图</button>}{draft && <button type="button" disabled={busy || disabled} onClick={discard}>丢弃这组截图与原件</button>}</div>
-    {draft && <p role="status">{draft.status === 'busy' ? '服务忙碌，截图已保留，稍后继续读取。' : draft.status === 'failed' ? draft.canContinue ? '读取没有完成，截图仍保留，可以继续读取。' : '本次读取未取得可用结果，不能继续自动调用。原图仍保留，可核对后手动录入或明确重新上传。' : draft.status === 'processing' ? '服务器正在读取，请稍后从导入记录查看。' : '核对岗位与原图后，带入下方编辑。'} 已开始识别的来源顺序固定；调整顺序请关闭后重新选择截图。</p>}
+    {draft && <p role="status">{draft.status === 'busy' ? '服务忙碌，截图已保留，稍后继续读取。' : draft.status === 'failed' ? draft.canContinue ? '读取没有完成，截图仍保留，可以继续读取。' : '本次读取未取得可用结果，不能继续自动调用。原图仍保留，可核对后手动录入或明确重新上传。' : draft.status === 'processing' ? '服务器正在读取，请稍后从导入记录查看。' : '核对岗位与原图后，带入编辑页。'} 已开始识别的来源顺序固定；调整顺序请关闭后重新选择截图。</p>}
     {candidates.length > 0 && <><h3>选择截图中的岗位</h3><p>同名岗位的城市、批次或截止时间不同，也要分别选择。</p>{candidates.map((row, index) => <label className="campus-check" key={row.id || index}><input type="radio" name="image-job-choice" checked={selected === String(row.id || index)} onChange={() => setSelected(String(row.id || index))} disabled={busy || disabled} />{row.company} · {row.title} · {[row.city, row.batch, row.deadline].filter(Boolean).join(' / ')}（来源截图 {(row.sourcePages || []).join('、')}）</label>)}
       <ul>{(draft.issues || []).map((issue, index) => <li key={issue.id || index}>{issue.message || issue.label}</li>)}</ul>
       <details><summary>查看提取原文</summary>{(draft.blocks || []).map((block, index) => <p className="campus-preserve-text" key={block.id || index}>截图 {block.page || index + 1}：{block.text}</p>)}</details>

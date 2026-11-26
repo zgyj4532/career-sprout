@@ -1,4 +1,4 @@
-import { lazy, useState } from 'react'
+import { lazy, useEffect, useRef, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, createBrowserRouter, RouterProvider, useLocation, Link } from 'react-router-dom'
 import './campus.css'
 import Particles from './bits/Particles'
@@ -45,6 +45,31 @@ function CoreNav() {
   )
 }
 
+function WorkspaceMenu() {
+  const heading = useRef(null)
+  const note = devNote()
+  useEffect(() => { heading.current?.focus() }, [])
+
+  return (
+    <section className="campus-workspace-menu campus-form" aria-labelledby="workspace-menu-heading">
+      <h1 id="workspace-menu-heading" ref={heading} tabIndex={-1}>工作台菜单</h1>
+      <div className="campus-panel">
+        {[['/', '回首页'], ['/history', '历史档案']].map(([to, label]) => (
+          <Link className="campus-workspace-menu-row" key={to} to={to}>
+            {label}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true" focusable="false"><path d="m6 3 5 5-5 5" /></svg>
+          </Link>
+        ))}
+        <section className="campus-form campus-workspace-menu-account" aria-labelledby="workspace-account-heading">
+          <h2 id="workspace-account-heading">账号</h2>
+          <SessionNavigation />
+          {note && <p className="campus-dev-note">{note}</p>}
+        </section>
+      </div>
+    </section>
+  )
+}
+
 function WorkspaceRoutes() {
   return (
     <Routes>
@@ -53,6 +78,7 @@ function WorkspaceRoutes() {
       <Route path="/discovery" element={<DiscoveryPage />} />
       <Route path="/jd" element={<JobsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/workspace-menu" element={<WorkspaceMenu />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/history/:id" element={<HistoryDetailPage />} />
       <Route path="/login/*" element={<AuthPage />} />
@@ -144,11 +170,6 @@ function CampusShell() {
         </div>
       </aside>
       <div className="campus-workspace-content">
-        <header className="campus-mobile-topbar">
-          <Link className="campus-brand" to="/">职芽</Link>
-          <Link className="campus-pill-link" to="/history">历史档案</Link>
-          <SessionNavigation />
-        </header>
         <main className="campus-main">
           <RouteLoadingBoundary>
             <WorkspaceRoutes />

@@ -10,7 +10,6 @@ it('uploads real files in the chosen order and requires a job choice', async () 
   const ready = { id: 'images', status: 'ready', files: [{ id: 'image-1', index: 0 }, { id: 'image-2', index: 1 }], candidates: [{ id: 'a', title: '开发', company: '甲', city: '上海', sourcePages: [1] }, { id: 'b', title: '开发', company: '甲', city: '杭州', sourcePages: [2] }] }
   campusData.mockImplementation(async (path) => path === '/jobs/images' ? { items: [] } : ready)
   render(<JobImageImport onChoose={onChoose} />)
-  fireEvent.click(screen.getByRole('button', { name: '从岗位截图整理' }))
   const first = new File(['a'], 'first.png', { type: 'image/png' })
   const second = new File(['b'], 'second.png', { type: 'image/png' })
   fireEvent.change(screen.getByLabelText('添加岗位截图'), { target: { files: [first, second] } })

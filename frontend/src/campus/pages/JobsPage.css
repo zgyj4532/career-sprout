@@ -1,0 +1,148 @@
+.jobs-page .jobs-board,
+.jobs-page .jobs-task {
+  gap: 16px;
+}
+
+.jobs-board-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.jobs-board-bar h2,
+.jobs-task > h2 {
+  margin: 0;
+}
+
+.jobs-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.jobs-rows > li {
+  border-bottom: 1px solid var(--line);
+}
+
+.campus .jobs-page .jobs-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) auto;
+  align-items: center;
+  gap: 8px 20px;
+  width: 100%;
+  padding: 14px 12px;
+  text-align: start;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.campus .jobs-page .jobs-row:hover:not(:disabled) {
+  background: var(--card);
+}
+
+.campus .jobs-page .jobs-row:focus-visible {
+  outline-offset: -3px;
+}
+
+.jobs-row-main {
+  display: grid;
+  gap: 4px;
+}
+
+.jobs-row-main > span,
+.jobs-row-status {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.jobs-row-arrow {
+  color: var(--accent);
+}
+
+.jobs-page .jobs-empty-state {
+  margin: 0;
+  padding: 20px 12px;
+  border-block: 1px solid var(--line);
+  text-align: start;
+}
+
+.jobs-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.jobs-page .jobs-back {
+  justify-self: start;
+}
+
+.jobs-task > .campus-panel > button {
+  justify-self: start;
+}
+
+.jobs-page .jobs-layout-contents:not([hidden]) {
+  display: contents;
+}
+
+@media (max-width: 767px) {
+  .jobs-page > .campus-workspace-heading {
+    display: block;
+  }
+
+  .jobs-page > .campus-workspace-heading :is(p, svg) {
+    display: none;
+  }
+
+  .jobs-page .jobs-board-bar {
+    gap: 4px 12px;
+  }
+
+  .jobs-page .jobs-board-bar > .campus-actions,
+  .jobs-page .jobs-leaf-nav {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 124px), 1fr));
+    gap: 8px;
+  }
+
+  .jobs-page .jobs-board-bar > .campus-actions > button,
+  .jobs-page .jobs-leaf-nav > button {
+    padding-inline: 8px;
+  }
+
+  .jobs-page .jobs-task > [type='submit'] {
+    justify-self: start;
+  }
+
+  .jobs-page .jobs-requirements {
+    border: 0;
+    padding: 0;
+  }
+
+  .jobs-page > p > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .campus .jobs-page .jobs-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .jobs-row-status {
+    grid-row: 2;
+  }
+
+  .jobs-row-arrow {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

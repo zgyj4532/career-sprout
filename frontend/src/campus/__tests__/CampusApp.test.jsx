@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import useUnsavedWork from '../hooks/useUnsavedWork'
@@ -77,6 +77,7 @@ it.each([
   ['/resume', 'Resume route'],
   ['/jd', 'Jobs route'],
   ['/profile', 'Profile route'],
+  ['/workspace-menu', '工作台菜单'],
   ['/interview', 'Interview route'],
   ['/discovery', 'Discovery route'],
   ['/interview/session/session-42', 'Session session-42'],
@@ -97,6 +98,22 @@ it.each([
   } else {
     expect(screen.getAllByText('Session navigation').length).toBeGreaterThan(0)
   }
+})
+
+it('offers home, history and account options from the workspace menu', async () => {
+  vi.stubEnv('VITE_APP_PROFILE', 'campus-local')
+  vi.stubEnv('VITE_CLERK_PUBLISHABLE_KEY', '')
+  vi.stubEnv('VITE_DEV_BYPASS_AUTH', 'true')
+  window.history.replaceState(null, '', '/workspace-menu')
+  render(<CampusApp />)
+
+  const menu = screen.getByRole('region', { name: '工作台菜单' })
+  expect(within(menu).getByRole('heading', { name: '工作台菜单' })).toHaveFocus()
+  expect(within(menu).getByRole('link', { name: '回首页' })).toHaveAttribute('href', '/')
+  expect(within(menu).getByText('Session navigation')).toBeVisible()
+  expect(within(menu).getByText('本地开发身份，只在本机有效。')).toBeVisible()
+  fireEvent.click(within(menu).getByRole('link', { name: '历史档案' }))
+  expect(await screen.findByRole('heading', { name: 'History route' })).toBeVisible()
 })
 
 it('keeps its data router and dirty editor stable across application rerenders and cancelled navigation', async () => {

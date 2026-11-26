@@ -1,0 +1,30 @@
+{
+  "id": "frontend-interaction-v2",
+  "name": "frontend-interaction-v2",
+  "title": "前端交互重构 v2.0",
+  "description": "调研同类交互并规划去除常驻左右分栏，审批后再实现",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "campus-dev",
+  "assignee": "campus-dev",
+  "createdAt": "2026-11-25",
+  "completedAt": "2026-11-26",
+  "branch": "feat/deepseek-ocr-polish-upgrade",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "11-26-profile-sections-import",
+    "11-26-workspace-visual-refresh",
+    "11-26-mobile-workspace-ux"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

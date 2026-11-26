@@ -1,14 +1,24 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createMemoryRouter, MemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, expect, it, vi } from 'vitest'
 import ProfilePage from '../ProfilePage'
 import { campusData, campusFetch } from '../../api'
+import UnsavedWorkProvider from '../../components/UnsavedWorkProvider'
 import { materialText } from '../../material'
 
 vi.mock('../../api', () => ({ campusData: vi.fn(), campusFetch: vi.fn(), downloadDiagnostics: vi.fn(), errorText: () => '请求未完成' }))
 vi.mock('../../components/SharingControls', () => ({ default: () => null }))
 vi.mock('../../components/ImportPanel', () => ({ default: () => null }))
-afterEach(() => { cleanup(); vi.clearAllMocks() })
+let router
+afterEach(() => { cleanup(); router?.dispose(); router = undefined; vi.clearAllMocks(); vi.unstubAllGlobals() })
+
+function renderGuardedProfile(initialEntry = '/profile') {
+  router = createMemoryRouter([
+    { path: '/profile', element: <UnsavedWorkProvider><ProfilePage /></UnsavedWorkProvider> },
+  ], { initialEntries: [initialEntry] })
+  return render(<RouterProvider router={router} />)
+}
+
 it('sends an explicit blank stage when clearing a previously saved year and reloads it', async () => {
   let profile = { displayName: '测试学生', studyStage: '大三', location: '', bio: '', skills: [] }
   const student = { interests: [], experiences: [], skillAssessments: [], availability: {}, targetJobId: null }
@@ -39,7 +49,7 @@ it('keeps imported skill proficiency unknown until explicitly assessed', async (
     if (options?.method === 'PUT') student = JSON.parse(options.body)
     return { profile, student }
   })
-  render(<MemoryRouter><ProfilePage /></MemoryRouter>)
+  render(<MemoryRouter initialEntries={['/profile?view=skills']}><ProfilePage /></MemoryRouter>)
   const level = await screen.findByLabelText('目前程度')
   fireEvent.click(screen.getByText(/技能自评与证据（1 项）/))
   expect(level).toHaveValue('')
@@ -81,10 +91,11 @@ it('explicitly adopts a polished brief while retaining full text for later editi
     if (options?.method === 'PUT') student = JSON.parse(options.body)
     return { profile, student }
   })
-  render(<MemoryRouter><ProfilePage /></MemoryRouter>)
+  render(<MemoryRouter initialEntries={['/profile?view=experiences']}><ProfilePage /></MemoryRouter>)
   await screen.findByDisplayValue('完整经历原文')
-  fireEvent.click(screen.getAllByRole('button', { name: '整理这段' })[1])
+  fireEvent.click(screen.getByRole('button', { name: '整理这段' }))
   fireEvent.click(await screen.findByRole('button', { name: '确认事实，采纳到输入框' }))
+  fireEvent.click(screen.getByText('精简稿 · 简历和面试采用此稿', { selector: 'summary' }))
   expect(screen.getByLabelText('在简历与面试中使用精简稿（完整经历仍保留）')).toBeChecked()
   expect(screen.getByLabelText('完整经历（不会被精简稿替换）')).toHaveValue('完整经历原文')
   fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
@@ -101,8 +112,10 @@ it('preserves confirmed idea provenance and uses both loaded comparison tokens',
   let student = { interests: ['校园工具'], experiences: [{ id: 'idea', kind: 'project', title: '工具设想', state: 'idea', fullText: '想做一款工具', sourceConversationId: 'conversation', sourceQuestionId: 'question', dateText: '尚未开始' }], skillAssessments: [], availability: {}, updatedAt: '2026-10-21T02:00:00.000Z' }
   campusData.mockImplementation(async (_path, options) => { if (options?.method === 'PUT') student = JSON.parse(options.body); return { profile, student } })
   campusFetch.mockResolvedValue({ profile: { ...profile, updatedAt: '2026-10-21T03:00:00.000Z' } })
-  render(<MemoryRouter><ProfilePage /></MemoryRouter>)
+  renderGuardedProfile()
+  fireEvent.click(screen.getByRole('link', { name: '经历与想法' }))
   fireEvent.change(await screen.findByLabelText('想法原文'), { target: { value: '想尝试为同学做一个工具' } })
+  fireEvent.click(screen.getByRole('link', { name: '个人档案' }))
   fireEvent.change(screen.getByLabelText('简介'), { target: { value: '补充简介' } })
   fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
   await screen.findByText(/档案与成长材料已保存/)
@@ -118,14 +131,14 @@ it('keeps persisted structured experiences editable when the model supplies empt
   let student = { interests: [], experiences: [{ id: 'manual', kind: 'course', title: '课堂任务', fullText: '', context: '分组调研', actions: '访谈同学', result: '整理报告' }], skillAssessments: [], availability: {} }
   campusData.mockImplementation(async (_path, options) => { if (options?.method === 'PUT') student = JSON.parse(options.body); return { profile, student } })
   campusFetch.mockResolvedValue({ profile })
-  const view = render(<MemoryRouter><ProfilePage /></MemoryRouter>)
+  const view = render(<MemoryRouter initialEntries={['/profile?view=experiences']}><ProfilePage /></MemoryRouter>)
   expect(await screen.findByLabelText('背景或想解决什么')).toHaveValue('分组调研')
   fireEvent.change(screen.getByLabelText('你实际做了什么'), { target: { value: '访谈并整理记录' } })
   expect(screen.getByLabelText('实际结果或学到什么')).toHaveValue('整理报告')
   fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
   await screen.findByText(/档案与成长材料已保存/)
   view.unmount()
-  render(<MemoryRouter><ProfilePage /></MemoryRouter>)
+  render(<MemoryRouter initialEntries={['/profile?view=experiences']}><ProfilePage /></MemoryRouter>)
   expect(await screen.findByLabelText('你实际做了什么')).toHaveValue('访谈并整理记录')
   expect(screen.getByLabelText('背景或想解决什么')).toHaveValue('分组调研')
   expect(screen.getByLabelText('实际结果或学到什么')).toHaveValue('整理报告')
@@ -305,4 +318,172 @@ it('freezes a lost profile save through failed recovery reads and rebases before
   expect(profile.bio).toBe('原简介A')
   expect(student.interests).toEqual(['调研'])
   expect(profileWrites).toBe(2)
+})
+
+it('reveals and focuses an invalid skill from another view, then saves edits from both views', async () => {
+  let profile = { displayName: '原姓名', skills: [] }
+  let student = { interests: [], experiences: [], skillAssessments: [], availability: {} }
+  campusData.mockImplementation(async (_path, options) => {
+    if (options?.method === 'PUT') student = { ...student, ...JSON.parse(options.body) }
+    return { profile, student }
+  })
+  campusFetch.mockImplementation(async (_path, options) => {
+    profile = { ...profile, ...JSON.parse(options.body) }
+    return { profile }
+  })
+  renderGuardedProfile()
+  fireEvent.change(await screen.findByRole('textbox', { name: '姓名' }), { target: { value: '新姓名' } })
+  fireEvent.click(screen.getByRole('link', { name: '技能与其他材料' }))
+  fireEvent.click(screen.getByText('技能自评与证据（0 项）'))
+  fireEvent.click(screen.getByRole('button', { name: '添加一项自评' }))
+  fireEvent.click(screen.getByText('技能自评与证据（1 项）'))
+  fireEvent.click(screen.getByRole('link', { name: '个人档案' }))
+  expect(screen.queryByRole('textbox', { name: '技能名称' })).not.toBeInTheDocument()
+  const readsBeforeSave = campusData.mock.calls.length
+  fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
+
+  const skill = await screen.findByRole('textbox', { name: '技能名称' })
+  expect(screen.getByRole('link', { name: '技能与其他材料' })).toHaveAttribute('aria-current', 'page')
+  expect(skill).toBeVisible()
+  expect(skill).toHaveFocus()
+  expect(campusData).toHaveBeenCalledTimes(readsBeforeSave)
+  expect(campusFetch).not.toHaveBeenCalled()
+
+  fireEvent.change(skill, { target: { value: '调研' } })
+  fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
+  await screen.findByText(/档案与成长材料已保存/)
+  expect(profile.displayName).toBe('新姓名')
+  expect(student.skillAssessments).toEqual([{ name: '调研', level: null, evidence: '' }])
+})
+
+function renderMobileProfile(profile, student, initialEntry = '/profile') {
+  vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }))
+  campusData.mockImplementation(async (path, options) => {
+    if (path !== '/me') return []
+    if (options?.method === 'PUT') student = { ...student, ...JSON.parse(options.body) }
+    return { profile, student }
+  })
+  campusFetch.mockImplementation(async (_path, options) => {
+    profile = { ...profile, ...JSON.parse(options.body) }
+    return { profile }
+  })
+  renderGuardedProfile(initialEntry)
+}
+
+it('opens only one experience and preserves its draft through Back and Forward', async () => {
+  const experiences = [
+    { id: 'first', kind: 'course', title: '课程调研' },
+    { id: 'second', kind: 'project', title: '求职工具' },
+  ]
+  renderMobileProfile({ skills: [] }, { experiences }, '/profile?source=resume&view=experiences#draft')
+  fireEvent.click(await screen.findByRole('link', { name: '课程调研' }))
+  expect(screen.getByRole('heading', { name: '课程调研' })).toHaveFocus()
+  expect(screen.queryByRole('navigation', { name: '档案页面' })).not.toBeInTheDocument()
+  expect(screen.getByRole('textbox', { name: '名称' })).toHaveValue('课程调研')
+  expect(screen.getByDisplayValue('求职工具')).not.toBeVisible()
+  fireEvent.change(screen.getByRole('textbox', { name: '名称' }), { target: { value: '课程访谈' } })
+  await act(() => router.navigate(-1))
+  expect(screen.getByRole('heading', { level: 1 })).toHaveFocus()
+  expect(screen.getByRole('link', { name: '课程访谈' })).toBeVisible()
+  expect(screen.queryByRole('link', { name: '工作台菜单' })).not.toBeInTheDocument()
+  await act(() => router.navigate(1))
+  expect(screen.getByRole('textbox', { name: '名称' })).toHaveValue('课程访谈')
+  expect(router.state.location).toMatchObject({ search: '?source=resume&view=experiences&panel=experience%3Afirst', hash: '#draft' })
+  fireEvent.click(screen.getByRole('link', { name: '返回经历与想法' }))
+  fireEvent.click(screen.getByRole('link', { name: '个人档案' }))
+  expect(screen.getByRole('link', { name: '工作台菜单' })).toHaveAttribute('href', '/workspace-menu')
+  expect(router.state.location).toMatchObject({ search: '?source=resume', hash: '#draft' })
+})
+
+it('opens and focuses an invalid mobile panel before saving the shared draft', async () => {
+  renderMobileProfile({ displayName: '原姓名', skills: [] }, {}, '/profile?view=skills&panel=assessment')
+  fireEvent.click(await screen.findByRole('button', { name: '添加一项自评' }))
+  const skill = screen.getByRole('textbox', { name: '技能名称' })
+  fireEvent.click(screen.getByRole('link', { name: '返回技能与其他材料' }))
+  fireEvent.click(screen.getByRole('link', { name: '个人档案' }))
+  fireEvent.click(screen.getByRole('link', { name: '基本档案' }))
+  fireEvent.change(screen.getByRole('textbox', { name: '姓名' }), { target: { value: '新姓名' } })
+  const readsBeforeSave = campusData.mock.calls.length
+  fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
+  expect(router.state.location.search).toBe('?view=skills&panel=assessment')
+  expect(skill).toBeVisible()
+  expect(skill).toHaveFocus()
+  expect(campusData).toHaveBeenCalledTimes(readsBeforeSave)
+  expect(campusFetch).not.toHaveBeenCalled()
+
+  fireEvent.change(skill, { target: { value: '调研' } })
+  fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
+  await screen.findByText(/档案与成长材料已保存/)
+  expect(JSON.parse(campusFetch.mock.calls[0][1].body).displayName).toBe('新姓名')
+  const [, write] = campusData.mock.calls.find(([, options]) => options?.method === 'PUT')
+  expect(JSON.parse(write.body).skillAssessments).toEqual([{ name: '调研', level: null, evidence: '' }])
+})
+
+it('opens the exact incomplete experience when saving from a different record', async () => {
+  renderMobileProfile({ skills: [] }, { experiences: [{ id: 'first', kind: 'course', title: '课程调研' }] }, '/profile?view=experiences')
+  fireEvent.click(await screen.findByRole('button', { name: '添加课程、社团或项目经历' }))
+  const newRecordSearch = router.state.location.search
+  const incomplete = screen.getByRole('textbox', { name: '名称' })
+  expect(incomplete).toHaveValue('')
+  fireEvent.click(screen.getByRole('link', { name: '返回经历与想法' }))
+  fireEvent.click(screen.getByRole('link', { name: '课程调研' }))
+  expect(incomplete).not.toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
+  expect(router.state.location.search).toBe(newRecordSearch)
+  expect(incomplete).toBeVisible()
+  expect(incomplete).toHaveFocus()
+  expect(campusData.mock.calls.some(([, options]) => options?.method === 'PUT')).toBe(false)
+})
+
+it.each([
+  ['/profile?source=resume&view=unknown&panel=assessment#draft', '?source=resume'],
+  ['/profile?source=resume&view=skills&panel=basics&panel=tags#draft', '?source=resume&view=skills'],
+])('normalizes malformed mobile Profile entries before editing (%s)', async (entry, search) => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+  try {
+    renderMobileProfile({ displayName: '原姓名', skills: [] }, {}, entry)
+    await waitFor(() => expect(router.state.location).toMatchObject({ search, hash: '#draft' }))
+    if (search.includes('view=')) fireEvent.click(screen.getByRole('link', { name: '个人档案' }))
+    fireEvent.click(screen.getByRole('link', { name: '基本档案' }))
+    fireEvent.change(await screen.findByRole('textbox', { name: '姓名' }), { target: { value: '未保存姓名' } })
+    fireEvent.click(screen.getByRole('link', { name: '返回个人档案' }))
+    fireEvent.click(screen.getByRole('link', { name: '可实习时间' }))
+    expect(router.state.location).toMatchObject({ search: '?source=resume&panel=availability', hash: '#draft' })
+    expect(confirm).not.toHaveBeenCalled()
+  } finally { confirm.mockRestore() }
+})
+
+it('reveals the actionable availability field after a confirmed server validation rejection', async () => {
+  let profile = { displayName: '原姓名', skills: [] }
+  const student = { availability: { startDate: '2026-12-20', endDate: '2026-12-01' } }
+  renderMobileProfile(profile, student, '/profile?panel=basics')
+  campusFetch.mockImplementation(async (_path, options) => {
+    profile = { ...profile, ...JSON.parse(options.body) }
+    return { profile }
+  })
+  campusData.mockImplementation(async (path, options) => {
+    if (path !== '/me') return []
+    if (options?.method === 'PUT' && JSON.parse(options.body).availability.endDate === '2026-12-01') {
+      throw { code: 'VALIDATION_FAILED', details: [{ field: 'availability', code: 'custom', message: 'PRIVATE' }] }
+    }
+    if (options?.method === 'PUT') Object.assign(student, JSON.parse(options.body))
+    return { profile, student }
+  })
+  fireEvent.change(await screen.findByRole('textbox', { name: '姓名' }), { target: { value: '新姓名' } })
+  fireEvent.change(screen.getByLabelText('感兴趣的方向（逗号分隔）'), { target: { value: '调研' } })
+  fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
+  await waitFor(() => expect(router.state.location.search).toBe('?panel=availability'))
+  expect(screen.getByLabelText('可持续到')).toHaveFocus()
+  expect(screen.getByLabelText('可持续到')).toHaveValue('2026-12-01')
+  expect(screen.getByRole('alert')).toHaveTextContent('开始日期不能晚于结束日期')
+  expect(screen.queryByText('PRIVATE')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: '检查档案保存结果' })).not.toBeInTheDocument()
+  expect(campusData.mock.calls.filter(([, options]) => options?.method === 'PUT')).toHaveLength(1)
+
+  fireEvent.change(screen.getByLabelText('可持续到'), { target: { value: '2026-12-25' } })
+  fireEvent.click(screen.getByRole('button', { name: '保存档案与成长材料' }))
+  await screen.findByText(/档案与成长材料已保存/)
+  expect(campusFetch).toHaveBeenCalledOnce()
+  expect(profile.displayName).toBe('新姓名')
+  expect(student.interests).toEqual(['调研'])
 })

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { confirmView, saveCopy } from '../import/confirmCopy'
 
 const IDENTITY = [['name', '姓名'], ['email', '邮箱'], ['phone', '电话']]
-export default function ImportConfirm({ draft, result, onChange, decisions, onDecision, resumeId, onResume, resumeTitle, onTitle, onSave, onContinue, onSource, busy }) {
+export default function ImportConfirm({ draft, result, onChange, decisions, onDecision, resumeId, onResume, resumeTitle, onTitle, onSave, onContinue, onSource, busy, disabled, profileMode = false }) {
   const [panel, setPanel] = useState('result')
   const [sourceBlockId, setSourceBlockId] = useState('')
   const scroll = useRef(0)
@@ -24,22 +24,16 @@ export default function ImportConfirm({ draft, result, onChange, decisions, onDe
   const unresolved = candidates.some((row) => !decisions[row.id])
   const unreviewed = issues.some((issue) => decisions[issue.id] !== 'confirmed')
   const choices = draft.resumeChoices || []
+  const targetTitle = choices.find((row) => row.id === resumeId)?.title || resumeTitle || '这份简历'
   const targetMissing = choices.length > 0 && !resumeId
+  const profileSaveLabel = targetMissing ? '请先选择要更新的简历' : `确认导入档案并${resumeId ? '更新' : '新建'}《${targetTitle}》`
+  const locked = busy || disabled
   function showSource(blockId = '') { scroll.current = window.scrollY; setSourceBlockId(typeof blockId === 'string' ? blockId : ''); setPanel('source') }
   function back() { setPanel('result'); requestAnimationFrame(() => window.scrollTo(0, scroll.current)) }
   function field(key, value) { onChange({ ...result, [key]: value }) }
   function rowField(key, index, fieldName, value) { field(key, result[key].map((row, i) => i === index ? { ...row, [fieldName]: value } : row)) }
-  return <section className="import-confirm campus-form" style={{ '--import-navigation-height': `${navigationHeight}px` }} aria-label="导入结果">
-    <p role="status">{view.summary || view.phase}</p>
-    <p>原件与抽出的文字会保留，直到你主动丢弃这份导入。DOCX 提供内容预览，不保证原排版。</p>
-    {panel === 'source' ? <section className="import-source"><button type="button" onClick={back}>返回整理结果</button><button type="button" disabled={busy || draft.kept === false} onClick={onSource}>下载原件核对</button>
-      {sourceBlockId && <button type="button" onClick={() => setSourceBlockId('')}>查看全部来源</button>}
-      {(draft.blocks || []).filter((block) => !sourceBlockId || block.id === sourceBlockId).map((block, index) => <article key={block.id || index}><h3>来源 {block.page || index + 1}</h3><p>{({ read: '已读取原文', parsed: '已读取原文', vision_unverified: '图片识别文字，请核对原图', failed: '这部分读取失败', unreadable: '这部分无法读取', partial: '这部分尚未读完' })[block.status] || '提取文字，供核对来源'}</p><p className="campus-preserve-text">{block.text || '这部分还没有读出文字。'}</p></article>)}
-    </section> : <>
-      <button type="button" onClick={showSource}>查看原件与提取文字</button>
-      {view.state === 'blocked' && <p>{draft.kept === false ? '原件不可用，请更换文件。' : '原件仍保留，不需要重新上传。'}{view.phase}</p>}
-      {draft.failed && !draft.canContinue && <p>本次读取没有取得可用结果，不能继续自动调用。原件仍可核对；可以更换文件或手动整理，已有档案不会因此丢失。</p>}
-      {result && <fieldset disabled={busy || draft.frozen || draft.saved || ['saved', 'restored', 'saving', 'save_unknown'].includes(draft.status)} className="campus-fieldset campus-form">
+  const preview = profileMode && result && ['clear', 'issues'].includes(view.state) && !draft.frozen
+  const fields = result && <>
         <h3>整理结果（可以直接修改）</h3><p>原文没有写的内容可以留空，不需要补齐。</p>
         <div className="campus-grid">{IDENTITY.map(([key, label]) => <label key={key}>{label}<input value={result[key] || ''} onChange={(event) => field(key, event.target.value)} /></label>)}</div>
         <label>简介<textarea value={result.bio || ''} onChange={(event) => field('bio', event.target.value)} /></label>
@@ -47,6 +41,28 @@ export default function ImportConfirm({ draft, result, onChange, decisions, onDe
         <h3>经历</h3>{(result.experiences || []).map((row, index) => <div className="campus-panel" key={row.id || index}>{[['title', row.titleIsSourceExcerpt ? '原文摘句（原文未写经历名称）' : '经历名称'], ['organization', '机构'], ['dateText', '时间（保留原文）']].map(([key, label]) => <label key={key}>{label}<input value={row[key] || ''} onChange={(event) => rowField('experiences', index, key, event.target.value)} /></label>)}<label>完整经历<textarea value={row.fullText ?? row.actions ?? ''} onChange={(event) => rowField('experiences', index, 'fullText', event.target.value)} /></label>{row.brief && <details><summary>可选精简稿</summary><p className="campus-preserve-text">{row.brief}</p><label className="campus-check"><input type="checkbox" checked={Boolean(row.useConcise)} onChange={(event) => rowField('experiences', index, 'useConcise', event.target.checked)} />在简历中采用精简稿，档案保留全文</label></details>}</div>)}
         <h3>技能</h3>{(result.skills || []).map((row, index) => <label key={index}>技能 {index + 1}<input value={typeof row === 'string' ? row : row.name || ''} onChange={(event) => field('skills', result.skills.map((skill, i) => i === index ? typeof skill === 'string' ? event.target.value : { ...skill, name: event.target.value } : skill))} /></label>)}
         <label>其他原文材料（奖项、证书、联系方式等）<textarea value={result.otherMaterials || ''} onChange={(event) => field('otherMaterials', event.target.value)} /></label>
+  </>
+  return <section className="import-confirm campus-form" style={{ '--import-navigation-height': `${navigationHeight}px` }} aria-label="导入结果">
+    {!preview && <p role="status">{profileMode && ['clear', 'issues'].includes(view.state) ? draft.phase || '等待文件整理完成。' : view.summary || view.phase}</p>}
+    <p>原件与抽出的文字会保留，直到你主动丢弃这份导入。DOCX 提供内容预览，不保证原排版。</p>
+    {panel === 'source' ? <section className="import-source"><button type="button" onClick={back}>返回整理结果</button><button type="button" disabled={locked || draft.kept === false} onClick={onSource}>下载原件核对</button>
+      {sourceBlockId && <button type="button" onClick={() => setSourceBlockId('')}>查看全部来源</button>}
+      {(draft.blocks || []).filter((block) => !sourceBlockId || block.id === sourceBlockId).map((block, index) => <article key={block.id || index}><h3>来源 {block.page || index + 1}</h3><p>{({ read: '已读取原文', parsed: '已读取原文', vision_unverified: '图片识别文字，请核对原图', failed: '这部分读取失败', unreadable: '这部分无法读取', partial: '这部分尚未读完' })[block.status] || '提取文字，供核对来源'}</p><p className="campus-preserve-text">{block.text || '这部分还没有读出文字。'}</p></article>)}
+    </section> : <>
+      {preview && <section aria-label="识别内容预览">
+        <h3>识别内容预览</h3>
+        <ul>
+          <li>个人档案：{[['name', '姓名'], ['phone', '电话'], ['bio', '简介']].filter(([key]) => result[key]?.trim()).map(([, label]) => label).concat(`${result.education?.length || 0} 条教育经历`).join('、')}</li>
+          <li>经历与想法：{result.experiences?.length || 0} 段经历</li>
+          <li>技能与其他材料：{result.skills?.length || 0} 项技能标签{result.otherMaterials?.trim() ? '、其他原文材料' : ''}{result.email?.trim() ? '、邮箱' : ''}</li>
+        </ul>
+        <p>以上是整理结果，不是实际写入数量。确认时会保留已有档案内容，并按核对结果补充。</p>
+      </section>}
+      <button type="button" onClick={showSource}>查看原件与提取文字</button>
+      {view.state === 'blocked' && <p>{draft.kept === false ? '原件不可用，请更换文件。' : '原件仍保留，不需要重新上传。'}{view.phase}</p>}
+      {draft.failed && !draft.canContinue && <p>本次读取没有取得可用结果，不能继续自动调用。原件仍可核对；可以更换文件或手动整理，已有档案不会因此丢失。</p>}
+      {result && <fieldset disabled={locked || draft.frozen || draft.saved || ['saved', 'restored', 'saving', 'save_unknown'].includes(draft.status)} className="campus-fieldset campus-form">
+        {profileMode ? <details><summary>查看或修改整理详情</summary>{fields}</details> : fields}
         {issues.length > 0 && <section><h3>需要核对的地方</h3><ul>{issues.map((issue, index) => {
           const match = /^(education|experiences|skills)\.(\d+)/.exec(issue.field || '')
           const item = match ? result[match[1]]?.[Number(match[2])] : null
@@ -58,8 +74,8 @@ export default function ImportConfirm({ draft, result, onChange, decisions, onDe
       </fieldset>}
     </>}
     {!draft.saved && !['saved', 'restored'].includes(draft.status) && <div className="import-save-bar campus-actions">
-      {draft.canContinue && <button type="button" disabled={busy} onClick={onContinue}>{busy ? '正在处理…' : view.action === '检查保存结果并继续' ? view.action : '继续读取'}</button>}
-      {result && !draft.frozen && !['saving', 'save_unknown'].includes(draft.status) && <><button className="primary" type="button" disabled={busy || unresolved || unreviewed || targetMissing} onClick={() => onSave(false)}>{busy ? '正在保存…' : saveCopy({ ...draft, resumeId, resumeTitle })}</button>{(issues.length > 0 || unresolved) && <button type="button" disabled={busy || targetMissing} onClick={() => onSave(true)}>先保存其余内容，跳过待核对部分</button>}</>}
+      {draft.canContinue && <button type="button" disabled={locked} onClick={onContinue}>{busy ? '正在处理…' : view.action === '检查保存结果并继续' ? view.action : '继续读取'}</button>}
+      {result && !draft.frozen && !['saving', 'save_unknown'].includes(draft.status) && <><button className="primary" type="button" disabled={locked || unresolved || unreviewed || targetMissing} onClick={() => onSave(false)}>{busy ? '正在保存…' : profileMode ? profileSaveLabel : saveCopy({ ...draft, resumeId, resumeTitle })}</button>{(issues.length > 0 || unresolved) && <button type="button" disabled={locked || targetMissing} onClick={() => onSave(true)}>先保存其余内容，跳过待核对部分</button>}</>}
     </div>}
   </section>
 }
