@@ -1,0 +1,5 @@
+# Design
+
+One task region per screen. Jobs list uses scan-friendly divider rows, opens detail in place, and returns to prior page/scroll without discarding dirty work silently. Job screenshot tool stays mounted as needed. Resume uses distinct controls for editor, import and saved versions; switch display without unmounting active state. Choose a different record only through existing guard. Existing import query still opens import. Interview preparation groups material, settings and launch in sequence; actual session keeps the focus on current question and answer, with secondary guidance nearby but not competing. Scope styles to the changed pages and eliminate only styles made obsolete by the cutover.
+
+Astra owns an illustrated heading with compass/trail, stitched resume sheet, and interview microphone motifs. Use original inline SVG with muted theme colors, no external dependency, one brief entrance and no movement with reduced-motion. Mobile design must not hide controls or add another fixed bar. Preserve router/provider/API contracts. Each page can be reverted independently; no migration.
