@@ -736,23 +736,14 @@
   line-height: 1.5;
 }
 
-.resume-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 24px;
-  align-items: stretch;
-}
-
 .campus-card.resume-editor-card { display: block; }
-.campus-card.resume-sidebar { display: flex; }
 
 .resume-editor-card {
   padding: 28px;
   box-shadow: 0 2px 8px rgba(28, 25, 21, 0.03);
 }
 
-.campus-card.resume-editor-card:hover,
-.campus-card.resume-sidebar:hover {
+.campus-card.resume-editor-card:hover {
   border-color: var(--line);
   box-shadow: 0 2px 8px rgba(28, 25, 21, 0.03);
 }
@@ -953,67 +944,6 @@
   cursor: not-allowed;
 }
 
-.resume-sidebar {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 20px 16px;
-  background: var(--card);
-}
-.resume-sidebar-tools {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.campus .resume-sidebar-tools > button,
-.campus .resume-sidebar-tools .campus-panel > button,
-.campus .profile-side-col .campus-panel > button,
-.campus .screenshot-dropzone .campus-panel > button {
-  width: auto;
-  justify-self: start;
-  align-self: flex-start;
-}
-.manual-entry-card .btn-secondary-outline { justify-self: center; }
-.campus-mark {
-  width: 96px;
-  height: 72px;
-  color: var(--accent);
-  opacity: 0.42;
-  pointer-events: none;
-}
-.manual-entry-card .campus-mark,
-.profile-side-fill .campus-mark {
-  position: absolute;
-  right: 8px;
-  bottom: 4px;
-}
-.prep-launchpad-card .campus-mark {
-  width: 120px;
-  height: 88px;
-  margin-top: auto;
-  color: #d7e4dc;
-  opacity: 0.55;
-}
-.resume-sidebar-header .campus-mark { width: 72px; height: 48px; }
-
-.resume-sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 0 6px 12px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid rgba(217, 208, 195, 0.6);
-}
-
-.campus .resume-sidebar-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .resume-count-badge {
   font-size: 12px;
   color: var(--muted);
@@ -1086,7 +1016,6 @@
 .resume-empty { margin: 8px 6px 0; font-size: 13px; }
 
 @media (max-width: 860px) {
-  .resume-workspace,
   .resume-meta-row { grid-template-columns: 1fr; }
   .resume-editor-card { padding: 20px 16px; }
   .campus .resume-textarea { min-height: 260px; }
@@ -1349,7 +1278,28 @@
   flex-direction: column;
 }
 
-.campus-mobile-topbar { display: none; }
+.campus-workspace-menu-link { display: none; }
+
+.campus-workspace-menu { max-inline-size: 30rem; }
+.campus-workspace-menu > .campus-panel { gap: 0; padding: 0 16px; box-shadow: none; }
+.campus .campus-workspace-menu-row,
+.campus .campus-workspace-menu-account a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  font-size: var(--mobile-body, 1rem);
+}
+.campus .campus-workspace-menu-row {
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+}
+.campus-workspace-menu-row svg { flex: none; color: var(--muted); }
+.campus-workspace-menu-account { padding-block: 12px; gap: 8px; }
+.campus .campus-workspace-menu-account h2 { font-size: var(--mobile-section, 1.125rem); margin: 0; }
+.campus .campus-workspace-menu-account p { margin: 0; font-size: var(--mobile-note, 0.875rem); }
 
 .campus-workspace .campus-main {
   width: min(1120px, 100%);
@@ -1360,11 +1310,34 @@
 .campus-room-bar a { color: #e8eef7; text-decoration: none; }
 
 @media (max-width: 767px) {
-  .campus-portal-header { padding: 16px 20px; }
-  .campus-portal-main { padding: 16px 16px 48px; }
-  .campus-portal-grid { grid-template-columns: 1fr; }
-  .campus-portal-card { padding: 20px; }
-  .campus-workspace { flex-direction: column; }
+  .campus-portal .campus-portal-header { display: none; }
+  .campus-portal-main { padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px)); }
+  .campus-portal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .campus .campus-portal-card { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px; border-radius: 12px; }
+  .campus-portal-card .campus-card-icon-box { flex: 0 0 28px; width: 28px; height: 28px; margin: 0; }
+  .campus-portal-card .campus-card-icon-box svg { width: 20px; height: 20px; }
+  .campus .campus-portal-card .campus-card-title { margin: 0; font-size: 1rem; }
+  .campus-portal-card :is(.campus-card-desc, .campus-card-watermark) { display: none; }
+  .campus-portal .campus-slogan-heading { font-size: 1.5rem; line-height: 1.3; }
+  .campus-portal .campus-hero-text > p { margin-block-end: 8px; font-size: .875rem; }
+  .campus-portal .campus-next-step { margin: 12px 0; padding: 12px; }
+  .campus-portal .campus-next-step h2 { margin: 0 0 8px; font-size: 1.125rem; }
+  .campus-portal .campus-interest-entry { display: flex; align-items: center; min-height: 44px; margin-top: 4px; font-size: .875rem; }
+  .campus-portal .campus-examples { margin: 8px 0; font-size: .875rem; }
+  .campus.campus-workspace {
+    --mobile-title: 1.5rem;
+    --mobile-section: 1.125rem;
+    --mobile-body: 1rem;
+    --mobile-note: 0.875rem;
+    --mobile-nav-label: 0.75rem;
+    --mobile-gap: 8px;
+    --mobile-inset: 12px;
+    --mobile-gutter: 16px;
+    --mobile-section-gap: 24px;
+    flex-direction: column;
+    background-image: none;
+    line-height: 1.5;
+  }
   .campus-nav-container {
     position: fixed;
     top: auto;
@@ -1373,7 +1346,7 @@
     width: 100%;
     height: auto;
     flex-direction: row;
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
     border-right: 0;
     border-top: 1px solid var(--line);
     background: var(--card);
@@ -1391,27 +1364,42 @@
     flex-direction: column;
     justify-content: center;
     gap: 4px;
-    padding: 8px 4px;
-    font-size: 12px;
+    min-height: 44px;
+    padding: var(--mobile-gap) 4px;
+    font-size: var(--mobile-nav-label);
   }
   .campus-nav-item.is-active {
     background: rgba(15, 110, 86, 0.08);
     color: var(--accent);
   }
-  .campus-mobile-topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    padding: 12px 16px;
-    background: rgba(244, 239, 230, 0.9);
-    border-bottom: 1px solid var(--line);
-  }
   .campus-workspace .campus-main {
-    padding: 20px 16px calc(64px + 32px + env(safe-area-inset-bottom, 0px));
+    padding: max(var(--mobile-gutter), env(safe-area-inset-top, 0px)) max(var(--mobile-gutter), env(safe-area-inset-right, 0px))
+      calc(64px + 32px + env(safe-area-inset-bottom, 0px)) max(var(--mobile-gutter), env(safe-area-inset-left, 0px));
   }
+  .campus .campus-workspace-menu-link {
+    position: fixed;
+    inset-inline-end: max(var(--mobile-gutter), env(safe-area-inset-right, 0px));
+    inset-block-end: calc(5rem + env(safe-area-inset-bottom, 0px));
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    inline-size: 48px;
+    block-size: 48px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--card);
+    color: var(--accent);
+  }
+  .campus-workspace .campus-main:has(.campus-workspace-menu-link) {
+    padding-block-end: calc(8.5rem + env(safe-area-inset-bottom, 0px));
+  }
+  .campus .campus-workspace-menu h1 { font-size: var(--mobile-title); }
+  .campus-workspace .campus-workspace-heading { grid-template-columns: minmax(0, 1fr); }
+  .campus-workspace .campus-workspace-heading h1 { margin: 0; font-size: var(--mobile-title); }
+  .campus-workspace .campus-workspace-heading :is(p, .campus-workspace-heading-art) { display: none; }
+  .campus-workspace :is(.profile-page, .jobs-page, .resume-page, .interview-prep-page) h2 { font-size: var(--mobile-section); }
+  .campus-workspace :is(.profile-page, .jobs-page, .resume-page, .interview-prep-page) :is(input:not([type='checkbox']):not([type='radio']), select, textarea) { font-size: var(--mobile-body); }
+  .campus-workspace :is(.profile-save-scope, .jobs-empty-state, .resume-label-hint) { font-size: var(--mobile-note); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1447,16 +1435,10 @@
 .campus-slogan-measure { visibility: hidden; pointer-events: none; }
 .campus-slogan-display { transition: opacity 100ms, filter 100ms; }
 .campus-slogan-toggle.is-fading .campus-slogan-display { opacity: 0.2; filter: blur(3px); }
-.campus .campus-job-choice { display: grid; gap: 8px; border-radius: 14px; text-align: left; justify-content: start; padding: 18px; }
-.campus-job-choice span { color: var(--muted); font-size: 14px; }
 .campus-recording-banner { position: sticky; top: 12px; z-index: 25; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 18px; border: 2px solid var(--danger); border-radius: 12px; color: #7a1410; background: #fff1ed; box-shadow: 0 4px 20px #1c19151a; }
 .campus-recording-banner strong { font-size: 20px; }
 .campus-timer { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 24px; }
 .campus-voice { padding: 16px 0; }
-.campus-interview-review { max-width: 900px; margin: auto; }
-.campus-interview-review .campus-question-card { display: flex; gap: 16px; padding: 24px; background: var(--card); border: 1px solid var(--line); color: var(--ink); }
-.campus-interview-review .campus-question-card h2 { color: var(--ink); }
-.campus-interview-review .campus-q-index { color: var(--accent); }
 .campus-auth {
   position: relative;
   isolation: isolate;
@@ -1556,7 +1538,7 @@
 .campus .resume-actions-bar { flex-wrap: wrap; }
 .campus .resume-textarea { font-family: inherit; }
 @media (max-width: 767px) {
-  .campus-portal-header, .campus-portal-actions, .campus-mobile-topbar { flex-wrap: wrap; }
+  .campus-portal-header, .campus-portal-actions { flex-wrap: wrap; }
   .campus-portal-actions { justify-content: flex-start; }
   .campus-grid { grid-template-columns: 1fr; }
   .campus-next-step { padding: 20px 16px; }
@@ -1568,34 +1550,104 @@
   .campus-portal-particles { display: none; }
 }
 .profile-page-header { margin-bottom: 8px; }
-.profile-bento-grid {
+.profile-view-heading {
   display: grid;
-  grid-template-columns: minmax(0, 1.85fr) minmax(300px, 1fr);
-  gap: 20px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(8px, 2vw, 24px);
 }
-.profile-main-col,
-.profile-side-col,
-.profile-section-card { min-width: 0; }
-.profile-side-col {
+.campus .profile-view-heading h1 { font-size: clamp(24px, 5vw, 40px); }
+.profile-view-heading p { margin: 0; }
+.profile-illustration,
+.profile-nav-motif { display: block; pointer-events: none; }
+.profile-illustration {
+  inline-size: clamp(72px, 13vw, 176px);
+  block-size: auto;
+  color: var(--accent);
+}
+.profile-entry-dots { opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .profile-entry-dots { animation: profile-dot-entry 520ms ease-out; }
+}
+@keyframes profile-dot-entry {
+  0% { opacity: 0; transform: translateY(4px); }
+  35% { opacity: 0.7; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+.profile-nav-motif {
+  flex: 0 0 auto;
+  inline-size: 18px;
+  block-size: 18px;
+}
+.profile-view-nav {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 12px;
-  height: 100%;
 }
-.profile-side-fill {
-  position: relative;
-  flex: 1;
-  overflow: hidden;
-  padding-bottom: 76px;
+.campus .profile-view-nav > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  max-inline-size: 100%;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--accent);
+  font-weight: 600;
+  text-align: center;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
 }
+.campus .profile-view-nav > a[aria-current="page"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+.campus .profile-import-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-block-size: 44px;
+  max-inline-size: 100%;
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.campus .profile-import-shortcut:hover { text-decoration: underline; }
+.profile-view-content {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+.profile-view-content > section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.campus .profile-page :is(a, button, input, textarea, select, summary, [tabindex]) {
+  scroll-margin-block: 8px; /* The shared scroll padding already clears workspace chrome. */
+}
+.profile-view-content button { max-inline-size: 100%; }
+.campus .profile-view-content .campus-panel > button { justify-self: start; }
 .profile-section-card {
+  min-inline-size: 0;
   display: grid;
   gap: 12px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--card);
+  padding-block: 16px;
+  border-block-start: 1px solid var(--line);
+}
+.profile-section-card > section.campus-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .profile-form-grid-2 {
   display: grid;
@@ -1603,6 +1655,7 @@
   gap: 12px;
 }
 .profile-form-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.profile-save-scope { margin: 0; }
 .profile-accordion-item {
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1645,121 +1698,81 @@
   background: transparent;
   color: var(--accent);
 }
-.direction-ingest-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.7fr);
-  gap: 16px;
-  align-items: stretch;
+.profile-save-group { display: contents; }
+@media (max-width: 767px) {
+  .profile-page .profile-view-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--mobile-gap);
+  }
+  .profile-page .profile-view-heading { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .campus .profile-page .profile-view-heading h1 { font-size: var(--mobile-title); margin: 0; }
+  .profile-page .profile-mobile-destinations { display: grid; gap: var(--mobile-gap); }
+  .profile-page .profile-mobile-destinations nav {
+    display: grid;
+    margin-block-start: calc(var(--mobile-section-gap) - var(--mobile-inset));
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+  }
+  .campus .profile-page .profile-view-nav > a { text-decoration: none; }
+  .campus .profile-page .profile-mobile-destinations nav > .profile-mobile-row {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .profile-page .profile-mobile-destinations nav > .profile-mobile-row + .profile-mobile-row { border-block-start: 1px solid var(--line); }
+  .campus .profile-page :is(.profile-mobile-row, .profile-mobile-back, .profile-mobile-inline-link) {
+    display: flex;
+    align-items: center;
+    min-block-size: 44px;
+    color: var(--accent);
+    overflow-wrap: anywhere;
+    text-underline-offset: 3px;
+  }
+  .campus .profile-page .profile-mobile-row {
+    justify-self: stretch;
+    justify-content: space-between;
+    gap: var(--mobile-inset);
+    padding: 6px var(--mobile-inset);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--card);
+  }
+  .profile-page .profile-mobile-row::after {
+    content: "";
+    flex: 0 0 7px;
+    block-size: 7px;
+    border-inline-end: 2px solid currentColor;
+    border-block-start: 2px solid currentColor;
+    transform: rotate(45deg);
+    margin-inline-end: 4px;
+  }
+  .profile-mobile-back { justify-self: start; }
+  .campus .profile-page .profile-mobile-inline-link { display: inline-flex; }
+  .campus .profile-page .profile-view-content a:not(.profile-mobile-row) {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+  }
+  .campus .profile-page :is(input:not([type="checkbox"]):not([type="radio"]), select) { min-block-size: 44px; }
+  .profile-page .profile-import-progress { margin: 0; }
+  .profile-page [data-profile-panel="basics"] > .profile-section-card > h2,
+  .profile-page [data-profile-panel="education"] > .profile-section-card > h2,
+  .profile-page [data-profile-panel="availability"] > .profile-section-card > h2 { display: none; }
+  .profile-page .profile-section-card { padding-block-start: 12px; }
+  .profile-page .profile-save-group:not([hidden]) { display: grid; gap: 8px; }
 }
-.screenshot-dropzone {
-  min-width: 0;
-  padding: 8px;
-  border: 1.5px dashed var(--accent);
-  border-radius: 16px;
-  background: rgba(15, 110, 86, 0.04);
-}
-.screenshot-dropzone > .campus-panel {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.manual-entry-card {
-  position: relative;
-  display: grid;
-  align-content: center;
-  height: 100%;
-  min-height: 180px;
-  overflow: hidden;
-}
-.jobs-board-section { display: grid; gap: 12px; }
-.jobs-board-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.jobs-empty-state {
-  padding: 28px 20px;
-  border: 1px dashed var(--line);
-  border-radius: 16px;
-  background: var(--card);
-  text-align: center;
-}
-.jobs-pager { display: flex; justify-content: flex-end; gap: 8px; }
-.interview-prep-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.8fr);
-  gap: 16px;
-  align-items: stretch;
-}
-.prep-sheet-card {
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--card);
-}
-.prep-sheet-header,
-.prep-sheet-save {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-}
-.prep-sheet-header h2 { margin: 0; }
-.prep-launchpad-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-  min-height: 100%;
-  padding: 24px;
-  border-radius: 16px;
-  background: #0b1220;
-  color: #e8eef7;
-  overflow: hidden;
-}
-.campus .prep-start,
-.campus .prep-outline-link,
-.prep-history-card { width: 100%; }
-.prep-sheet-card a {
-  width: fit-content;
-  text-decoration: none;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--paper);
-}
-.campus .prep-start {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: transparent;
-}
-.campus .prep-outline-link {
-  background: transparent;
-  color: #e8eef7;
-  border-color: rgba(232, 238, 247, 0.45);
-}
-.prep-history-card {
-  display: block;
-  padding: 14px 16px;
-  border: 1px solid rgba(232, 238, 247, 0.35);
-  border-radius: 12px;
-  color: #e8eef7;
-  text-decoration: none;
-}
-@media (max-width: 960px) {
-  .profile-bento-grid,
-  .direction-ingest-grid,
-  .jobs-board-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 860px) {
-  .interview-prep-grid { grid-template-columns: 1fr; }
-}
+
 @media (max-width: 640px) {
+  .profile-view-nav { gap: 8px; }
+  .campus .profile-view-nav > a { padding-inline: 6px; font-size: 14px; }
   .profile-form-grid-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .profile-view-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .campus-practice .campus-room-bar a { color: var(--accent); display: inline-flex; align-items: center; min-height: 44px; }
@@ -1813,6 +1826,9 @@
   .import-save-bar { bottom: calc(var(--import-navigation-height, 0px) + 8px); padding: 12px; }
   .import-save-bar button { width: 100%; white-space: normal; }
   .job-image-list { grid-template-columns: 1fr; }
+  /* Keep Profile import actions in flow above the mobile workspace navigation. */
+  .profile-view-content .import-confirm { padding-bottom: 0; }
+  .profile-view-content .import-save-bar { position: static; }
 }
 
 /* Optional tools stay mounted; disclosures never own form or media lifetime. */

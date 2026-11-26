@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
+import { useMobileWorkspace } from '../hooks/useMobileWorkspaceView'
 import { UnsavedWorkContext } from '../hooks/unsavedWorkContext'
+import { isResumeTabReplace, isWorkspaceViewSwitch } from '../mobileWorkspaceViews'
 
 export default function UnsavedWorkProvider({ children }) {
+  const isMobile = useMobileWorkspace()
   const guards = useRef(new Set())
   const register = useCallback((id, dirty) => {
     if (dirty) guards.current.add(id)
     else guards.current.delete(id)
   }, [])
-  const shouldBlock = useCallback(({ currentLocation, nextLocation }) => guards.current.size > 0 && (
-    currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search || currentLocation.key !== nextLocation.key
-  ), [])
+  const shouldBlock = useCallback(({ currentLocation, nextLocation, historyAction }) => guards.current.size > 0 && (
+    currentLocation.pathname !== nextLocation.pathname || currentLocation.search !== nextLocation.search || currentLocation.hash !== nextLocation.hash || currentLocation.key !== nextLocation.key
+  ) && !isWorkspaceViewSwitch(currentLocation, nextLocation) && !(isMobile && isResumeTabReplace(currentLocation, nextLocation, historyAction)), [isMobile])
   const blocker = useBlocker(shouldBlock)
   useEffect(() => {
     if (blocker.state !== 'blocked') return

@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef } from 'react'
 import { UnsavedWorkContext } from './unsavedWorkContext'
 
-export default function useUnsavedWork(dirty) {
+export default function useUnsavedWork(dirty, registrationKey) {
   const context = useContext(UnsavedWorkContext)
   const id = useRef(Symbol('unsaved-work'))
   const active = useRef(dirty)
@@ -10,8 +10,9 @@ export default function useUnsavedWork(dirty) {
     context?.register(id.current, dirty)
     const key = id.current
     return () => context?.register(key, false)
-  }, [context, dirty])
-  // Only call after server acknowledgement or an explicit discard decision.
+  }, [context, dirty, registrationKey])
+  // Release only after acknowledgement, explicit discard, or for an in-place
+  // navigation that retains the work and rearms this guard via registrationKey.
   const allowLeave = useCallback(() => {
     active.current = false
     context?.register(id.current, false)
