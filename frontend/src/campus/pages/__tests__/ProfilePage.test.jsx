@@ -383,7 +383,7 @@ it('opens only one experience and preserves its draft through Back and Forward',
   expect(screen.getByDisplayValue('求职工具')).not.toBeVisible()
   fireEvent.change(screen.getByRole('textbox', { name: '名称' }), { target: { value: '课程访谈' } })
   await act(() => router.navigate(-1))
-  expect(screen.getByRole('heading', { name: '经历与想法' })).toHaveFocus()
+  expect(screen.getByRole('heading', { level: 1 })).toHaveFocus()
   expect(screen.getByRole('link', { name: '课程访谈' })).toBeVisible()
   expect(screen.queryByRole('link', { name: '工作台菜单' })).not.toBeInTheDocument()
   await act(() => router.navigate(1))
